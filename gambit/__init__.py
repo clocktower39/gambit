@@ -1,4 +1,4 @@
-"""Haggle — a self-improving auto-negotiator.
+"""Gambit — a self-improving auto-negotiator.
 
 An agent that lists an item, negotiates with buyers to maximize sale price
 within a reasonable time, and improves from its own past negotiations.

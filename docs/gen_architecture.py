@@ -1,4 +1,4 @@
-"""Generates docs/architecture.excalidraw — the Haggle system architecture.
+"""Generates docs/architecture.excalidraw — the Gambit system architecture.
 
 Edit this script and re-run (`python docs/gen_architecture.py`) to tweak the diagram,
 or just open the .excalidraw file in excalidraw.com / the VS Code Excalidraw extension
@@ -112,7 +112,7 @@ def right(b):
 
 
 # ---- Title ---------------------------------------------------------------
-text("Haggle — Self-Improving Auto-Negotiator", 60, 24, size=30, color="#0f172a")
+text("Gambit — Self-Improving Auto-Negotiator", 60, 24, size=30, color="#0f172a")
 text("Theme: Continual Learning.  ONE negotiation policy — used in production (left) "
      "and trained by a self-improvement loop (right).", 60, 66, size=15, color="#475569")
 
@@ -188,7 +188,7 @@ edge(bottom(strat), top(i2), color="#d97706", dashed=True)
 doc = {
     "type": "excalidraw",
     "version": 2,
-    "source": "haggle-architecture",
+    "source": "gambit-architecture",
     "elements": elements,
     "appState": {"gridSize": None, "viewBackgroundColor": "#ffffff"},
     "files": {},

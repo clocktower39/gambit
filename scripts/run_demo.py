@@ -12,7 +12,7 @@ import sys
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Haggle self-improvement demo")
+    parser = argparse.ArgumentParser(description="Gambit self-improvement demo")
     parser.add_argument("--generations", type=int, default=6)
     parser.add_argument("--turns", type=int, default=6)
     parser.add_argument("--offline", action="store_true", help="force heuristic mode (no API)")
@@ -25,13 +25,13 @@ def main() -> int:
     # Make the package importable when run from the repo root.
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    from haggle.config import llm_available
-    from haggle.improve_loop import default_pairs, evaluate, head_to_head, holdout_pairs, improve
-    from haggle.models import budget_of
-    from haggle.personas import ITEMS, PERSONAS
+    from gambit.config import llm_available
+    from gambit.improve_loop import default_pairs, evaluate, head_to_head, holdout_pairs, improve
+    from gambit.models import budget_of
+    from gambit.personas import ITEMS, PERSONAS
 
     mode = "DigitalOcean Inference (LLM)" if llm_available() else "offline heuristics"
-    print(f"=== Haggle — self-improving negotiator | mode: {mode} ===\n")
+    print(f"=== Gambit — self-improving negotiator | mode: {mode} ===\n")
 
     pairs = default_pairs(all_items=True)
     history = improve(generations=args.generations, pairs=pairs, max_turns=args.turns)

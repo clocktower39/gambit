@@ -1,7 +1,7 @@
 {
   "type": "excalidraw",
   "version": 2,
-  "source": "haggle-architecture",
+  "source": "gambit-architecture",
   "elements": [
     {
       "angle": 0,
@@ -29,13 +29,13 @@
       "y": 24,
       "width": 678.5999999999999,
       "height": 37.5,
-      "text": "Haggle \u2014 Self-Improving Auto-Negotiator",
+      "text": "Gambit \u2014 Self-Improving Auto-Negotiator",
       "fontSize": 30,
       "fontFamily": 2,
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "Haggle \u2014 Self-Improving Auto-Negotiator",
+      "originalText": "Gambit \u2014 Self-Improving Auto-Negotiator",
       "lineHeight": 1.25,
       "baseline": 24
     },

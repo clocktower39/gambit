@@ -1,4 +1,4 @@
-# Haggle — a self-improving auto-negotiator
+# Gambit — a self-improving auto-negotiator
 
 > Lists your item, negotiates with buyers to get the best price in a reasonable time,
 > and **gets better at it from its own past negotiations** — no human labeling.
@@ -85,7 +85,7 @@ See `docs/ebay.md`.
 
 ## Layout
 ```
-haggle/
+gambit/
   models.py        # Item, BuyerPersona, Strategy, Episode, Outcome
   personas.py      # fixture items + buyer personas (hidden budgets)
   seller_agent.py  # the negotiator (LLM + offline heuristic)
