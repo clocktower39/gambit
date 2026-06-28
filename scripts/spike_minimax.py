@@ -33,6 +33,7 @@ from pathlib import Path as _Path
 _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))  # make `gambit` importable
 
 from gambit.settings import settings
+from gambit import observability as obs
 
 
 class SellerMove(BaseModel):
@@ -175,28 +176,20 @@ def main() -> None:
         print("MINIMAX_API_KEY not set — add it to .env and rerun.")
         return
 
-    if settings.logfire_token:  # stream the spike to the same dashboard as the curve, if configured
-        import logfire
-
-        # Disable scrubbing: our prompts say "secret floor" (a negotiation term, not a real
-        # secret), which Logfire's default redaction would replace with "[Scrubbed due to 'secret']"
-        # — hiding the very prompts we want to inspect. No real credentials appear in span data.
-        logfire.configure(token=settings.logfire_token, service_name="gambit", console=False,
-                          scrubbing=False)
-        logfire.instrument_pydantic_ai()
-
-    print(f"endpoint={settings.minimax_base_url}  model={settings.minimax_model}\n")
-    raw = check_raw()
-    print()
-    structured = check_structured()
-    print("\n=== GATE #1 ===")
-    print(f"  raw connectivity  : {'PASS' if raw else 'FAIL'}")
-    print(f"  structured output : {'PASS' if structured else 'FAIL'}  (Pydantic AI output_type on M3)")
-    print(
-        "  → proceed with the typed-agent architecture."
-        if raw and structured
-        else "  → structured-output bet at risk; investigate before committing the rebuild."
-    )
+    obs.configure()      # streams the spike to Logfire (tagged job=spike) when LOGFIRE_TOKEN is set
+    with obs.job("spike", source="agent", title="M3 structured-output spike"):
+        print(f"endpoint={settings.minimax_base_url}  model={settings.minimax_model}\n")
+        raw = check_raw()
+        print()
+        structured = check_structured()
+        print("\n=== GATE #1 ===")
+        print(f"  raw connectivity  : {'PASS' if raw else 'FAIL'}")
+        print(f"  structured output : {'PASS' if structured else 'FAIL'}  (Pydantic AI output_type on M3)")
+        print(
+            "  → proceed with the typed-agent architecture."
+            if raw and structured
+            else "  → structured-output bet at risk; investigate before committing the rebuild."
+        )
 
 
 if __name__ == "__main__":
