@@ -110,7 +110,7 @@ async def make_move(scenario: Scenario) -> SellerMove:
 
     agent = Agent(model_for("chat"), output_type=SellerMove, system_prompt=SYSTEM)
     result = await agent.run(scenario.prompt)
-    usage = result.usage()
+    usage = result.usage  # property in current pydantic-ai (not a method)
     increment_eval_metric("input_tokens", usage.input_tokens or 0)
     increment_eval_metric("output_tokens", usage.output_tokens or 0)
     return result.output
@@ -178,7 +178,11 @@ def main() -> None:
     if settings.logfire_token:  # stream the spike to the same dashboard as the curve, if configured
         import logfire
 
-        logfire.configure(token=settings.logfire_token, service_name="gambit", console=False)
+        # Disable scrubbing: our prompts say "secret floor" (a negotiation term, not a real
+        # secret), which Logfire's default redaction would replace with "[Scrubbed due to 'secret']"
+        # — hiding the very prompts we want to inspect. No real credentials appear in span data.
+        logfire.configure(token=settings.logfire_token, service_name="gambit", console=False,
+                          scrubbing=False)
         logfire.instrument_pydantic_ai()
 
     print(f"endpoint={settings.minimax_base_url}  model={settings.minimax_model}\n")
