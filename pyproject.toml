@@ -31,8 +31,11 @@ feature-layer = [
 # Application project (not a distributable package) — uv just manages the venv + deps.
 [tool.uv]
 package = false
-# Dependency cooling (supply-chain safety): never resolve a version published in the last week.
-exclude-newer = "1 week"
+# Dependency cooling (supply-chain safety): never resolve a version published after this date.
+# One-time bump (authorized) to admit google-genai 2.10.0 (published 2026-06-24) for the live
+# Gemini build — a rolling "1 week" window would exclude a 4-day-old release. Restore the rolling
+# form (exclude-newer = "1 week") once 2.10.0 ages past a week (after 2026-07-01).
+exclude-newer = "2026-06-29"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
