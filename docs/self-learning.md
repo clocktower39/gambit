@@ -15,7 +15,7 @@ and integrity rails** — not a better chat prompt.
 |---|---|---|
 | **RLVR** — *Instructing LLMs to Negotiate w/ Verifiable Rewards* (arXiv:2604.09855) | Reward = programmatic surplus, **not** an LLM judge; terminal shaping; reservation-enforced sim; `<reasoning>/<dialogue>/<action>` schema | `reward.reward` (surplus from secret floor, −1 integrity / 0 walk / surplus); the schema is a Pydantic `NegotiationMove` (`reasoning · text · action: Literal · offer`), reasoning excluded from `Episode.transcript()` |
 | **Bilateral Trade w/ Private Info** (arXiv:2604.16472) | Separate **binding structured offers** from the NL channel; surplus↔deal-rate tension | `NegotiationMove.offer` + `action` (binding channel) ⊥ `.text` (dialogue); deal-rate implicit in the reward (no-deal = 0) |
-| **BINEVAL** (arXiv:2606.27226) | Decompose fuzzy quality into **atomic binary checks**; prompt-opt gains collapse after 1–2 iters | `agents/verifier.py` → `AuditVerdict` schema (one `AuditAnswer{answer, reason}` per question — the checklist *is* the type); anti-bloat is a schema constraint: `OptimizerProposal.lessons = Field(max_length=3)` |
+| **BINEVAL** (arXiv:2606.27226) | Decompose fuzzy quality into **atomic binary checks**; prompt-opt gains collapse after 1–2 iters | `agents/verifier.py` → `AuditVerdict` schema (one `AuditAnswer{answer, reason}` per question — the checklist *is* the type). **The plateau finding is why a single global tactics prompt is the wrong artifact** — we learn a situation-keyed `PolicyStore` (per-bucket knobs + value-attributed lessons) instead, so capacity grows with experience rather than saturating one prompt. See [architecture.md → the learned artifact](./architecture.md#the-learned-artifact--a-situation-keyed-policy-how-a-frozen-model-still-learns). |
 | **TERMS-Bench** (arXiv:2605.13909) / **AgenticPay** (arXiv:2602.06008) | Go beyond deal-rate: **infer counterparty type/reservation**, calibrate beliefs | `opponent.py` — reservation estimation + belief-calibration metric (95% offline); `Belief` is a `BaseModel` |
 | hud-trace-explorer (patterns only) | Adversarial reward-integrity guard so the curve is defensible | `reward.audit_episode` (Tier-1 deterministic) + `agents/verifier.py` (Tier-2); plus per-agent `output_validator`s that reject below-floor / over-budget moves before they ever enter a transcript |
 
@@ -33,14 +33,18 @@ behavior and expresses it through the typed contract (see [`architecture.md`](./
 - ✅ Tier-2 BINEVAL binary-question verifier on a stronger model (`agents/verifier.py` → `AuditVerdict`)
 - ✅ **Verifier → optimizer dense feedback**: the optimizer audits the worst transcripts and turns
   each flag into a targeted lesson (shapes proposals, never selects)
-- ✅ Anti-bloat: lessons capped at the schema level (`OptimizerProposal.lessons = Field(max_length=3)`) + dedup validator
+- ✅ Anti-bloat → **superseded by the situation-keyed `PolicyStore`**: instead of dedup/cap on one
+  global prompt, lessons live per-bucket and are kept only if a per-bucket held-out A/B shows they help
+  (value-attribution + Beta/Thompson), so the prompt sent each turn is small *and* nothing validated is
+  ever evicted (no FIFO forgetting).
 - ✅ Held-out personas + early-stop when held-out plateaus (`improve_loop`)
 - ✅ Opponent modeling + belief-calibration eval (`opponent.py`; `Belief` is a `BaseModel`)
 - ➕ New in the rebuild: per-agent `output_validator`s as hard integrity rails (below-floor /
   over-budget moves trigger a `ModelRetry` instead of reaching the transcript)
 - ➕ New (feature layer): the optimizer can run as a **Gemini Antigravity managed agent** that
-  rewrites its own tactics `SKILL.md` generation over generation in a stateful sandbox — a model
-  editing the instructions that drive it (recursive self-improvement). It is a *stronger proposer*
+  improves **one weak bucket's** skill fragment in the situation-keyed `PolicyStore` generation over
+  generation in a stateful sandbox — a model editing the structured policy that drives it (recursive
+  self-improvement). It is a *stronger proposer*
   only: the deterministic verifiable surplus + held-out promotion gate still select. The
   reward-philosophy invariant below is unchanged. See [`architecture.md`](./architecture.md#self-improving-optimizer--gemini-antigravity-managed-agent).
 

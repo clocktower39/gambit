@@ -82,7 +82,7 @@ human ever labels a transcript.
  (policy)   (one shared policy,  (transcripts)  (verifiable   (reflect →      │
      ▲       walled-off private              surplus +        lessons)        │
      │       info on each side)              Tier-1 audit)                    │
-     └────────────────  keep the better strategy, next generation  ◄──────────┘
+     └──────────  promote the better per-bucket policy, next generation  ◄──────┘
         held-out early-stop (anti-overfit)   Tier-2 verifier audits integrity (binary checklist)
         checkpoint league (anti-self-play-collapse)
 ```
@@ -93,8 +93,33 @@ human ever labels a transcript.
   buyer `budget − price`) — opposing objectives over shared weights make self-play genuinely adversarial.
 - **Reward-integrity guard** so the curve is defensible: Tier-1 deterministic audit (done), Tier-2
   binary-question verifier on a *different model* (done), Tier-3 held-out counterparties (done).
-- **Anti-bloat:** the optimizer extracts *lessons* (not rewrites), dedups + caps the tactics prompt,
-  and the loop early-stops on a held-out plateau.
+- **What's learned is a policy *table*, not a prompt blob** (see below): the optimizer proposes a
+  change scoped to one weak situation-bucket, and the held-out A/B gate keeps it or drops it. The loop
+  early-stops on a held-out plateau.
+
+### What actually gets learned (a frozen model still learns)
+
+**MiniMax M3's weights never change — it's a frozen actuator.** So everything Gambit learns lives in
+*data it reads at inference time*. The learned artifact is a **situation-keyed policy table**
+(contextual-bandit / tabular RL), **not** a single global tactics prompt:
+
+- The situation is structured and low-dimensional — `(price_band, margin_band, buyer_type)`. Each
+  **bucket** holds its own knobs + a few **validated, value-attributed lessons**. At a turn, the agent
+  infers the bucket and injects only that row: a small, specific prompt; total capacity = the whole table.
+- **Why not one global `SKILL.md` + 5 knobs:** a single prompt has fixed capacity (BINEVAL — which we
+  cite — shows prompt-opt plateaus after 1–2 iters), forces FIFO eviction (it forgets the lesson that
+  mattered), and can't tell "hard on a thin-margin lowballer" from "soft on an eager fat-margin buyer."
+- **How it improves without weights:** group episodes by bucket → find the weakest → propose a
+  *scoped* knob/lesson change → **promote only if it raises surplus on a held-out, structurally
+  different opponent with `viol=0`** (Beta/Thompson drives exploration). The table grows monotonically;
+  nothing validated is evicted. Antigravity is just the stronger *proposer* for one bucket — it never selects.
+- **Retrieval is a table lookup, not vectors.** The key is a structured tuple, so it's a `dict` /
+  `WHERE bucket=…` — no embeddings. pgvector is reserved for *one optional* job (semantic few-shot
+  retrieval of past buyer *messages*) and only if it beats structured-key exemplars in an A/B.
+- **Honest ceiling:** each bucket plateaus at what the frozen model can execute with a perfect row —
+  you can't prompt past the base model. The claim is therefore **monotonic + coverage-growing +
+  attributable + held-out-verified, not unbounded.** Weight-level RL (*Later*) is what lifts the
+  per-bucket ceiling. This is the truthful version of "never stops improving."
 
 ---
 
@@ -121,7 +146,7 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 
 | Surface | Where it plugs in | What it buys |
 |---|---|---|
-| **Managed agent — Gemini Antigravity** (`antigravity-preview-05-2026` via the **Interactions API**) | The **optimizer** (a *second backend* behind the existing proposal interface). | A hosted agent reads scored transcripts + verifier flags in an ephemeral sandbox, runs the eval harness, and **rewrites the tactics `SKILL.md` — the policy improving its own skill file**, carried across generations via the stateful `environment_id`. The agent *proposes*; deterministic surplus still *selects*. This is the "models build themselves" story made literal. |
+| **Managed agent — Gemini Antigravity** (`antigravity-preview-05-2026` via the **Interactions API**) | The **optimizer** (a *second backend* behind the existing proposal interface). | A hosted agent reads one weak bucket's scored transcripts + verifier flags in an ephemeral sandbox, runs the eval harness, and **rewrites that bucket's skill fragment in the situation-keyed `PolicyStore` — the policy improving its own skill files**, carried across generations via the stateful `environment_id`. The agent *proposes*; the per-bucket held-out A/B over deterministic surplus still *selects*. This is the "models build themselves" story made literal. |
 | **Gemini Live / Live Translate** (`gemini-3.5-live-translate-preview`) **over LiveKit** | The **human buyer seat** (existing counterparty) as a voice shell. | A person haggles by voice, in their own language, against the seller — continuous low-latency speech-to-speech. The shell just turns audio → a typed `BuyerMove`; the referee never knows it wasn't text. |
 | **Nano Banana** (Gemini image gen) | The eBay listing pipeline. | Generates the listing photo + precise text-in-image for the post we put on the real marketplace. |
 
@@ -146,7 +171,8 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 | `metrics.py` → `reward.py` | verifiable surplus reward + terminal shaping + Tier-1 audit + panel | ✅ |
 | seller policy / buyer policy | the negotiator + the self-play buyer (one shared policy, two contexts) | 🟡 buyer is a passive heuristic today — make it reward-seeking; LLM path **untested** |
 | `optimizer.py` | reflection → lessons, anti-bloat dedup/cap, verifier-rubric feedback | 🟡 LLM path **untested** |
-| optimizer (Antigravity backend) | Gemini managed agent that rewrites the tactics `SKILL.md` across generations (stateful env) — proposes, never selects | ⬜ |
+| `policy.py` (the learned artifact) | situation-keyed `PolicyStore` (per-bucket knobs + validated lessons) + per-bucket held-out A/B promotion — replaces the global tactics blob | ⬜ |
+| optimizer (Antigravity backend) | Gemini managed agent that improves **one weak bucket's** lesson fragment per call (stateful env) — proposes, never selects | ⬜ |
 | voice buyer shell | LiveKit room + Gemini Live/Translate → typed `BuyerMove` in the human seat | ⬜ |
 | listing media | Nano Banana listing image/text-in-image for the eBay post | ⬜ |
 | `improve_loop.py` | generational loop + held-out early-stop | ✅ (⬜ checkpoint league) |
@@ -178,18 +204,26 @@ improving*.
       and the gains hold on held-out counterparties.
 
 ### Next — make self-play genuinely adversarial
+- [ ] **Situation-keyed `PolicyStore` (the learned artifact):** replace the single global tactics
+      blob + 5 global knobs with per-bucket knobs + validated, value-attributed lessons, retrieved by
+      `situation_key(item, belief)` at inference and promoted per-bucket on held-out. This is what makes
+      "improves without weight updates" real rather than a prompt that plateaus (BINEVAL).
 - [ ] **Reward-seeking buyer:** the buyer-hat optimizes its own surplus (today it's a passive
       reservation-respecting heuristic). This is what turns "two agents" into real self-play.
+- [ ] **Structurally-different held-out:** make the held-out promotion gate run against a different
+      buyer-policy family (LLM buyer / human), not the same simulator with new params — otherwise
+      "held-out" is in-distribution and the transfer claim is hollow.
 - [ ] **Checkpoint league:** train against a pool of past selves, not just the latest — anti-collapse.
 - [ ] **Anti-collusion audit:** lean on the Tier-2 verifier to catch a shared-policy handshake;
       add held-out *promotion* gate (refuse to promote a candidate that regresses held-out).
 - [ ] **Opponent-aware pricing:** wire `opponent.infer` into the seller — hold near the
       estimated reservation instead of folding.
 - [ ] **Self-improving optimizer (Gemini Antigravity):** the optimizer becomes a hosted managed
-      agent that, between generations, reads the scored transcripts + verifier flags in its sandbox
-      and **rewrites the tactics `SKILL.md` (= `Strategy.tactics`)**, persisted across generations
-      via the `environment_id`. The local Pydantic-AI optimizer stays the default/offline backend;
-      this is a second backend behind the same proposal interface. **Still proposes, never selects.**
+      agent that, between generations, reads **one weak bucket's** scored transcripts + verifier flags
+      in its sandbox and **rewrites that bucket's lesson fragment** (`PolicyStore.buckets[target_bucket]`),
+      persisted across generations via the `environment_id`. The local Pydantic-AI optimizer stays the
+      default/offline backend; this is a second backend behind the same proposal interface. **Still
+      proposes, never selects** — the per-bucket held-out A/B gate decides.
 
 ### Then — real counterparties
 - [ ] **Human-in-the-buyer-seat:** the same interface, a person on the other side — try it, break it.
@@ -197,7 +231,9 @@ improving*.
       a LiveKit room + Gemini Live shell turns audio into the same typed `BuyerMove`. Core loop unchanged.
 - [ ] **eBay connector (eBay API):** real list → Best Offer → counter → accept (`docs/ebay.md`),
       with the listing image generated by **Nano Banana**.
-- [ ] **Memory:** DO Postgres + pgvector case retrieval (storage layer already built).
+- [ ] **Memory:** persist the `PolicyStore` to DO Postgres (plain indexed rows — the spine).
+      pgvector is *optional* Tier-C semantic exemplar retrieval, gated behind an A/B vs structured-key
+      exemplars — not the learning substrate.
 - [ ] **Deploy:** DO App Platform + a live view of the climbing curve.
 
 ### Later — scale-up (only when the core is unshakable)
@@ -215,9 +251,13 @@ improving*.
 - **Not yet real:** every **LLM-mode path** compiles with deterministic fallbacks but has never
   run against a live model. The buyer is still a passive heuristic, not a reward-seeking
   self-play agent.
-- **Reference, not code:** the 7-book negotiation playbook lives in `docs/playbook/` — literature
-  we read *around* the system, never seeded into the seller (that would contradict "zero human
-  labeling").
+- **Reference today; an optional cold-start *prior* tomorrow.** The 7-book negotiation playbook lives
+  in `docs/playbook/` — literature we read *around* the system. "Zero human labeling" is a property of
+  the **reward signal** (verifiable surplus, no labeled transcripts), **not** of the initialization —
+  so seeding a bucket's starter lessons from the playbook is a *prior*, like giving AlphaZero the rules,
+  not a label. The stronger claim is "it improves *past a strong prior*," not "past a deliberate
+  pushover." Optional, off by default; the reward + held-out gate still decide what survives, so the
+  integrity wall is untouched.
 - **Repo:** https://github.com/clocktower39/gambit (public).
 
 ---
@@ -250,7 +290,7 @@ criteria. Nothing here is bolted on for a stage — each surface earns its place
 | Criterion | How Gambit qualifies |
 |---|---|
 | **Theme: Continual Learning** *(required)* | The whole product — self-play, zero human labels, verifiable surplus climbing across generations on held-out counterparties. |
-| **Theme: Self-Improvement Stack / Recursive Intelligence** | The Antigravity optimizer **rewrites its own tactics `SKILL.md` generation over generation** (stateful env) under a deterministic, gameable-proof reward — a model improving the thing that drives it, with the integrity wall intact. |
-| **Best Gemini 3.5** | **Managed Agents** (Antigravity via the Interactions API, `AGENTS.md`/`SKILL.md`, stateful `environment_id`) **+ Gemini Live / Live Translate** for the voice buyer **+ Nano Banana** for listing media — three new surfaces combined, not a wrapper chatbot. |
+| **Theme: Self-Improvement Stack / Recursive Intelligence** | The agent learns a **situation-keyed policy it edits itself** — the Antigravity optimizer improves one weak bucket's lesson fragment generation over generation (stateful env) under a deterministic, gameable-proof reward, promoted only by a per-bucket held-out A/B. A model improving the structured policy that drives it, with the integrity wall intact. |
+| **Best Gemini 3.5** | **Managed Agents** (Antigravity via the Interactions API, `AGENTS.md` + per-bucket skill fragments, stateful `environment_id`) **+ Gemini Live / Live Translate** for the voice buyer **+ Nano Banana** for listing media — three new surfaces combined, not a wrapper chatbot. |
 | **Best LiveKit** | The human buyer seat negotiates by **voice over LiveKit**, cross-language via Gemini Live Translate — the pluggable counterparty made tangible. |
 | **Best DigitalOcean** | The app runs on DO — App Platform (deploy + live curve), Managed Postgres + pgvector (memory), Spaces (images). |

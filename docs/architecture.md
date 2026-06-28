@@ -36,7 +36,7 @@
 | Observability | **Logfire** (`instrument_pydantic_ai`, `instrument_psycopg`) | native Pydantic AI tracing; the live improvement-curve dashboard |
 | Deploy + data | **DigitalOcean** — App Platform, Managed Postgres + pgvector (`psycopg`), Spaces | the whole app runs on DO; inference lives on MiniMax |
 | Reward / integrity | **plain typed Python** (no LLM in the selector) | verifiable, defensible improvement curve |
-| **Self-improving optimizer** | **Gemini Antigravity** (`antigravity-preview-05-2026`) via the **Interactions API**, second backend behind the proposal interface | hosted agent rewrites the tactics `SKILL.md` across generations (stateful `environment_id`); runs **once per generation**, never per move; proposes, never selects |
+| **Self-improving optimizer** | **Gemini Antigravity** (`antigravity-preview-05-2026`) via the **Interactions API**, second backend behind the proposal interface | hosted agent improves **one weak bucket's** skill fragment in the situation-keyed `PolicyStore` across generations (stateful `environment_id`); runs **once per generation**, never per move; proposes, never selects |
 | **Voice counterparty** | **LiveKit** room + **Gemini Live / Live Translate** (`gemini-3.5-live-translate-preview`) | the human buyer seat by voice, cross-language; an I/O shell that emits the same typed `BuyerMove` |
 | **Listing media** | **Nano Banana** (Gemini image gen) | the eBay listing photo + text-in-image; Phase 2 |
 
@@ -48,7 +48,7 @@ so the secret floor / hidden budget / current ask are injected as typed data, ne
 a format string by hand.
 
 **`seller` and `buyer` are the same policy.** They run on one model and (in self-play) share one
-learned `Strategy` — the difference is entirely in the `deps`: the seller sees the floor and
+learned `PolicyStore` — the difference is entirely in the `deps`: the seller sees the floor and
 maximizes `price − floor`; the buyer sees the reservation and maximizes `budget − price`. They
 *never* share state — each context is walled off, and the transcript is the only channel between
 them, so the information asymmetry the reward depends on is preserved by construction. This is what
@@ -56,7 +56,7 @@ makes the buyer a real adversary rather than a script. See [self-play](#self-pla
 
 | Agent | `deps_type` | `output_type` | Integrity rail (output validator) |
 |---|---|---|---|
-| `seller` | `SellerContext` (item, strategy, current ask) | `SellerMove` | reject any move that offers/accepts below `item.floor_price` → `ModelRetry` |
+| `seller` | `SellerContext` (item, resolved `bucket`, current ask) | `SellerMove` | reject any move that offers/accepts below `item.floor_price` → `ModelRetry` |
 | `buyer` | `BuyerContext` (item, persona, **hidden budget**) | `BuyerMove` | clamp/reject accept-or-offer above `budget` (the reservation guard) |
 | `optimizer` | `OptimizerContext` (current strategy + scored transcripts + audit flags) | `OptimizerProposal` | knob bounds are `Field` constraints, so out-of-range proposals auto-retry |
 | `verifier` | `AuditContext` (transcript + secret floor) | `AuditVerdict` | the schema *is* the BINEVAL checklist — one bool+reason per question |
@@ -84,13 +84,15 @@ class SellerMove(NegotiationMove): ...
 class BuyerMove(NegotiationMove): ...
 
 class OptimizerProposal(BaseModel):
-    tactics: str = Field(default="", max_length=2000)               # the rewritten tactics block — becomes Strategy.tactics
-    lessons: list[str] = Field(default_factory=list, max_length=3)   # anti-bloat cap, was merge_tactics
-    opening_anchor_ratio: float = Field(ge=0.90, le=1.00)            # constraints replace _clamp()
+    target_bucket: str                                              # the situation_key this change applies to
+    lessons: list[str] = Field(default_factory=list, max_length=3)   # candidate lesson(s) for THIS bucket only
+    opening_anchor_ratio: float = Field(ge=0.90, le=1.00)            # this bucket's knobs; constraints replace _clamp()
     concession_rate: float       = Field(ge=0.05, le=0.80)
     accept_ratio: float          = Field(ge=0.80, le=0.99)
     walkaway_patience: int       = Field(ge=2, le=10)
     urgency: bool
+    # SCOPED to one bucket — no global `tactics` blob. The host applies it to
+    # PolicyStore.buckets[target_bucket]; the per-bucket held-out A/B gate decides promotion.
 
 class AuditAnswer(BaseModel):
     answer: bool
@@ -108,7 +110,7 @@ class AuditVerdict(BaseModel):                                       # every que
 
 ```python
 class SellerContext(BaseModel):                  # (also shown in the agent sketch below)
-    item: Item; strategy: Strategy; current_ask: float
+    item: Item; bucket: BucketPolicy; current_ask: float   # bucket resolved via situation_key(item, belief)
 
 class BuyerContext(BaseModel):
     item: Item
@@ -117,11 +119,12 @@ class BuyerContext(BaseModel):
     current_offer: float | None = None
 
 class OptimizerContext(BaseModel):               # input to BOTH optimizer backends
-    strategy: Strategy                           # current policy (incl. .tactics)
-    transcripts: list[str]                       # worst-scoring episodes' public transcripts
+    policy: PolicyStore                          # the full learned artifact
+    target_bucket: str                           # the weak bucket this call is scoped to improve
+    transcripts: list[str]                       # worst-scoring episodes IN target_bucket (public)
     surplus: list[float]                         # matching verifiable surplus per transcript
     audit_flags: list[AuditVerdict]              # matching Tier-2 verdicts (dense feedback)
-    held_out_score: float                        # current held-out surplus (for the promotion gate)
+    held_out_score: float                        # current held-out surplus FOR target_bucket (gate baseline)
 
 class AuditContext(BaseModel):
     transcript: str                              # Episode.transcript() — public channel only
@@ -146,11 +149,11 @@ class BuyerUtterance(BaseModel):                 # output_type of the voice `to_
 ```python
 from pydantic_ai import Agent, RunContext, ModelRetry
 from gambit.llm import model_for
-from gambit.models import Item, Strategy
+from gambit.models import Item, BucketPolicy
 
 class SellerContext(BaseModel):
     item: Item
-    strategy: Strategy
+    bucket: BucketPolicy        # the resolved PolicyStore row for this episode's situation_key
     current_ask: float
 
 seller = Agent(
@@ -163,10 +166,12 @@ seller = Agent(
 
 @seller.instructions
 def tactics(ctx: RunContext[SellerContext]) -> str:
-    s, item = ctx.deps.strategy, ctx.deps.item
+    # ctx.deps.bucket is resolved once per episode: situation_key(item, belief) → PolicyStore row.
+    b, item = ctx.deps.bucket, ctx.deps.item
+    lessons = "; ".join(l.text for l in b.lessons if l.promoted)   # only this bucket's promoted lessons
     return (f"SECRET FLOOR ${item.floor_price:.0f} — never agree below it. "
             f"Target ${item.target_price:.0f}; standing ask ${ctx.deps.current_ask:.0f}. "
-            f"STRATEGY: {s.tactics}")
+            f"TACTICS FOR THIS SITUATION: {lessons}")
 
 @seller.output_validator
 def protect_floor(ctx: RunContext[SellerContext], move: SellerMove) -> SellerMove:
@@ -203,6 +208,103 @@ def model_for(role: str) -> OpenAIChatModel:
     return OpenAIChatModel(name, provider=_provider())
 ```
 
+## The learned artifact — a situation-keyed policy (how a frozen model still learns)
+
+**We do not update model weights — MiniMax M3 is a frozen actuator.** Everything the system
+"learns" lives in *data the agent reads at inference time*. So the design question is not "what
+prompt" — it's *what is the right learned artifact when the model itself cannot change*. The answer
+is a **situation-keyed policy table** (contextual-bandit / tabular RL over a discrete situation
+space), **not** a single global tactics blob. The frozen LLM executes; the table is what learns.
+
+**Why not a global `SKILL.md` + 5 global knobs.** A single prompt has *fixed capacity*: BINEVAL
+(arXiv:2606.27226 — which we already cite) finds prompt-optimization gains collapse after 1–2
+iterations, and a fixed-length lessons list forces FIFO eviction, so the system *forgets the lesson
+that mattered*. One global knob-set also can't say "anchor hard on a thin-margin lowballer **but**
+concede on a fat-margin eager buyer." Capacity and specificity are both capped — which directly
+contradicts "never stops improving."
+
+**The substrate.** The situation at decision time is low-dimensional and *structured*, so the policy
+is a table keyed by a structured tuple and the active prompt is always just the matching row:
+
+```python
+def situation_key(item: Item, belief: Belief) -> str:
+    price_band  = bucket(item.list_price, [50, 200])                                  # <50 | 50-200 | 200+
+    margin_band = bucket((item.list_price-item.floor_price)/item.list_price, [.15,.35])  # thin|mid|fat
+    buyer_type  = belief.type_label                                                   # lowballer|measured|eager
+    return f"{price_band}/{margin_band}/{buyer_type}"
+
+class Lesson(BaseModel):
+    text: str
+    uses: int = 0
+    reward_with: float = 0.0        # mean surplus when this lesson was injected
+    reward_without: float = 0.0     # control: mean surplus in the same bucket without it
+    wins: int = 1; losses: int = 1  # Beta(wins, losses) → Thompson exploration
+    promoted: bool = False          # only promoted lessons are injected at inference
+
+class BucketPolicy(BaseModel):
+    knobs: Strategy                 # the 5 scalars, PER BUCKET (not global)
+    lessons: list[Lesson] = []      # validated + value-attributed; retrieved, never FIFO-evicted
+
+class PolicyStore(BaseModel):       # THE learned artifact — replaces the single global Strategy
+    buckets: dict[str, BucketPolicy] = {}
+```
+
+At inference the seller infers the bucket (`opponent.infer` → `Belief` → `situation_key`), loads that
+bucket's `knobs`, and injects **only that bucket's promoted lessons**. Small prompt, specific
+knowledge; total system capacity = the whole table.
+
+**How it learns (per generation):**
+1. Run episodes; score with the deterministic verifiable surplus (the only selector).
+2. Group episodes by `situation_key`; find the **weakest bucket(s)** (lowest mean surplus, or the
+   widest gap to the skill ceiling).
+3. The **proposer** (`LocalOptimizer` on MiniMax, or the Antigravity backend) proposes a change
+   **scoped to one weak bucket** — a knob tweak *or* one candidate lesson — never a global rewrite.
+4. **Promotion gate = per-bucket held-out A/B.** Re-evaluate that bucket on **held-out
+   counterparties**, *with vs without* the change. Promote iff held-out surplus rises **and**
+   `viol=0`; update the lesson's `Beta(wins, losses)`. Otherwise discard. (Thompson sampling over the
+   Betas drives exploration so a bucket never gets stuck.)
+5. The table **grows monotonically** — a validated knob/lesson is never evicted; prompt size is
+   bounded by *retrieval*, not eviction.
+
+This is RL: the policy table is what's learned, the frozen LLM is the actuator that runs the row.
+
+**Why this is strictly better than the global blob:**
+
+| Problem with global `SKILL.md` + 5 knobs | Situation-keyed policy table |
+|---|---|
+| Fixed capacity → BINEVAL plateau after 1–2 iters | Capacity grows with experience; active prompt stays small |
+| FIFO eviction → catastrophic forgetting | Validated entries are never evicted; retrieval manages size |
+| Gain can't be attributed (tactic + knob bundled in one global A/B) | Every promotion is a per-bucket, per-lesson A/B → fully attributable |
+| One knob-set for every situation | Per-bucket knobs (hard on thin-margin lowballers, soft on eager fat-margin) |
+| Re-evaluates a whole global strategy each gen (costly) | Spends LLM calls fixing the *weak* bucket → sample-efficient |
+
+**On retrieval / pgvector (decided).** The retrieval key is a *structured tuple*, so the store is an
+**indexed table lookup** — a `dict` in memory, a `WHERE bucket = …` on DO Postgres. **No embeddings,
+no ANN index, no similarity threshold to babysit.** Vector search would be cargo-cult here. pgvector
+earns its place in **exactly one optional spot**: Tier-C **exemplar retrieval** — fetching a past
+*buyer message* by semantic similarity as a few-shot example — and only if an A/B shows semantic
+exemplars beat structured-key exemplars. The default store is the plain indexed table; `memory.py`'s
+pgvector path is gated behind that A/B, not assumed.
+
+**The honest ceiling (state the claim truthfully).** This is *in-context* continual learning. It
+improves while (a) new situations keep appearing — *coverage growth* — and (b) a bucket's tactics
+still have headroom *the frozen model can execute*. Each bucket eventually **plateaus** at MiniMax's
+capability with a perfect row; you cannot prompt past the base model. That is fine, and it is the
+claim to make:
+
+> *Gambit accumulates a verifiable, situation-indexed policy that monotonically raises per-situation
+> surplus and coverage on held-out counterparties it never trained against, with integrity guards —
+> no weight updates, no human labels.*
+
+Monotonic + coverage-growing + attributable + held-out-verified — **not** "unbounded." That version
+survives a skeptic, and weight-level RL (the *Later* milestone) is precisely what lifts the
+per-bucket ceiling itself.
+
+**Held-out must be a *different* opponent.** The promotion gate proves generalization only if its
+held-out set is *structurally different* from training — a different buyer-policy family (the LLM
+buyer, a human), **not** the same simulator with a different `budget_ratio`. Same generator + new
+params is in-distribution; it does not validate transfer, and the curve's credibility rests on this.
+
 ## Self-improving optimizer — Gemini Antigravity (managed agent)
 
 The optimizer is the one role with **two interchangeable backends behind a single proposal
@@ -224,14 +326,18 @@ class AntigravityOptimizer: # Gemini managed agent via the Interactions API
 upgrade: instead of a single structured call, it spins a **hosted, stateful agent** that *works* on
 the strategy the way an engineer would.
 
-- **The skill file IS the policy — and it must flow back.** `Strategy.tactics` is materialized as
-  `.agents/skills/seller-tactics/SKILL.md` in the agent's environment. The agent reads the
-  generation's transcripts + `AuditVerdict` flags, sanity-checks a change against the mounted eval
-  harness, and **rewrites `SKILL.md`**. Critically, the seller runs on **MiniMax**, not in the
-  sandbox — so the rewritten tactics must return to the host. The agent emits the new tactics in the
-  **`OptimizerProposal.tactics`** JSON field (the reliable read-back path); the host applies
-  `proposal.tactics → candidate Strategy.tactics`. We do *not* depend on reading the file back out of
-  the sandbox — the JSON field is the contract; the in-sandbox `SKILL.md` is the agent's working copy.
+- **One skill fragment per bucket — and it must flow back.** Antigravity is just the stronger
+  *proposer* for the situation-keyed policy above: each call is **scoped to `ctx.target_bucket`**, not
+  the whole policy. That bucket's lessons are materialized as
+  `.agents/skills/seller-tactics/<target_bucket>.md` in the agent's environment. The agent reads that
+  bucket's transcripts + `AuditVerdict` flags, sanity-checks a change against the mounted eval harness,
+  and **rewrites that bucket's fragment**. Critically, the seller runs on **MiniMax**, not in the
+  sandbox — so the change must return to the host. The agent emits it in the **`OptimizerProposal`**
+  JSON (`target_bucket` + `lessons` ≤3 + knobs — the reliable read-back path); the host applies it to
+  `PolicyStore.buckets[target_bucket]`, and the **per-bucket held-out A/B gate** decides promotion. We
+  do *not* depend on reading the file back out of the sandbox — the JSON is the contract; the in-sandbox
+  `.md` is the agent's working copy. (The global-`SKILL.md` rewrite is retired — it plateaus and can't
+  attribute gains; see [the learned artifact](#the-learned-artifact--a-situation-keyed-policy-how-a-frozen-model-still-learns).)
 - **Validate-and-repair, then a deterministic gate.** A managed (multi-step) run's final turn is not
   *guaranteed* schema-valid (`response_format` + `agent=` is allowed but unproven for agentic runs).
   So: `model_validate_json` with one re-ask on failure, and if it still fails, **fall back to the
@@ -266,9 +372,11 @@ fresh = [
     {"type": "inline", "target": "/workspace/audit_flags.json", "content": json.dumps([v.model_dump() for v in ctx.audit_flags])},
 ]
 # Reuse the env if we have one; otherwise (or if reuse fails) seed it from the current SKILL.md.
+bucket = ctx.policy.buckets[ctx.target_bucket]
 seed = [
     {"type": "inline", "target": ".agents/AGENTS.md", "content": PERSONA_MD},
-    {"type": "inline", "target": ".agents/skills/seller-tactics/SKILL.md", "content": ctx.strategy.tactics},
+    {"type": "inline", "target": f".agents/skills/seller-tactics/{ctx.target_bucket}.md",
+     "content": "\n".join(l.text for l in bucket.lessons if l.promoted)},   # THIS bucket's fragment only
     {"type": "inline", "target": "/workspace/eval_harness.py", "content": EVAL_HARNESS_SRC},  # offline scorer the agent runs
 ]
 environment = self._env_id or {"type": "remote", "sources": seed + fresh}
@@ -276,10 +384,10 @@ environment = self._env_id or {"type": "remote", "sources": seed + fresh}
 
 interaction = client.interactions.create(
     agent="antigravity-preview-05-2026",
-    input="Read /workspace/transcripts.json and audit_flags.json. Improve "
-          ".agents/skills/seller-tactics/SKILL.md to raise verifiable surplus without tripping any "
-          "audit flag. Verify with `python /workspace/eval_harness.py`, then emit the proposal "
-          "with the FULL rewritten tactics in the `tactics` field.",
+    input=f"Read /workspace/transcripts.json and audit_flags.json (all from bucket {ctx.target_bucket}). "
+          f"Improve .agents/skills/seller-tactics/{ctx.target_bucket}.md to raise verifiable surplus "
+          "for THIS bucket without tripping any audit flag. Verify with `python /workspace/eval_harness.py`, "
+          "then emit the proposal with `target_bucket` + the bucket's lessons (≤3) + tuned knobs.",
     environment=environment,
     previous_interaction_id=self._prev_id,
     response_format={"type": "text", "mime_type": "application/json",
@@ -292,7 +400,7 @@ try:
     proposal = OptimizerProposal.model_validate_json(interaction.output_text)
 except ValidationError:
     proposal = await self._local.propose(ctx)     # never blocks a generation on a malformed proposal
-# Host applies proposal.tactics → candidate Strategy.tactics; the deterministic gate decides promotion.
+# Host applies proposal → PolicyStore.buckets[proposal.target_bucket]; the per-bucket held-out A/B gate decides promotion.
 ```
 
 ## The negotiation loop is a referee over two `Policy` objects
@@ -525,7 +633,10 @@ gambit/
   observability.py   # logfire.configure() + instrument_* — called once at entry
   llm.py             # MiniMax M3 OpenAIChatModel factory + FallbackModel (inner loop)
   models.py          # ALL domain types as BaseModel: Item, BuyerPersona, Message,
-                     #   Strategy, Outcome, Episode, Belief (+ field/model validators)
+                     #   Strategy (per-bucket knobs), Lesson, BucketPolicy, PolicyStore,
+                     #   Outcome, Episode, Belief (+ field/model validators)
+  policy.py          # the learned artifact: situation_key(), PolicyStore get/apply,
+                     #   per-bucket retrieval + promotion (held-out A/B, Beta/Thompson)
   agents/
     seller.py        # Agent + SellerMove + output_validator (floor rail)
     buyer.py         # Agent + BuyerMove + output_validator (reservation guard)
@@ -541,7 +652,8 @@ gambit/
   reward.py          # verifiable surplus + Tier-1 integrity audit (was metrics.py) — NO LLM
   opponent.py        # belief estimation (pure Python); used by BOTH sides; Belief is a BaseModel
   improve_loop.py    # generational loop + head-to-head + checkpoint league (train vs past selves)
-  memory.py          # pgvector store on DO Postgres (Phase 2)
+  memory.py          # OPTIONAL Tier-C exemplar retrieval (pgvector on DO Postgres) — gated
+                     #   behind an A/B vs structured-key exemplars; the policy store itself is plain indexed rows
   connectors/        # Phase 2: base.py + ebay.py — live-market BuyerPolicy via the eBay API; payloads as BaseModels
 scripts/run_demo.py  # entry: logfire.configure() → run loop
 ```
@@ -555,7 +667,8 @@ scripts/run_demo.py  # entry: logfire.configure() → run loop
 | `chat_json(...)` then `.get()`/`float(...)`/`_clamp(...)` in every caller | `output_type=Model`; `Field(ge=, le=)`; validators |
 | `action = str(data.get("action")).lower()` | `action: Literal["offer","accept","walk"]` |
 | `_enforce_reservation` / floor clamps (manual `if`) | `@agent.output_validator` raising `ModelRetry` |
-| `merge_tactics` dedup + char cap | `lessons: list[str] = Field(max_length=3)` + the dedup helper kept as a validator |
+| `merge_tactics` dedup + char cap | retired — lessons live per-bucket with value-attribution, never FIFO-evicted |
+| one global `Strategy.tactics` blob + 5 global knobs (plateaus, can't attribute, forgets) | **`PolicyStore`**: situation-keyed buckets, each with its own knobs + validated lessons; retrieved per turn, promoted per-bucket on held-out |
 | `Settings` dataclass + `os.getenv` | `pydantic-settings.BaseSettings` |
 | `try/except: fall back to heuristic` inside each agent | explicit `Policy` selection at wiring time |
 | no tracing | Logfire spans + `instrument_pydantic_ai` |
