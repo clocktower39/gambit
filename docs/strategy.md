@@ -125,6 +125,10 @@ buyer, and other active listings should all change the seller's move:
 Mechanically this starts in `MarketplaceState`: seller-visible listings and buyer threads feed portfolio
 features (`active_buyers`, `best_offer_gap`, `listing_age`, `inventory_pressure`, `bundle_opportunity`)
 into the same `KnobPolicy`. Each buyer still has a walled-off context; only the seller sees the portfolio.
+For the learning loop, this should start as **truthful context over the active negotiation**, not a
+giant synthetic marketplace. A background buyer only counts when there is a real thread, a recorded
+replay, or an explicit fixture with its own hidden budget and behavior. Fake pressure is worse than
+no pressure because it trains the seller to use leverage the product cannot honestly claim.
 
 ---
 
@@ -180,7 +184,7 @@ They are synthesized starting defaults; the learning loop tunes them.)*
 ## 7. The full marketplace doctrine (beyond the price core)
 
 The playbook covers the whole sale, not just the price haggle. These rules are doctrine for the real
-product but **are NOT exercised by the current price-only self-play engine** (§8) — they apply once
+product but **are NOT exercised by the current price-only engine** (§8) — they apply once
 the agent negotiates a real listing.
 
 | Situation | Doctrine | Ceiling (CONC) |
@@ -201,13 +205,13 @@ the agent negotiates a real listing.
 
 ## 8. What the MVP engine actually exercises (honest coverage map)
 
-The current self-play engine is a **price negotiation over a hidden reservation**. It exercises the
+The current learning engine is a **price negotiation over a hidden reservation**. It exercises the
 *spine* of the doctrine, not the whole thing. Don't mistake a clean curve for "the doctrine works."
 
 | Doctrine element | In the current engine? |
 |---|---|
 | Anchor on target, shrinking conditional ladder, accept threshold, walk line | ✅ yes — `KnobPolicy.resolve(Features)` |
-| Parallel-buyer / portfolio features | 🟡 scaffolded — `MarketplaceState` builds features and `scripts/play_multiple.py` exercises one listing with real background buyer threads; no full `MarketplaceDomain` rollout yet |
+| Parallel-buyer / portfolio features | 🟡 scaffolded — `MarketplaceState` builds features and `scripts/play_multiple.py` exercises one listing with background buyer threads; next step is truthful context/replay in the main gate, not a fake full-market simulator |
 | Probe-don't-disclose, buyer-type tactics | 🟡 partial — the lesson channel, if seeded |
 | Never below floor, never leak floor | ✅ yes — reward + verifier |
 | Never fabricate, never cave to pressure | 🟡 partial — verifier `honest`; pressure's analog is the **walk-away (§4.1)**; non-terminal walk mechanics are live, but tactical bluff handling still needs richer policies/verifier coverage |
@@ -223,6 +227,11 @@ The current self-play engine is a **price negotiation over a hidden reservation*
   seed for `PolicyStore.buckets` once text lessons are live. Today the offline gate validates numeric
   policy changes on held-out gate panels, then reports locked held-out transfer; lesson
   validation/demotion is future machinery.
+- **Counterparty realism:** deterministic buyer families are the reproducible starting panel, not the
+  final distribution. Reward-seeking LLM buyers, checkpoint/self-play drills, human games, and live
+  marketplace threads should be added as separate evidence sources. A candidate should be considered
+  stronger only when it transfers across that panel, not merely because it beat its current training
+  opponent.
 - **What learns offline:** proposal generation can nudge one base knob, one feature coefficient, or
   the urgency toggle at a time. The report shows final base knobs and `learned coeffs`, so coefficient
   drift is visible instead of hidden inside "the strategy got better."

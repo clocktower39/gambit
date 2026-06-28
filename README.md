@@ -21,20 +21,19 @@ had, rewrites its own negotiation strategy, and keeps what measurably wins.
 ```
             ┌─────────────────── continual-learning loop ───────────────────┐
             │                                                                │
-  Strategy ─┼─►   seller   ⇄   buyer (self-play)  ──►  Episodes  ──►  Score  │
-  (policy)  │  (one shared policy, walled-off       (transcripts)        │   │
-            │   private info on each side)                               ▼   │
+  Strategy ─┼─►   seller   ⇄   buyer panel  ──►  Episodes  ──►  Score    │
+  (policy)  │  (fixtures, LLM buyers,         (transcripts)        │     │
+            │   humans, live market)                              ▼     │
             │         ▲                                                      │
             │         └──────────  Optimizer  ◄── reflect on wins/losses ────┘
-            │            (improves the weakest situation-bucket; promotes what wins on held-out)
+            │            (improves the weakest situation-bucket; promotes what wins on a gate)
 ```
 
-- **Pluggable counterparty** — the loop is a *referee* over two policies; what's on the other
-  side of the table is a swap, not a rewrite. The default buyer is **self-play**: the *same
-  shared policy* wearing the buyer's hat, assigned a *hidden reservation* drawn from a persona
-  (lowballer, fence-sitter, in-a-hurry, tire-kicker) and rewarded for its own surplus — so the
-  agent improves by negotiating against itself, no human labels. A **human** (by text or voice)
-  or a **live market** (eBay) drops into the same seat unchanged. The seller never sees the budget.
+- **Pluggable counterparty** — the loop is a *referee* over a seller policy and a typed buyer
+  seat; what's on the other side of the table is a swap, not a rewrite. The current buyer panel is
+  deterministic so the gate is reproducible. Next, reward-seeking LLM buyers and checkpoint/self-play
+  drills make the exercise harder; humans and a **live market** (eBay) drop into the same seat
+  unchanged. The seller never sees the budget.
 - **Seller** — negotiates from a learned **hybrid policy** (`PolicyStore`): a **global parametric knob
   policy** (anchor, concession schedule, accept threshold, walk-away patience — computed from
   continuous, scale-free features, so strength pools across situations) **plus per-bucket validated
@@ -42,9 +41,10 @@ had, rewrites its own negotiation strategy, and keeps what measurably wins.
   is what learns.*
 - **Optimizer** — the self-improvement brain. The weights can't change, so it improves the **data the
   agent reads**: each generation it targets the weakest bucket (with enough support) and proposes **one
-  atomic change** — a knob nudge *or* one lesson — kept only if a **paired A/B on a locked,
-  structurally-different held-out** raises surplus with `viol=0`, clears an FDR threshold, and doesn't
-  regress the global policy; dead effects are later **demoted** (no forgetting, no hoarding noise).
+  atomic change** — a knob nudge *or* one lesson — kept only if a **paired A/B on a gating held-out**
+  raises surplus with `viol=0`, clears an FDR threshold, and doesn't regress the global policy; a
+  separate locked final set is reported as the headline transfer check, and dead effects are later
+  **demoted** (no forgetting, no hoarding noise).
   Offline it runs a deterministic search so the loop is testable with no API key. A **Gemini
   Antigravity** backend (post-MVP) runs the *lesson* channel as a multi-step sandbox agent that edits
   one bucket's fragment across generations. Either way it *proposes* — the deterministic reward
@@ -93,8 +93,8 @@ locked held-out (never trained on):  skill 0.31 -> 0.41   # climbs LESS than tra
 
 | Phase | What | Status |
 |---|---|---|
-| **1 — Learning core** | seller + self-play buyer (one shared policy) + self-improvement loop + reward + head-to-head | ✅ runnable (offline + MiniMax M3) |
-| **1 — Learned artifact** | hybrid `PolicyStore`: global parametric knob policy + per-bucket lessons; one-atomic-change promotion via paired **locked-held-out** A/B (min-support + FDR + global non-regression + demotion) | ⬜ |
+| **1 — Learning core** | seller policy + reproducible buyer panel + self-improvement loop + reward + head-to-head | ✅ runnable (offline + MiniMax M3) |
+| **1 — Learned artifact** | hybrid `PolicyStore`: global parametric knob policy + per-bucket lessons; one-atomic-change promotion via paired **gating-held-out** A/B, with a locked final transfer report (min-support + FDR + global non-regression + demotion) | ⬜ |
 | **1 — Self-improving optimizer** | **Gemini Antigravity** managed agent improves one weak bucket's skill fragment across generations (stateful env) — proposes, never selects | ⬜ |
 | **2 — Real marketplace** | eBay connector (real list + Best Offer loop, **eBay API**) — see `docs/ebay.md` | ⬜ |
 | **2 — Voice buyer seat** | **LiveKit + Gemini Live/Translate**: a human haggles by voice, cross-language, in the buyer seat | ⬜ |
@@ -125,7 +125,7 @@ gambit/
   models.py        # ALL domain types as Pydantic BaseModel (+ validators): Item, Features, Knobs,
                    #   KnobPolicy, Strategy (knob seed), Lesson, BucketPolicy, PolicyStore, Episode, Belief
   policy.py        # learned artifact: situation_key() + KnobPolicy.resolve() + shadow PolicyStore
-                   #   + paired locked-held-out promotion (min-support, FDR, demotion)
+                   #   + paired gating-held-out promotion (min-support, FDR, demotion)
   agents/          # seller · buyer · optimizer · verifier (typed Agents)
                    #   + optimizer_antigravity.py — Gemini managed-agent optimizer backend
   policies.py      # Policy protocol: self-play (LLM) · heuristic · human · live-market

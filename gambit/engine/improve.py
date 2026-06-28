@@ -53,10 +53,14 @@ def improve(
     generations: int = 10,
     min_support: int = 8,
     select: Metric = mean_reward,
+    on_event: Callable[[int, P, dict], None] | None = None,
 ) -> tuple[P, list[dict]]:
     """Greedy hill-climb: each generation, accept the best candidate that beats the incumbent on
     the held-out gate (paired over `gate_seeds`), clears `min_support`, and is integrity-clean. The
-    held-out gate metric is monotone-non-decreasing by construction; early-stop on a plateau."""
+    held-out gate metric is monotone-non-decreasing by construction; early-stop on a plateau.
+
+    `on_event(gen, incumbent_policy, panel)` (optional) fires for gen 0 and each promoted
+    generation — a generic observation hook (the policy is opaque) used for live tracing."""
 
     if seeds is not None:
         train_seeds = train_seeds or seeds
@@ -70,6 +74,8 @@ def improve(
     base_res = gate(policy)
     base = select(base_res)
     history = [{"gen": 0, "improved": False, **_panel(base_res)}]
+    if on_event:
+        on_event(0, policy, _panel(base_res))
 
     for g in range(1, generations + 1):
         train_res = run_batch(domain, policy, train_cps, train_seeds)
@@ -89,5 +95,7 @@ def improve(
             break
         policy, base, base_res = best_p, best_score, best_res
         history.append({"gen": g, "improved": True, **_panel(base_res)})
+        if on_event:
+            on_event(g, policy, _panel(base_res))
 
     return policy, history

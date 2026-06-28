@@ -11,3 +11,4 @@ checkpoints/
 *.sqlite
 *.db
 .DS_Store
+.claude/

@@ -1,13 +1,14 @@
 # Gambit — North Star
 
-**A self-improving auto-negotiator.** It lists an item, negotiates to the best price in a
+**A self-improving seller agent.** It lists an item, negotiates to the best price in a
 reasonable time, and **gets better from its own negotiations — with zero human labeling.**
 The current offline loop improves a seller policy against reproducible buyer families; the
-target loop learns by negotiating against *itself* (self-play): one shared policy plays both
-the seller and the buyer, each side fighting for its own surplus, refereed by a verifiable
-reward. The counterparty is **pluggable** — a human can step in as the buyer at any moment,
-and real buyers drop in unchanged when a marketplace is wired. The objective is singular:
-**a real negotiator that never stops improving.**
+target loop learns from a ladder of realistic exercises: deterministic buyer panels, stronger
+LLM buyers with their own objective, human pressure tests, and eventually live marketplace
+offers. Self-play is useful as one adversarial drill, but it is not the product truth. The
+counterparty is **pluggable** — a human can step in as the buyer at any moment, and real buyers
+drop in unchanged when a marketplace is wired. The objective is singular: **a real seller agent
+that never stops improving.**
 
 > Originated at the AI Engineer World's Fair 2026 (theme: Continual Learning). We are not
 > building a demo — we are building the real thing, and continual improvement is the whole
@@ -21,10 +22,10 @@ Done is not a date — it's three properties that have to hold and keep holding.
 
 1. **It's real.** Live structured negotiation on **MiniMax M3**: typed moves, private
    information (secret floor / hidden reservation), a binding offer channel separate from the
-   chat. No scripted puppet on either side — both seller and buyer are the same reasoning
-   policy under different context. The same engine that trains against itself plugs into a
-   **human buyer** or a **live marketplace** through one interface, with nothing in the loop
-   changed.
+   chat. The seller is the product. Counterparties may be deterministic fixtures, LLM buyers,
+   humans, or live market buyers, but they all enter through the same typed interface. The same
+   seller policy that trains offline plugs into a **human buyer** or a **live marketplace** with
+   nothing in the seller loop changed.
 2. **It keeps improving.** Across generations, with no human labels, **verifiable surplus
    measurably climbs** — and it climbs on **held-out counterparties it never trained against**,
    not just the ones it practiced on. Improvement that doesn't transfer isn't improvement; the
@@ -49,27 +50,39 @@ decision is what makes this real instead of a simulator:
 | Counterparty | What it is | When |
 |---|---|---|
 | **Deterministic buyer families** | Reproducible reservation-respecting counterparties used by the current offline gate. | Now — the implemented training/eval substrate. |
-| **Self-play** | The **same shared policy** wearing the buyer's hat, with a hidden reservation, rewarded for the buyer's own surplus. The agent improves by negotiating against itself. | Target — after the reward-seeking buyer hat is wired. |
+| **LLM buyer panel** | Reward-seeking buyer agents with hidden budgets and different tactics. These are harder, more varied exercises than the deterministic families. | Next realism step — after the buyer hat is wired. |
+| **Self-play / checkpoint league** | The seller's current or past policy wearing a buyer hat with a separate buyer objective. Useful adversarial pressure, not the definition of reality. | A drill inside the panel, not the only target. |
 | **Human** | A person types **or speaks** the buyer's messages. Same interface, same typed moves — voice is a **LiveKit + Gemini Live** shell (real-time, cross-language Live Translate) that emits the same `BuyerMove`. | Any time — drop in to feel it out, pressure-test it, or sanity-check a generation. |
 | **Live market** | A real buyer via a connector (eBay Best Offer first, **via the eBay API**). The seller's moves become real offers; the reward becomes the real sale. | When a marketplace is wired — the engine is unchanged. |
 
-We are moving toward self-play **because it's the strongest way to improve and because we don't
-have live buyers yet** — not because the buyer should stay scripted. Swapping in a human or a real
-marketplace is a policy swap, not a rewrite.
+We use synthetic buyers because they are cheap, repeatable, and let us run paired A/B gates before
+live traffic exists. But realism comes from **varied counterparties and held-out transfer**, not from
+pretending a fake market is the market. Swapping in a human or a real marketplace is a policy swap,
+not a rewrite.
 
-The seller side is **one policy managing many listings and many buyer threads**. Self-play should
-therefore become one seller policy against a market panel, not a pile of isolated one-buyer games.
-Parallel buyers and active inventory are the seller's real BATNA: if three buyers are alive on one
-listing, hold firmer; if a stale listing has one serious buyer, flex; if a buyer wants multiple active
-items, grow the deal. Each buyer can still be another negotiation agent under a walled-off context.
+The seller side is **one policy managing many listings and many buyer threads**. That should inform
+the seller's move, but only from truthful seller-visible state. Parallel buyers and active inventory
+are the seller's real BATNA: if three buyers are actually alive on one listing, hold firmer; if a stale
+listing has one serious buyer, flex; if a buyer wants multiple active items, grow the deal. The useful
+exercise is not a giant fake marketplace; it is a seller agent learning to use realistic context
+without inventing leverage.
 
-### Why self-play (the AlphaZero move)
+### Where self-play helps, and where it doesn't
 
-A scripted buyer caps how good the seller can get — you can't out-negotiate your own
-heuristics. A **shared policy playing both sides** scales with you: as the seller sharpens,
-so does the buyer it faces, so the pressure never relaxes. The agent generates its own
-training signal by playing itself — the cleanest possible continual-learning story, and no
-human ever labels a transcript.
+A scripted buyer caps how good the seller can get — you can't out-negotiate your own heuristics.
+Reward-seeking LLM buyers and self-play raise the bar because the buyer can adapt and fight for its
+own surplus. That makes them valuable drills. They are not, by themselves, proof that the agent will
+work in a real marketplace.
+
+The realistic shape is a **counterparty panel**:
+- deterministic buyers for reproducible gates;
+- LLM buyers and checkpoint self-play for adversarial pressure;
+- humans for taste, weirdness, and failure discovery;
+- live marketplace threads for the final distribution.
+
+The selector should promote a change only when it wins on held-out panels and does not violate the
+integrity rails. The product claim is seller improvement that transfers, not "it beat a clone of
+itself."
 
 **The three traps, and the guards we already have:**
 1. **Collusion / a private handshake** — same model on both sides could learn a tell that
@@ -87,19 +100,19 @@ human ever labels a transcript.
 ## 3. How the core loop works
 
 ```
- Strategy ─► seller ⇄ buyer ─► Episodes ─► Score ─► Optimizer ─► A/B select ─┐
- (policy)   (one shared policy,  (transcripts)  (verifiable   (reflect →      │
-     ▲       walled-off private              surplus +        lessons)        │
-     │       info on each side)              Tier-1 audit)                    │
-     └──────────  promote the better per-bucket policy, next generation  ◄──────┘
+ Strategy ─► seller ⇄ counterparty panel ─► Episodes ─► Score ─► Optimizer ─► A/B select ─┐
+ (policy)      (typed buyers: fixtures,       (transcripts)  (verifiable   (reflect →      │
+     ▲          LLM, human, market)                       surplus +        lessons)        │
+     │                                                    Tier-1 audit)                    │
+     └──────────────  promote the better seller policy, next generation  ◄──────────────────┘
         held-out early-stop (anti-overfit)   Tier-2 verifier audits integrity (binary checklist)
-        checkpoint league (anti-self-play-collapse)
+        checkpoint/self-play drills are optional panel members, not the whole proof
 ```
 
 - **Reward = deterministic verifiable surplus** from the secret floor: `(price − floor)/(list − floor)`.
   Terminal shaping: below-floor / format → −1; no-deal / walk-away → 0; deal → surplus.
-  **No LLM judge in the selector.** Each side optimizes its *own* surplus (seller `price − floor`,
-  buyer `budget − price`) — opposing objectives over shared weights make self-play genuinely adversarial.
+  **No LLM judge in the selector.** In buyer-agent drills, each side optimizes its *own* surplus
+  (seller `price − floor`, buyer `budget − price`) so the pressure is adversarial instead of scripted.
 - **Reward-integrity guard** so the curve is defensible: Tier-1 deterministic audit (done), Tier-2
   binary-question verifier on a *different model* (done), Tier-3 held-out counterparties (done).
 - **What's learned is a policy, not a prompt blob** (see below): the optimizer proposes *one atomic
@@ -181,7 +194,7 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 | `models.py` / `personas.py` | Item, Strategy, Episode, counterparty reservations (hidden budgets) | ✅ |
 | `negotiation.py` | referee one episode over two policies → terminal outcome | ✅ |
 | `metrics.py` → `reward.py` | verifiable surplus reward + terminal shaping + Tier-1 audit + panel | ✅ |
-| seller policy / buyer policy | the negotiator + the self-play buyer (one shared policy, two contexts) | 🟡 buyer is a passive heuristic today — make it reward-seeking; LLM path **untested** |
+| seller policy / buyer policies | the product seller + a panel of typed counterparties | 🟡 current buyers are deterministic/passive — add reward-seeking LLM buyers; LLM path **untested** |
 | `optimizer.py` | reflection → lessons, anti-bloat dedup/cap, verifier-rubric feedback | 🟡 LLM path **untested** |
 | `policy.py` (the learned artifact) | hybrid `PolicyStore`: global parametric `KnobPolicy` + per-bucket text lessons; current loop promotes knob changes by paired gating A/B; FDR/global non-regression/demotion are not wired yet | 🟡 |
 | `market.py` / portfolio state | one seller, multiple listings, parallel buyer threads, first-firm-commitment guard | 🟡 typed state seam + feature tests |
@@ -225,22 +238,24 @@ improving*.
 - **Real when:** a live MiniMax run shows surplus climbing across generations with `viol=0%`,
       and the gains hold on a **locked, structurally-different** held-out set.
 
-### Next — make self-play genuinely adversarial
+### Next — make the exercises more realistic
 - [ ] **Hybrid `PolicyStore` (the learned artifact):** a global *parametric* knob policy (pooled
       strength) + per-bucket *text lessons*, keyed by a coarse `(margin_band, buyer_type)` (no
       `price_band`; `buyer_type` after K offers). Promote **one atomic change** per generation via a
       paired single-toggle A/B on a gating held-out, keep the **locked, structurally-different** held-out
       for headline measurement only, and add **FDR + global non-regression + a demotion path** before
       claiming the full statistical guardrail.
-- [ ] **MarketplaceDomain:** one seller policy manages a portfolio: multiple active listings, many buyer
-      threads, truthful competing-interest state, bundle opportunities, and first-firm-commitment wins.
-      This is the next self-play substrate because BATNA is portfolio state, not a constant.
+- [ ] **Portfolio-context training slice:** teach the seller to use truthful seller-visible state:
+      active buyer count, best real competing offer, listing age, inventory pressure, bundle
+      opportunity, and first-firm-commitment wins. Start with one primary thread plus honest background
+      state/replay before building a full marketplace simulator.
 - [ ] **Reward-seeking buyer:** the buyer-hat optimizes its own surplus (today it's a passive
-      reservation-respecting heuristic). This is what turns "two agents" into real self-play.
+      reservation-respecting heuristic). This turns buyer agents into useful adversarial drills.
 - [ ] **Structurally-different held-out:** make the held-out promotion gate run against a different
       buyer-policy family (LLM buyer / human), not the same simulator with new params — otherwise
       "held-out" is in-distribution and the transfer claim is hollow.
-- [ ] **Checkpoint league:** train against a pool of past selves, not just the latest — anti-collapse.
+- [ ] **Checkpoint league:** include past selves in the counterparty panel, but treat the league as
+      one held-out pressure source, not proof by itself.
 - [ ] **Anti-collusion audit:** lean on the Tier-2 verifier to catch a shared-policy handshake;
       add held-out *promotion* gate (refuse to promote a candidate that regresses held-out).
 - [ ] **Opponent-aware pricing:** wire `opponent.infer` into the seller — hold near the
@@ -330,7 +345,7 @@ criteria. Nothing here is bolted on for a stage — each surface earns its place
 
 | Criterion | How Gambit qualifies |
 |---|---|
-| **Theme: Continual Learning** *(required)* | The whole product — self-play, zero human labels, verifiable surplus climbing across generations on held-out counterparties. |
+| **Theme: Continual Learning** *(required)* | The whole product — a seller policy improving with zero human labels, verifiable surplus climbing across generations, and gains holding on held-out counterparties. |
 | **Theme: Self-Improvement Stack / Recursive Intelligence** | The agent learns a **situation-keyed policy it edits itself** — the Antigravity optimizer improves one weak bucket's lesson fragment generation over generation (stateful env) under a deterministic, gameable-proof reward, promoted only by a per-bucket held-out A/B. A model improving the structured policy that drives it, with the integrity wall intact. |
 | **Best Gemini 3.5** | **Managed Agents** (Antigravity via the Interactions API, `AGENTS.md` + per-bucket skill fragments, stateful `environment_id`) **+ Gemini Live / Live Translate** for the voice buyer **+ Nano Banana** for listing media — three new surfaces combined, not a wrapper chatbot. |
 | **Best LiveKit** | The human buyer seat negotiates by **voice over LiveKit**, cross-language via Gemini Live Translate — the pluggable counterparty made tangible. |

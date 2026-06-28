@@ -241,6 +241,8 @@ def _generation(gen: int, domain: NegotiationDomain, store: PolicyStore, opt: An
     gate_matchups = _feasible_matchups(domain, pool, gate_start, args.pool_n, LOCKED_SEEDS[0])
     promoted = False
     best = {"delta": _GATE_EPS, "bucket": None, "text": None}
+    best_seen: float | None = None      # best candidate Δ this gen (even if it didn't clear the bar)
+    scored: list[dict] = []
     if candidates and gate_matchups:
         cur = _run_matchups(domain, gate_matchups, current_lessons, args.workers)
         cur_mean = _mean([r["reward"] for r in cur])
@@ -249,6 +251,8 @@ def _generation(gen: int, domain: NegotiationDomain, store: PolicyStore, opt: An
             cand_mean = _mean([r["reward"] for r in cand])
             cand_viol = sum(r["viol"] for r in cand)
             delta = cand_mean - cur_mean
+            scored.append({**c, "delta": delta, "viol": cand_viol})
+            best_seen = delta if best_seen is None else max(best_seen, delta)
             print(f"  [gen {gen}] gate {c['bucket']:<10} Δ={delta:+.3f} "
                   f"(cur {cur_mean:+.3f} → cand {cand_mean:+.3f}) with-viol={cand_viol}")
             # Promote the BEST candidate that clears eps AND keeps integrity (with-lesson viol==0).
@@ -257,16 +261,30 @@ def _generation(gen: int, domain: NegotiationDomain, store: PolicyStore, opt: An
         if best["bucket"] is not None:
             _promote(store, best["bucket"], best["text"], best["delta"], support=len(gate_matchups))
             promoted = True
-            obs.record_gate_delta(best["delta"], job_type="self-play")
             obs.record_promotion(job_type="self-play", generation=gen)
             print(f"  [gen {gen}] PROMOTED → {best['bucket']} (Δ={best['delta']:+.3f}): {best['text'][:90]}")
+        # The candidate gate Δ is charted every generation (the best one evaluated), promoted or not.
+        if best_seen is not None:
+            obs.record_gate_delta(best_seen, job_type="self-play")
+        # One event per candidate so the dashboard shows what was LEARNED vs DISCARDED.
+        for s in scored:
+            won = promoted and s["bucket"] == best["bucket"] and s["text"] == best["text"]
+            verdict = "promotion" if won else "rejection"
+            obs.emit("lesson {verdict} for {bucket} (Δ={delta})", kind=verdict, verdict=verdict,
+                     bucket=s["bucket"], delta=round(s["delta"], 4), with_viol=s["viol"],
+                     lesson=s["text"], gen=gen)
 
     # 4) SCORE the FIXED locked yardstick with the (possibly newly) promoted policy.
     locked_lessons = _all_promoted(store)
     locked_results = _run_matchups(domain, locked_matchups, locked_lessons, args.workers)
     sc = _score_locked(locked_results)
-    obs.record_surplus(sc["locked_reward"], job_type="self-play", source="agent")
-    obs.record_skill(sc["locked_skill"], job_type="self-play", source="agent")
+
+    # One representative locked episode per bucket (a real transcript) — NOT per-episode metrics, so
+    # the trace carries a sample without flooding thousands of spans. The gen-level metrics below are
+    # the primary curve; these are illustrative spans only (see _run).
+    sample_by_bucket: dict[str, dict] = {}
+    for r in locked_results:
+        sample_by_bucket.setdefault(r["bucket"], r)
 
     return {
         "gen": gen,
@@ -278,9 +296,11 @@ def _generation(gen: int, domain: NegotiationDomain, store: PolicyStore, opt: An
         "n_lessons": len(locked_lessons),
         "promoted": promoted,
         "promoted_bucket": best["bucket"] if promoted else None,
-        "gate_delta": round(best["delta"], 4) if promoted else 0.0,
+        "gate_delta": round(best["delta"], 4) if promoted else (round(best_seen, 4) if best_seen is not None else 0.0),
         "promoted_lessons": locked_lessons,
         "n_candidates": len(candidates),
+        # underscore keys are consumed by _run (obs spans) and stripped before the checkpoint is written.
+        "_locked_samples": list(sample_by_bucket.values()),
     }
 
 
@@ -364,28 +384,49 @@ def _run(args, out: Path) -> None:
         while gen < args.max_gens and time.time() < deadline and not stop["flag"]:
             g0 = time.time()
             pool = _build_pool(base_personas, level)
+            n_lessons_before = len(_all_promoted(store))
             try:
-                ckpt = _generation(gen, domain, store, opt, pool, locked_matchups, args)
+                # One per-generation span groups the whole gen (proposals, gate, locked score) in the
+                # trace tree; every obs call inside inherits generation=gen via baggage.
+                with obs.generation(gen, checkpoint="league", opponent_level=level,
+                                    n_lessons=n_lessons_before):
+                    ckpt = _generation(gen, domain, store, opt, pool, locked_matchups, args)
+                    ckpt["elapsed"] = round(time.time() - t0, 1)
+                    ckpt["t"] = time.time()
+                    ckpt["opponent_level"] = level
+                    samples = ckpt.pop("_locked_samples", [])
+
+                    # THE WATCHABLE CURVE: gen-level metrics charted over time as the climb proceeds.
+                    obs.record_reward(ckpt["locked_reward"], job_type="self-play", source="agent")
+                    obs.record_surplus(ckpt["locked_reward"], job_type="self-play", source="agent")
+                    obs.record_skill(ckpt["locked_skill"], job_type="self-play", source="agent")
+                    obs.emit("league gen {gen}: reward={locked_reward} skill={locked_skill} viol={locked_viol}",
+                             kind="league_gen", gen=gen, locked_reward=ckpt["locked_reward"],
+                             locked_skill=ckpt["locked_skill"], locked_viol=ckpt["locked_viol"],
+                             n_lessons=ckpt["n_lessons"], promoted=ckpt["promoted"],
+                             opponent_level=level, elapsed_s=ckpt["elapsed"])
+
+                    # INTEGRITY: the locked yardstick must read viol==0 at every generation.
+                    if ckpt["locked_viol"] > 0:
+                        obs.emit("INTEGRITY BREACH on locked set: viol={viol} at gen {gen}", level="error",
+                                 kind="integrity", gen=gen, viol=ckpt["locked_viol"])
+                        print(f"  [gen {gen}] !!! INTEGRITY BREACH — locked viol={ckpt['locked_viol']} (must be 0) !!!")
+
+                    # Representative transcripts: ONE locked episode per bucket (not per-episode metrics)
+                    # — a real sample in the trace without thousands of spans.
+                    for s in samples:
+                        with obs.episode(bucket=s["bucket"], split="locked", seed=s["seed"]):
+                            obs.emit("locked sample {bucket} (reward={reward})", kind="sample_episode",
+                                     bucket=s["bucket"], reward=round(s["reward"], 4),
+                                     skill=(round(s["skill"], 4) if s["skill"] is not None else None),
+                                     deal=s["deal"], opp=s["opp"], family=s["family"],
+                                     transcript=s["transcript"], gen=gen)
             except Exception as exc:  # noqa: BLE001 — one bad gen logs and continues, never kills the run
                 obs.emit("generation {gen} failed: {err}", level="error", kind="gen_error",
                          gen=gen, err=repr(exc))
                 print(f"[gen {gen}] FAILED ({type(exc).__name__}: {exc}) — skipping, continuing run")
                 gen += 1
                 continue
-
-            ckpt["elapsed"] = round(time.time() - t0, 1)
-            ckpt["t"] = time.time()
-            ckpt["opponent_level"] = level
-            with obs.generation(gen, checkpoint="league", opponent_level=level):
-                obs.emit("league gen {gen}: locked_reward={lr} skill={sk} viol={vi} lessons={nl}",
-                         kind="league_gen", gen=gen, lr=ckpt["locked_reward"], sk=ckpt["locked_skill"],
-                         vi=ckpt["locked_viol"], nl=ckpt["n_lessons"], promoted=ckpt["promoted"],
-                         opponent_level=level)
-                # INTEGRITY: the locked yardstick must read viol==0 at every generation.
-                if ckpt["locked_viol"] > 0:
-                    obs.emit("INTEGRITY BREACH on locked set: viol={vi} at gen {gen}", level="error",
-                             kind="integrity", gen=gen, viol=ckpt["locked_viol"])
-                    print(f"  [gen {gen}] !!! INTEGRITY BREACH — locked viol={ckpt['locked_viol']} (must be 0) !!!")
 
             _checkpoint(out, ckpt, store)
             if gen0 is None:
@@ -409,7 +450,8 @@ def _run(args, out: Path) -> None:
                         level += 1
                         no_promo = 0
                         opp = _ESCALATION_PERSONAS[level - 1]
-                        obs.emit("escalate to level {lvl}: +{opp}", kind="escalate", level=level, opp=opp.name)
+                        obs.emit("escalate to level {opponent_level}: +{opp}", kind="escalate",
+                                 gen=gen, opponent_level=level, opp=opp.name)
                         print(f"  [gen {gen}] ESCALATE → level {level} (added firm-anchor {opp.name})")
                     else:
                         plateau = True

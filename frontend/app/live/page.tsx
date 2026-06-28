@@ -111,17 +111,22 @@ export default function LivePage() {
   const [starting, setStarting] = useState(false);
   const esRef = useRef<EventSource | null>(null);
 
-  const connect = useCallback(() => {
+  const connect = useCallback((targetRunId?: string) => {
     esRef.current?.close();
-    setCurve([]); setSpots([]); setTransfer(null); setCfg(null); setStatus("waiting");
-    const es = new EventSource(`${BACKEND}/watch/stream`);
+    setCurve([]); setSpots([]); setTransfer(null); setCfg(null); setRunId(targetRunId ?? null); setStatus("waiting");
+    const qs = targetRunId ? `?run=${encodeURIComponent(targetRunId)}` : "";
+    const es = new EventSource(`${BACKEND}/watch/stream${qs}`);
     esRef.current = es;
     es.onmessage = (e) => {
       let ev: any;
       try { ev = JSON.parse(e.data); } catch { return; }
       switch (ev.type) {
         case "start": setCfg(ev); setStatus("live"); break;
-        case "run": setRunId(ev.run_id); setStatus("live"); break;
+        case "run":
+          setRunId(ev.run_id);
+          setCurve([]); setSpots([]); setTransfer(null); setCfg(null);
+          setStatus("live");
+          break;
         case "gen":
           setStatus("live");
           setCurve((c) => [...c.filter((p) => p.gen !== ev.gen), { gen: ev.gen, reward: ev.reward, skill: ev.skill, viol: ev.viol, promoted: !!ev.improved }].sort((a, b) => a.gen - b.gen));
@@ -137,7 +142,11 @@ export default function LivePage() {
 
   const runFresh = useCallback(async () => {
     setStarting(true);
-    try { await fetch(`${BACKEND}/watch/start`, { method: "POST" }); connect(); }
+    try {
+      const r = await fetch(`${BACKEND}/watch/start`, { method: "POST" });
+      const body = await r.json().catch(() => ({}));
+      connect(body.run_id);
+    }
     finally { setStarting(false); }
   }, [connect]);
 
@@ -164,47 +173,54 @@ export default function LivePage() {
         </div>
       </header>
 
-      <section className="hero">
-        <Climb curve={curve} live={status === "live"} />
-        <Vitals curve={curve} />
-      </section>
+      <section className="stage" aria-label="Live climb and negotiations">
+        <div className="climbPane">
+          <section className="hero">
+            <Climb curve={curve} live={status === "live"} />
+            <Vitals curve={curve} />
+          </section>
 
-      {transfer && (
-        <section className="transfer">
-          <b>It generalizes.</b> On <b>{cfg?.locked_family ?? "a held-out family"}</b> it never trained against,
-          held-out reward climbed <b>{transfer.locked_start.reward.toFixed(3)} → {transfer.locked_final.reward.toFixed(3)}</b>
-          {" "}(<b className="up">{signed(transfer.locked_delta)}</b>), skill {transfer.locked_start.skill.toFixed(2)} → {transfer.locked_final.skill.toFixed(2)},
-          with <b className="ok">viol {transfer.locked_final.viol}</b>.
-        </section>
-      )}
-
-      <section className="feedwrap">
-        <h3>Live negotiations <span className="sub">the agent haggling, generation by generation</span></h3>
-        <div className="feed">
-          {spots.length === 0 && <div className="empty">negotiations stream here as the run plays…</div>}
-          {spots.map((ep, i) => (
-            <article className="spot" key={`${ep.gen}-${ep.seed}-${i}`}>
-              <div className="spotHead">
-                <b>{ep.item}</b>
-                <span>gen {ep.gen} · vs {ep.persona} · <code>{ep.bucket}</code></span>
-              </div>
-              <div className="talk">
-                {ep.moves.map((m, k) => (
-                  <div className={`turn ${m.role}`} key={k}>
-                    <span className="who">{m.role}</span>
-                    <div className="bubble">
-                      <span className="say">{m.text || (m.action ? `(${m.action})` : "")}</span>
-                      {m.offer != null && <span className="offer">{money(m.offer)}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className={`spotOut ${ep.outcome.deal ? "deal" : "nodeal"}`}>
-                {ep.outcome.deal ? `deal ${money(ep.outcome.price)} · ${ep.outcome.turns} turns` : `no deal${ep.outcome.reason ? ` (${ep.outcome.reason})` : ""}`}
-              </div>
-            </article>
-          ))}
+          {transfer && (
+            <section className="transfer">
+              <b>It generalizes.</b> On <b>{cfg?.locked_family ?? "a held-out family"}</b> it never trained against,
+              held-out reward climbed <b>{transfer.locked_start.reward.toFixed(3)} → {transfer.locked_final.reward.toFixed(3)}</b>
+              {" "}(<b className="up">{signed(transfer.locked_delta)}</b>), skill {transfer.locked_start.skill.toFixed(2)} → {transfer.locked_final.skill.toFixed(2)},
+              with <b className="ok">viol {transfer.locked_final.viol}</b>.
+            </section>
+          )}
         </div>
+
+        <section className="feedwrap">
+          <div className="feedHead">
+            <h3>Live negotiations</h3>
+            <span>{spots.length ? `${spots.length} streamed` : "waiting for chats"}</span>
+          </div>
+          <div className="feed">
+            {spots.length === 0 && <div className="empty">negotiations stream here as the run plays…</div>}
+            {spots.map((ep, i) => (
+              <article className={`spot ${i === 0 ? "latest" : ""}`} key={`${ep.gen}-${ep.seed}-${i}`}>
+                <div className="spotHead">
+                  <b>{ep.item}</b>
+                  <span>gen {ep.gen} · vs {ep.persona} · <code>{ep.bucket}</code></span>
+                </div>
+                <div className="talk">
+                  {ep.moves.map((m, k) => (
+                    <div className={`turn ${m.role}`} key={k}>
+                      <span className="who">{m.role}</span>
+                      <div className="bubble">
+                        <span className="say">{m.text || (m.action ? `(${m.action})` : "")}</span>
+                        {m.offer != null && <span className="offer">{money(m.offer)}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className={`spotOut ${ep.outcome.deal ? "deal" : "nodeal"}`}>
+                  {ep.outcome.deal ? `deal ${money(ep.outcome.price)} · ${ep.outcome.turns} turns` : `no deal${ep.outcome.reason ? ` (${ep.outcome.reason})` : ""}`}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
       </section>
 
       <style>{liveCss}</style>
@@ -214,19 +230,21 @@ export default function LivePage() {
 
 const liveCss = `
 .live{--brass:#d9a24a;--brass2:#f0c074;--pos:#4fd1a8;--neg:#f0676b;--ink:#ece9e3;--dim:#c4c2bc;--muted:#868c98;--panel:#14171f;--panel2:#10131b;--line:#232936;--seller:#6ea8ff;--buyer:#e0a85a;
-  max-width:1180px;margin:0 auto;padding:36px 26px 70px;color:var(--ink);}
-.live .head{display:flex;justify-content:space-between;align-items:flex-end;gap:26px;flex-wrap:wrap;}
+  max-width:1560px;margin:0 auto;padding:24px 26px 38px;color:var(--ink);}
+.live .head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;}
 .live .tag{display:inline-flex;align-items:center;gap:7px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 11px;margin-bottom:14px;}
 .live .tag.live{color:var(--pos);border-color:rgba(79,209,168,.4);}
 .live .tag.done{color:var(--brass2);border-color:rgba(217,162,74,.4);}
-.live h1{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:clamp(30px,4.4vw,46px);letter-spacing:-.025em;margin:0 0 10px;}
+.live h1{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:clamp(28px,3.7vw,42px);letter-spacing:-.025em;margin:0 0 8px;}
 .live h1 em{font-style:italic;color:var(--brass2);font-weight:400;}
-.live .head p{color:var(--dim);max-width:640px;font-size:14.5px;line-height:1.6;margin:0;}
+.live .head p{color:var(--dim);max-width:720px;font-size:14px;line-height:1.5;margin:0;}
 .live .ctrls{display:flex;gap:10px;align-items:center;}
 .live .btn{font-size:13.5px;font-weight:600;color:#1a130a;background:linear-gradient(180deg,var(--brass2),var(--brass));border:0;border-radius:999px;padding:9px 16px;cursor:pointer;white-space:nowrap;}
 .live .btn:disabled{opacity:.5;cursor:default;}
 .live .btn.ghost{color:var(--ink);background:transparent;border:1px solid var(--line);}
-.live .hero{margin-top:26px;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:20px 22px;}
+.live .stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(430px,.56fr);gap:18px;align-items:start;margin-top:22px;}
+.live .climbPane{min-width:0;}
+.live .hero{border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:18px 20px;}
 .live .climb svg{width:100%;height:auto;display:block;}
 .live .grid{stroke:var(--line);stroke-width:1;}.live .grid.base{stroke:#33405a;}
 .live .axis,.live .gtick{fill:var(--muted);font-size:11px;font-family:ui-monospace,Menlo,monospace;}
@@ -248,14 +266,16 @@ const liveCss = `
 .live .vv{font-family:ui-monospace,Menlo,monospace;font-size:24px;font-weight:500;}
 .live .vv.brass{color:var(--brass2);}.live .vv.ok{color:var(--pos);}.live .vv.bad{color:var(--neg);}
 .live .vsub{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;}.live .vsub .up{color:var(--pos);}.live .vsub .dn{color:var(--neg);}
-.live .transfer{margin-top:16px;border:1px solid rgba(79,209,168,.35);background:rgba(79,209,168,.07);border-radius:12px;padding:13px 17px;font-size:14px;line-height:1.5;}
+.live .transfer{margin-top:14px;border:1px solid rgba(79,209,168,.35);background:rgba(79,209,168,.07);border-radius:12px;padding:13px 17px;font-size:14px;line-height:1.5;}
 .live .transfer .up{color:var(--pos);}.live .transfer .ok{color:var(--pos);}
-.live .feedwrap{margin-top:26px;}
-.live .feedwrap h3{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:17px;margin:0 0 12px;}
-.live .feedwrap .sub{font-family:inherit;color:var(--muted);font-size:12.5px;font-weight:400;}
-.live .feed{display:flex;flex-direction:column;gap:12px;}
+.live .feedwrap{min-width:0;border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--panel2));padding:16px;max-height:calc(100vh - 188px);overflow:hidden;display:flex;flex-direction:column;}
+.live .feedHead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px;}
+.live .feedHead h3{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:18px;margin:0;}
+.live .feedHead span{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted);white-space:nowrap;}
+.live .feed{display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-height:0;padding-right:4px;}
 .live .empty{color:var(--muted);font-size:13px;padding:24px;text-align:center;border:1px dashed var(--line);border-radius:12px;}
-.live .spot{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:13px 15px;}
+.live .spot{border:1px solid var(--line);border-radius:12px;background:rgba(20,23,31,.82);padding:13px 15px;}
+.live .spot.latest{border-color:rgba(217,162,74,.48);box-shadow:0 0 0 1px rgba(217,162,74,.08),0 12px 34px rgba(0,0,0,.24);}
 .live .spotHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:9px;}
 .live .spotHead b{font-size:13.5px;}.live .spotHead span{font-size:11.5px;color:var(--muted);}
 .live .talk{display:flex;flex-direction:column;gap:6px;}
@@ -268,4 +288,5 @@ const liveCss = `
 .live .offer{font-family:ui-monospace,Menlo,monospace;font-weight:600;font-size:12px;color:var(--brass2);white-space:nowrap;}
 .live .spotOut{margin-top:9px;font-size:12px;font-weight:600;font-family:ui-monospace,Menlo,monospace;}
 .live .spotOut.deal{color:var(--pos);}.live .spotOut.nodeal{color:var(--muted);}
+@media(max-width:1040px){.live .stage{grid-template-columns:1fr}.live .feedwrap{max-height:none;overflow:visible}.live .feed{overflow:visible}.live .ctrls{width:100%;}.live .btn{flex:1;text-align:center;}}
 `;
