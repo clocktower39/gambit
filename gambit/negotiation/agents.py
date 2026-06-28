@@ -130,13 +130,14 @@ class LLMSeller:
             self._agent = self._build_agent()
         return self._agent
 
-    def _move(self, prompt: str, *, fallback_price: float) -> Move:
+    def _move(self, prompt: str, *, accept_price: float) -> Move:
         out = _ask(self.agent, prompt)
-        offer = out.offer
-        # Validator rail: an accept MUST name a price. If the model accepted without one, it means
-        # "yes at the price on the table" — the buyer's offer, or our standing ask as a backstop.
-        if out.action == "accept" and offer is None:
-            offer = fallback_price
+        # Integrity rail: an accept ALWAYS closes at the price ON THE TABLE, never one the model
+        # self-names. Otherwise an LLM seller could emit action="accept", offer=list_price on turn 1
+        # and close above the buyer's standing offer with no consent — uncaught reward inflation that
+        # Tier-1 can't see (the accept's own price is "in the transcript"). Offers stay verbatim so the
+        # below-floor audit still catches a cheating seller.
+        offer = accept_price if out.action == "accept" else out.offer
         return Move(role="seller", text=out.text, action=out.action, offer=offer, reasoning=out.reasoning)
 
     def opening(self, item: Item) -> Move:
@@ -146,7 +147,7 @@ class LLMSeller:
             f"This is your OPENING move — the buyer has not spoken yet. Round 0 of {self.max_turns}.\n"
             "State your opening ask as a single move."
         )
-        return self._move(prompt, fallback_price=item.list_price)
+        return self._move(prompt, accept_price=item.list_price)  # accept-on-open is degenerate; backstop only
 
     def respond(self, item: Item, current_ask: float, buyer_offer: float | None, round_idx: int) -> Move:
         prompt = (
@@ -158,8 +159,9 @@ class LLMSeller:
             f"- Round {round_idx} of {self.max_turns}.\n"
             "Respond with a single move (offer a new ask, accept, or walk)."
         )
-        # If we accept, the agreed price is what's on the table: the buyer's offer, else our ask.
-        return self._move(prompt, fallback_price=buyer_offer if buyer_offer is not None else current_ask)
+        # An accept closes at the buyer's standing offer (never above our own ask), else our ask.
+        accept_price = min(buyer_offer, current_ask) if buyer_offer is not None else current_ask
+        return self._move(prompt, accept_price=accept_price)
 
 
 class LLMBuyer:
@@ -200,9 +202,9 @@ class LLMBuyer:
             "Respond with a single move (offer a price, accept, or walk)."
         )
         out = _ask(self.agent, prompt)
-        offer = out.offer
-        if out.action == "accept" and offer is None:
-            offer = float(seller_ask)  # accept = "yes at the seller's ask"
+        # An accept always means "yes at the seller's ask" — bind to it, never a model-named price
+        # (enforce_reservation below still caps it at the hidden budget). Offers stay verbatim.
+        offer = float(seller_ask) if out.action == "accept" else out.offer
         move = Move(role="buyer", text=out.text, action=out.action, offer=offer, reasoning=out.reasoning)
         # Hard rail on EVERY buyer move: the LLM can never offer/accept above its hidden budget.
         return enforce_reservation(move, budget)

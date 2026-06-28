@@ -226,3 +226,29 @@ def test_second_walk_re_confirms_and_ends_in_no_deal():
     assert ep.outcome.walked_by == "buyer" and "re-confirmed" in ep.outcome.reason
     assert sum(m.action == "walk" for m in ep.moves) == 2   # exactly one rebuttal turn between the walks
     assert audit_episode(ep) == [] and reward(ep) == 0.0
+
+
+# --- live-agent integrity: an LLM accept must bind to the price on the table, not self-named -------
+# (regression for the reward-inflation hole where a model emits action="accept", offer=<inflated>).
+# Monkeypatches the agent call so it's deterministic and makes NO API request.
+
+def test_llm_accept_binds_to_table_price(monkeypatch):
+    from gambit.negotiation import agents
+
+    item = _item(floor_price=80, list_price=100, target_price=90)
+    # the model tries to close at an inflated, self-named price regardless of the table
+    monkeypatch.setattr(agents, "_ask",
+                        lambda agent, prompt: agents.AgentMove(text="deal!", action="accept", offer=999))
+
+    seller = agents.LLMSeller()
+    # buyer's standing offer is 85 → a seller accept closes at 85, not the model's 999
+    assert seller.respond(item, current_ask=95, buyer_offer=85, round_idx=2).offer == 85
+    # buyer offered above our ask → never close above our own ask
+    assert seller.respond(item, current_ask=95, buyer_offer=120, round_idx=2).offer == 95
+
+    buyer = agents.LLMBuyer(BuyerPersona(name="b", budget_ratio=0.95))   # hidden budget 95
+    bmv = buyer.respond(item, seller_ask=90, round_idx=2, current_offer=80)
+    assert bmv.action == "accept" and bmv.offer == 90                    # accept = yes at the seller's ask
+    # an accept the model names above budget is capped by the reservation rail, never exceeds budget
+    bmv2 = buyer.respond(item, seller_ask=200, round_idx=2, current_offer=80)
+    assert bmv2.offer <= 95

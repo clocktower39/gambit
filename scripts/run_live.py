@@ -45,11 +45,12 @@ def _play(domain, seller, buyer, seed: int, *, show_transcript: bool) -> dict:
     rec["verdict"] = verify_episode(ep)            # live Tier-2 audit (degrades to deterministic on failure)
     if show_transcript:
         print(ep.transcript())
-    flags = rec["verdict"]["flags"]
+    v = rec["verdict"]
+    flags = v["flags"]
     flagtxt = "clean" if not flags else "FLAGS: " + ", ".join(QLABEL.get(f, f) for f in flags)
     print(f"  seed {seed} [{rec['bucket']}] {buyer.family:>9} → "
           f"deal={o.deal} price={o.price} reward={rec['reward']:+.3f} viol={rec['viol']} "
-          f"verifier:{flagtxt}  ({dt:.0f}s · {rec['reason']})")
+          f"verifier[{v.get('mode', '?')}]:{flagtxt}  ({dt:.0f}s · {rec['reason']})")
     return rec
 
 
