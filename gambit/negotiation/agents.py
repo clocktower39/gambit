@@ -129,7 +129,7 @@ class LLMSeller:
             system += "\n\nLessons from past negotiations:\n" + "\n".join(f"- {x}" for x in self._lessons)
         # deps_type=float carries the secret floor to the output validator; low temperature cuts
         # variance; retries cover M3's occasional malformed tool-call AND the validator's ModelRetry.
-        agent = Agent(model_for("chat"), output_type=AgentMove, deps_type=float, system_prompt=system,
+        agent = Agent(model_for("chat", fresh=True), output_type=AgentMove, deps_type=float, system_prompt=system,
                       model_settings={"temperature": _SELLER_TEMP}, retries={"output": 4})
 
         @agent.output_validator
@@ -209,7 +209,8 @@ class LLMBuyer:
     def _build_agent(self):
         from pydantic_ai import Agent
 
-        return Agent(model_for("buyer"), output_type=AgentMove, system_prompt=_BUYER_SYSTEM, retries={"output": 3})
+        return Agent(model_for("buyer", fresh=True), output_type=AgentMove, system_prompt=_BUYER_SYSTEM,
+                     model_settings={"temperature": _SELLER_TEMP}, retries={"output": 3})
 
     @property
     def agent(self):

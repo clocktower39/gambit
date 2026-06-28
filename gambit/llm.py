@@ -1,7 +1,10 @@
 """MiniMax-M3 model factory for Pydantic AI, via the Anthropic-compatible endpoint.
 
 The provider lives in exactly one place, so swapping the host (or pointing at the China
-endpoint) is a one-line/.env change. Built once and cached.
+endpoint) is a one-line/.env change. The default provider is built once and cached; pass
+`fresh=True` for a NON-shared client (each owns its own httpx pool), which is required when
+running episodes concurrently — the cached AsyncAnthropic's pool is bound to the event loop it
+was first used on, so sharing it across simultaneous loops/threads breaks.
 """
 
 from __future__ import annotations
@@ -11,8 +14,7 @@ from functools import lru_cache
 from gambit.settings import settings
 
 
-@lru_cache(maxsize=1)
-def _provider():
+def _build_provider():
     from anthropic import AsyncAnthropic
     from pydantic_ai.providers.anthropic import AnthropicProvider
 
@@ -21,8 +23,16 @@ def _provider():
     return AnthropicProvider(anthropic_client=client)
 
 
-def model_for(role: str):
-    """Return the Pydantic AI model for a role: 'chat' | 'buyer' | 'verifier'."""
+@lru_cache(maxsize=1)
+def _provider():
+    return _build_provider()
+
+
+def model_for(role: str, *, fresh: bool = False):
+    """Return the Pydantic AI model for a role: 'chat' | 'buyer' | 'verifier'.
+
+    `fresh=True` builds a dedicated provider/client (not the shared cache) — use it for agents
+    that may run concurrently so each gets its own event-loop-safe connection pool."""
     from pydantic_ai.models.anthropic import AnthropicModel
 
     name = {
@@ -30,4 +40,4 @@ def model_for(role: str):
         "buyer": settings.minimax_model,
         "verifier": settings.verifier_model_id,
     }[role]
-    return AnthropicModel(name, provider=_provider())
+    return AnthropicModel(name, provider=_build_provider() if fresh else _provider())
