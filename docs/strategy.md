@@ -97,10 +97,12 @@ runtime should treat "forget it / I'm out / 350 or I walk" as a *tactic*, not a 
   negotiation — the Tier-2 verifier (`buyer_in_character`) must flag a concession that follows a walk
   for no legitimate reason.
 
-**Mechanical requirement for the next referee slice:** for the bluff to exist at all, a walk must be
-**non-terminal** — the referee gives the other side one rebuttal turn, and no-deal is reached only on a
-re-confirmed/second walk or timeout. The current MVP referee still treats `walk` as terminal, so this is
-an explicit implementation gap, not current coverage.
+**Mechanical requirement (implemented).** For the bluff to exist at all, a walk must be **non-terminal** —
+the referee gives the other side one rebuttal turn, and no-deal is reached only on a re-confirmed/second
+walk or timeout. This now lives in `run_episode` (a per-side `walked` set; see `architecture.md` and
+`tests/test_foundation.py`). It is currently **latent** in the offline loop — the deterministic buyers
+rarely walk — and becomes load-bearing once a *tactical* policy (the typed LLM seller, slice 5, or a
+dedicated bluffing-buyer family) actually uses the walk as a lever.
 
 ---
 

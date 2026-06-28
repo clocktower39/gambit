@@ -54,7 +54,15 @@ def _finalize(item: Item, budget: float, *, deal: bool, price: float | None, tur
 
 def run_episode(item: Item, seller: SellerPolicy, buyer: BuyerCounterparty,
                 max_turns: int = 6) -> Episode:
-    """Pure referee over two policies → terminal Episode. Domain-specific turn-taking only."""
+    """Pure referee over two policies → terminal Episode. Domain-specific turn-taking only.
+
+    A walk is NON-TERMINAL (docs/strategy.md §4.1): the *first* walk by a side is a threat, not
+    the end — the other side gets one rebuttal turn (the standing offer is preserved, so it can be
+    accepted or bridged). No-deal is reached only when a side walks a *second* time (re-confirmed)
+    or the turn budget runs out. A walk that instantly ended the episode would make every walk
+    'real' and the single richest tactic in negotiation unlearnable. The honest-bluff integrity
+    check (a staged mutual walk that resolves into a cozy split = collusion) needs intent and is a
+    Tier-2 / live-verifier concern (`buyer_in_character`, slice 5), not a deterministic Tier-1 rail."""
     persona = buyer.persona
     budget = budget_of(item, persona)
     ep = Episode(item=item, persona=persona)
@@ -63,6 +71,7 @@ def run_episode(item: Item, seller: SellerPolicy, buyer: BuyerCounterparty,
     ep.moves.append(opening)
     seller_ask = opening.offer or item.list_price
     buyer_offer: float | None = None
+    walked: set[str] = set()           # sides that have already walked once (a second walk is terminal)
 
     outcome: Outcome | None = None
     for r in range(1, max_turns + 1):
@@ -72,10 +81,13 @@ def run_episode(item: Item, seller: SellerPolicy, buyer: BuyerCounterparty,
             outcome = _finalize(item, budget, deal=True, price=bmove.offer, turns=r, reason="buyer accepted")
             break
         if bmove.action == "walk":
-            outcome = _finalize(item, budget, deal=False, price=None, turns=r,
-                                walked_by="buyer", reason="buyer walked")
-            break
-        buyer_offer = bmove.offer
+            if "buyer" in walked:                          # re-confirmed → real no-deal
+                outcome = _finalize(item, budget, deal=False, price=None, turns=r,
+                                    walked_by="buyer", reason="buyer re-confirmed walk")
+                break
+            walked.add("buyer")                            # soft walk: keep the standing offer; seller rebuts below
+        elif bmove.offer is not None:
+            buyer_offer = bmove.offer
 
         smove = seller.respond(item, seller_ask, buyer_offer, r)
         ep.moves.append(smove)
@@ -83,10 +95,12 @@ def run_episode(item: Item, seller: SellerPolicy, buyer: BuyerCounterparty,
             outcome = _finalize(item, budget, deal=True, price=smove.offer, turns=r, reason="seller accepted")
             break
         if smove.action == "walk":
-            outcome = _finalize(item, budget, deal=False, price=None, turns=r,
-                                walked_by="seller", reason="seller walked")
-            break
-        if smove.offer is not None:
+            if "seller" in walked:                         # re-confirmed → real no-deal
+                outcome = _finalize(item, budget, deal=False, price=None, turns=r,
+                                    walked_by="seller", reason="seller re-confirmed walk")
+                break
+            walked.add("seller")                           # soft walk: keep the standing ask; buyer rebuts next round
+        elif smove.offer is not None:
             seller_ask = smove.offer
 
     ep.outcome = outcome or _finalize(item, budget, deal=False, price=None, turns=max_turns, reason="timeout")

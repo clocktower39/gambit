@@ -484,6 +484,17 @@ transcript, enforces turn order, and scores the terminal outcome. **What is on t
 the table is a swappable implementation, not a fork in the loop.** This is the single decision
 that lets one engine serve self-play, a human, and a live marketplace unchanged.
 
+**A walk is non-terminal (the bluff rule, see strategy.md §4.1).** The referee treats the *first*
+walk by a side as a threat, not the end: the standing offer is preserved and the other side gets
+exactly **one rebuttal turn** (accept it, or bridge with one final offer). No-deal is reached only
+when a side walks a **second** time (re-confirmed) or the turn budget runs out. Implemented in
+`run_episode` via a per-side `walked` set; covered by `tests/test_foundation.py`. A walk that
+instantly ended the episode would make every walk "real" and the richest tactic in negotiation
+unlearnable. The complementary integrity check — a *staged* mutual walk resolving into a cozy split
+is collusion — needs intent and is a **Tier-2 / live-verifier** concern (`buyer_in_character`,
+slice 5), not a deterministic Tier-1 rail. In the live `RespondToBestOffer` mapping `walk → Decline`
+remains, but a Decline is likewise a first-walk threat the counterpart may answer once.
+
 **Orchestration pattern (named explicitly).** The referee + `improve_loop` are Pydantic AI
 *programmatic hand-off*: our plain-Python code calls independent agents in sequence and the
 deterministic reward decides between turns and generations. We deliberately **do not** use Pydantic AI

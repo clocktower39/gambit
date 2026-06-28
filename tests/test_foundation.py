@@ -20,6 +20,7 @@ from gambit.negotiation import (
     audit_episode,
     budget_of,
     reward,
+    run_episode,
     situation_key,
 )
 from gambit.negotiation.fixtures import ITEMS, PERSONAS
@@ -160,3 +161,68 @@ def test_skill_is_the_honest_metric_vs_surplus():
     )
     assert reward(ep) == ep.outcome.surplus
     assert ep.outcome.skill > ep.outcome.surplus   # 0.8 skill vs 0.2 surplus — extracted 80% of willingness
+
+
+# --- the non-terminal walk (docs/strategy.md §4.1): a walk is a bluff, not the end ---------------
+# The production heuristic/firm-anchor buyers rarely walk, so the mechanic is exercised here with
+# scripted stub policies that satisfy the referee's Seller/Buyer protocols.
+
+class _ScriptSeller:
+    """Holds its ask, then accepts the standing buyer offer from round 2 on (i.e. on the rebuttal)."""
+
+    def opening(self, item: Item) -> Move:
+        return Move(role="seller", action="offer", offer=item.list_price, text="opening")
+
+    def respond(self, item: Item, current_ask: float, buyer_offer: float | None, round_idx: int) -> Move:
+        if round_idx >= 2 and buyer_offer is not None:
+            return Move(role="seller", action="accept", offer=float(buyer_offer), text="ok, deal")
+        return Move(role="seller", action="offer", offer=float(current_ask), text="holding firm")
+
+
+class _BluffThenSettle:
+    """Round 1: put a floor-clearing offer on the table. Round 2: bluff a walk. Then settle."""
+
+    family = "bluff"
+
+    def __init__(self, persona: BuyerPersona):
+        self.persona = persona
+
+    def respond(self, item: Item, seller_ask: float, round_idx: int, current_offer: float | None) -> Move:
+        if current_offer is None:
+            return Move(role="buyer", action="offer", offer=float(item.floor_price + 5), text="my offer")
+        if round_idx == 2:
+            return Move(role="buyer", action="walk", text="forget it, I'm out")
+        return Move(role="buyer", action="accept", offer=float(seller_ask), text="fine, deal")
+
+
+class _AlwaysWalk:
+    """Re-confirms the walk every turn — the genuine no-deal path."""
+
+    family = "walker"
+
+    def __init__(self, persona: BuyerPersona):
+        self.persona = persona
+
+    def respond(self, item: Item, seller_ask: float, round_idx: int, current_offer: float | None) -> Move:
+        return Move(role="buyer", action="walk", text="not interested")
+
+
+def test_first_walk_is_non_terminal_and_can_be_salvaged():
+    # The bluff: buyer walks once, but the standing offer is preserved and the seller closes on its
+    # rebuttal turn. Under the old terminal-walk rule this same script was an irrecoverable no-deal.
+    item = _item(floor_price=80, list_price=100, target_price=90)
+    ep = run_episode(item, _ScriptSeller(), _BluffThenSettle(BuyerPersona(name="b", budget_ratio=0.95)))
+    assert any(m.action == "walk" for m in ep.moves)     # a walk really happened mid-episode
+    assert ep.outcome.deal                                # yet the deal still closed (non-terminal)
+    assert ep.outcome.price == item.floor_price + 5      # at the buyer's standing pre-walk offer
+    assert audit_episode(ep) == [] and reward(ep) == ep.outcome.surplus > 0
+
+
+def test_second_walk_re_confirms_and_ends_in_no_deal():
+    # No bluff to call: a side that walks twice genuinely leaves. No-deal, neutral reward, clean.
+    item = _item(floor_price=80, list_price=100, target_price=90)
+    ep = run_episode(item, _ScriptSeller(), _AlwaysWalk(BuyerPersona(name="b", budget_ratio=0.95)))
+    assert not ep.outcome.deal
+    assert ep.outcome.walked_by == "buyer" and "re-confirmed" in ep.outcome.reason
+    assert sum(m.action == "walk" for m in ep.moves) == 2   # exactly one rebuttal turn between the walks
+    assert audit_episode(ep) == [] and reward(ep) == 0.0
