@@ -45,15 +45,16 @@ class Item(BaseModel):
 
 
 class BuyerPersona(BaseModel):
-    """A simulated buyer. `budget_ratio` sets the hidden reservation as a fraction of
-    list price; `family` tags the behavior policy so held-out can be a *different family*."""
+    """A simulated buyer's hidden parameters. `budget_ratio` sets the hidden reservation as a
+    fraction of list price. The behavior *family* (the structural held-out axis) is the buyer
+    policy class itself (`HeuristicBuyer` / `FirmAnchorBuyer`), surfaced via `Counterparty.family`
+    — a persona is just parameters and can be plugged into either family."""
 
     name: str
     style: str = ""
     budget_ratio: float = Field(gt=0)    # secret: max willingness = list_price * budget_ratio
     patience: int = Field(default=6, ge=1)
     eagerness: float = Field(default=0.5, ge=0.0, le=1.0)
-    family: str = "heuristic"            # behavior-policy family (NOT just new params)
 
 
 class Knobs(BaseModel):

@@ -39,7 +39,7 @@ class Policy(Protocol):
 
 @runtime_checkable
 class Counterparty(Protocol):
-    """The other side of an episode — a buyer family, an environment, an opponent.
+    """The other side of an episode — a counterparty family, an environment, an opponent.
     Carries a `family` tag so held-out can be a *structurally different* family, not
     the same generator with new params."""
 

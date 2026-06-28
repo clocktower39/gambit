@@ -120,3 +120,51 @@ class HeuristicBuyer:
             move = Move(role="buyer", action="offer", offer=float(nxt),
                         text=f"That's a bit high. ${nxt:.0f} is about my limit.", reasoning="hold near limit")
         return enforce_reservation(move, budget)
+
+
+class FirmAnchorBuyer:
+    """A *structurally different* buyer family — the honest held-out (build-order #3, eval-plan §2).
+
+    HeuristicBuyer creeps monotonically UP toward its budget and accepts once a deal feels
+    "comfortable"; a seller can exploit that by simply holding firm. FirmAnchorBuyer plays a
+    different decision rule entirely: it plants one principled anchor *below* budget and HOLDS it,
+    conceding essentially nothing, accepting only when the seller meets the anchor — with a single
+    rational endgame accept (up to its true budget) right before it runs out of patience, else it
+    walks. This is a different behavior *policy*, not HeuristicBuyer re-parameterized, so a seller
+    tuned against eager creep does not automatically transfer here. That is exactly what makes it a
+    valid held-out: improvement on it is improvement that generalizes. Stateless and deterministic
+    (its standing offer is a pure function of the args), so paired-seed A/B stays reproducible."""
+
+    family = "firm_anchor"
+
+    def __init__(self, persona: BuyerPersona):
+        self.persona = persona
+
+    def budget(self, item: Item) -> int:
+        return budget_of(item, self.persona)
+
+    def _anchor(self, budget: int) -> float:
+        # Principled anchor strictly below budget: firmer (higher) when eager, lower for lowballers.
+        return float(round(min(budget - 1, budget * (0.72 + 0.12 * self.persona.eagerness))))
+
+    def respond(self, item: Item, seller_ask: float, round_idx: int, current_offer: float | None) -> Move:
+        p, budget = self.persona, self.budget(item)
+        anchor = self._anchor(budget)
+        if current_offer is None:                       # open AT the anchor (a stated fair price, not a throwaway lowball)
+            move = Move(role="buyer", action="offer", offer=anchor,
+                        text=f"I can do ${anchor:.0f} — that's a fair price for me.", reasoning="plant firm anchor")
+        elif seller_ask <= anchor:                      # seller met the anchor → take it
+            move = Move(role="buyer", action="accept", offer=float(seller_ask),
+                        text=f"${seller_ask:.0f} works — deal.", reasoning="seller met anchor")
+        elif round_idx >= p.patience:                   # endgame: one rational accept up to true budget, else walk
+            if seller_ask <= budget:
+                move = Move(role="buyer", action="accept", offer=float(seller_ask),
+                            text=f"Alright, ${seller_ask:.0f} — I'll take it.", reasoning="endgame rational accept")
+            else:
+                move = Move(role="buyer", action="walk",
+                            text="We're too far apart. I'll pass.", reasoning="held firm; seller stayed above budget")
+        else:                                           # hold the line — re-assert the anchor (barely moves)
+            hold = float(round(min(budget, max(current_offer, anchor))))
+            move = Move(role="buyer", action="offer", offer=hold,
+                        text=f"I'm firm around ${hold:.0f}.", reasoning="hold anchor")
+        return enforce_reservation(move, budget)
