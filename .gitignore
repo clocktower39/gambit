@@ -7,6 +7,7 @@ __pycache__/
 .pytest_cache/
 runs/
 data/human_episodes/
+data/reflections/
 checkpoints/
 *.sqlite
 *.db
