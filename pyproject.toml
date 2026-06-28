@@ -17,10 +17,20 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",   # agents are async; run_episode awaits agent.run()
 ]
+# Gemini 3.5 feature layer — install with `uv sync --group feature-layer` when building it.
+# Kept out of the default deps so the Phase-1 core (MiniMax) stays lean and offline-runnable.
+feature-layer = [
+    "google-genai>=1.0",          # Interactions API (Antigravity optimizer) · Nano Banana · Gemini Live
+    "livekit-agents[google]~=1.5",# voice buyer seat: LiveKit transport + Gemini Live plugin
+    "livekit",                    # rtc SDK for the raw Gemini-Live TranslationBridge (primary translate path)
+    "requests>=2.32",             # eBay API connector (Trading API is XML over HTTP; parse with stdlib xml.etree)
+]
 
 # Application project (not a distributable package) — uv just manages the venv + deps.
 [tool.uv]
 package = false
+# Dependency cooling (supply-chain safety): never resolve a version published in the last week.
+exclude-newer = "1 week"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

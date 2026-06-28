@@ -1,5 +1,13 @@
 # Gambit — Conversation Capture (for consolidation)
 
+> ⚠️ **SUPERSEDED — historical capture only.** This predates the current design. The source of
+> truth is now [`../../northstar.md`](../../northstar.md), [`../architecture.md`](../architecture.md),
+> and [`../self-learning.md`](../self-learning.md). In particular, this file still reflects the *old*
+> stack (DO Serverless Inference / `llama3.3`, `inference.py`/`config.py`/`metrics.py`, Gemma-4 +
+> computer-use, seller voice intake, DO image gen). The current decisions: **MiniMax M3** inner loop;
+> a **Gemini 3.5 feature layer** (Antigravity optimizer · LiveKit + Gemini-Live *buyer-seat* voice ·
+> Nano Banana media); **eBay API** (not Computer Use); **Gemma 4 out of scope**. Do not build from this file.
+
 > **Status:** raw capture, not final docs. Everything below came out of the design/build
 > conversation for the **Gambit** auto-negotiator (AIEWF 2026 hackathon). To be merged with
 > the other apps'/conversations' captures during consolidation. Some pieces (the Tier-2

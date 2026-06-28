@@ -18,21 +18,26 @@ had, rewrites its own negotiation strategy, and keeps what measurably wins.
 ```
             ┌─────────────────── continual-learning loop ───────────────────┐
             │                                                                │
-  Strategy ─┼─►  SellerAgent  ⇄  BuyerSimulator   ──►  Episodes  ──►  Score  │
-  (policy)  │   (negotiator)     (hidden budgets)       (transcripts)   │    │
-            │         ▲                                                 ▼    │
+  Strategy ─┼─►   seller   ⇄   buyer (self-play)  ──►  Episodes  ──►  Score  │
+  (policy)  │  (one shared policy, walled-off       (transcripts)        │   │
+            │   private info on each side)                               ▼   │
+            │         ▲                                                      │
             │         └──────────  Optimizer  ◄── reflect on wins/losses ────┘
             │            (rewrites tactics + tunes knobs, keeps what scores higher)
 ```
 
-- **BuyerSimulator** — adversarial LLM buyers with *hidden reservation prices* and personas
-  (lowballer, fence-sitter, in-a-hurry, tire-kicker). Gives us conversation volume to learn
-  from and a controlled, reproducible demo. The agent never sees the budgets.
-- **SellerAgent** — negotiates from a `Strategy` (anchor, concession schedule, accept
-  threshold, walk-away patience, free-text tactics).
+- **Pluggable counterparty** — the loop is a *referee* over two policies; what's on the other
+  side of the table is a swap, not a rewrite. The default buyer is **self-play**: the *same
+  shared policy* wearing the buyer's hat, assigned a *hidden reservation* drawn from a persona
+  (lowballer, fence-sitter, in-a-hurry, tire-kicker) and rewarded for its own surplus — so the
+  agent improves by negotiating against itself, no human labels. A **human** (by text or voice)
+  or a **live market** (eBay) drops into the same seat unchanged. The seller never sees the budget.
+- **Seller** — negotiates from a `Strategy` (anchor, concession schedule, accept threshold,
+  walk-away patience, free-text tactics).
 - **Optimizer** — the self-improvement brain. With an LLM it reflects on real transcripts and
   rewrites its own tactics + knobs; offline it runs a deterministic search so the loop is
-  testable with no API key.
+  testable with no API key. A **Gemini Antigravity** backend can run this as a managed agent that
+  edits its own `SKILL.md` across generations. Either way it *proposes* — the deterministic reward *selects*.
 - **Reward** — a *deterministic, verifiable* surplus from the secret floor drives selection
   (no LLM judge — following arXiv:2604.09855), with a terminal penalty for going below floor and
   neutral credit for walking away. A reward-integrity guard audits every transcript so the
@@ -44,8 +49,10 @@ One typed contract end-to-end (**Pydantic**), every LLM role a typed agent with 
 structured output (**Pydantic AI** on **MiniMax M3**), every run traced (**Logfire**), deployed on
 **DigitalOcean** (App Platform + Managed Postgres/pgvector). The seller, buyer, optimizer, and
 verifier are four small `Agent`s; field constraints and output validators are the anti-reward-hacking
-rails; selection stays on the deterministic surplus. Full engineering design in
-**[`docs/architecture.md`](docs/architecture.md)**.
+rails; selection stays on the deterministic surplus. On top sits a **Gemini 3.5** feature layer —
+a Gemini **Antigravity** managed-agent optimizer (Interactions API), a **LiveKit + Gemini
+Live/Translate** voice buyer seat, and **Nano Banana** listing images — none of which touch the
+selector. Full engineering design in **[`docs/architecture.md`](docs/architecture.md)**.
 
 ## Quickstart
 
@@ -73,16 +80,19 @@ held-out buyers (never trained on):  surplus 0.16 -> 0.36
 
 | Phase | What | Status |
 |---|---|---|
-| **1 — Learning core** | agent + buyer simulator + self-improvement loop + metrics + head-to-head | ✅ runnable (offline + MiniMax M3) |
-| **2 — Real marketplace** | eBay Sandbox connector (real list + Best Offer loop) — see `docs/ebay.md` | ⬜ |
-| **2 — Voice intake** | LiveKit: describe your item by talking, agent builds the listing live | ⬜ |
-| **2 — Listing images** | DigitalOcean image generation for listing photos | ⬜ |
-| **3 — Weight-level RSI** | LoRA fine-tune **Gemma 4** on winning transcripts (DO GPU droplet) | ⬜ stretch |
-| **3 — Auto-post** | Gemini 3.5 computer-use to post where no API exists | ⬜ stretch |
+| **1 — Learning core** | seller + self-play buyer (one shared policy) + self-improvement loop + reward + head-to-head | ✅ runnable (offline + MiniMax M3) |
+| **1 — Self-improving optimizer** | **Gemini Antigravity** managed agent rewrites its own tactics `SKILL.md` across generations (stateful env) — proposes, never selects | ⬜ |
+| **2 — Real marketplace** | eBay connector (real list + Best Offer loop, **eBay API**) — see `docs/ebay.md` | ⬜ |
+| **2 — Voice buyer seat** | **LiveKit + Gemini Live/Translate**: a human haggles by voice, cross-language, in the buyer seat | ⬜ |
+| **2 — Listing images** | **Nano Banana** (Gemini) listing photo + text-in-image | ⬜ |
+| **3 — Weight-level RSI** | LoRA fine-tune on winning transcripts (DO GPU droplet) — *Gemma 4 on-device out of scope* | ⬜ stretch |
 
-Targets: **Continual Learning** theme · **Best MiniMax** (the negotiator + buyer + verifier all run
-on MiniMax M3) · **Best DigitalOcean** (App Platform deploy, pgvector memory, Spaces images) ·
-**Best LiveKit** (voice intake) · **Best Gemini \$5k** (stretch — Gemma 4 fine-tune + computer-use).
+The inner negotiation loop stays on **MiniMax M3** (cheap, high-volume); **Gemini 3.5** rides a
+feature layer on top (the Antigravity optimizer, the Gemini-Live voice seat, Nano Banana media).
+Targets: **Continual Learning** theme · **Best DigitalOcean** (App Platform deploy, pgvector memory,
+Spaces images) · **Best LiveKit** (voice buyer seat) · **Best Gemini \$5k** (Antigravity managed-agent
+optimizer + Gemini Live/Translate + Nano Banana — three new surfaces, not a wrapper chatbot).
+See the full prize-alignment map in **[`northstar.md`](northstar.md)** §9.
 
 ## Why eBay (not Facebook Marketplace)
 Automating Facebook Marketplace/Messenger violates Meta's ToS (no public API) and risks
@@ -97,15 +107,18 @@ The full rebuild design (rationale + code shapes) is in **[`docs/architecture.md
 gambit/
   settings.py      # pydantic-settings BaseSettings (env / .env, validated)
   observability.py # logfire.configure() + instrument_pydantic_ai (once, at entry)
-  llm.py           # DigitalOcean OpenAIChatModel factory + FallbackModel
+  llm.py           # MiniMax M3 OpenAIChatModel factory + FallbackModel (inner loop)
   models.py        # ALL domain types as Pydantic BaseModel (+ validators)
-  agents/          # seller · buyer · optimizer · verifier — one typed Agent each
-  policies.py      # Policy protocol: LLM impl + deterministic offline impl
+  agents/          # seller · buyer · optimizer · verifier (typed Agents)
+                   #   + optimizer_antigravity.py — Gemini managed-agent optimizer backend
+  policies.py      # Policy protocol: self-play (LLM) · heuristic · human · live-market
+  voice/           # Gemini feature layer: LiveKit + Gemini Live voice buyer seat → BuyerMove
+  media.py         # Gemini feature layer: Nano Banana listing images (Phase 2)
   negotiation.py   # referee loop over policies → Episode (Logfire episode spans)
   reward.py        # verifiable surplus + Tier-1 integrity audit (no LLM in the selector)
   opponent.py      # belief estimation (pure Python); Belief is a BaseModel
   improve_loop.py  # generational learning loop + head-to-head (Logfire generation spans)
-  connectors/      # Phase 2: eBay Trading API (payloads as BaseModels)
+  connectors/      # Phase 2: eBay API connector (payloads as BaseModels)
 scripts/run_demo.py
 docs/architecture.md  # engineering design & approach
 docs/self-learning.md # research grounding (which paper buys what)
@@ -120,5 +133,6 @@ docs/ebay.md          # Phase-2 eBay connector runbook
   (pgvector) for memory + Spaces (images). Inference now lives on MiniMax.
 - **Logfire** (optional, fast): logfire.pydantic.dev → write token → `LOGFIRE_TOKEN`. Without it
   tracing runs locally; with it the improvement curve is a live dashboard.
-- **LiveKit**: Cloud project → URL + API key/secret.
-- **Gemini**: aistudio.google.com API key (Phase 3).
+- **LiveKit**: Cloud project → URL + API key/secret (the voice buyer seat's transport).
+- **Gemini**: aistudio.google.com API key — the feature layer (Antigravity optimizer via the
+  Interactions API · Gemini Live/Translate for the voice seat · Nano Banana for listing media).

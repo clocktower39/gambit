@@ -32,10 +32,13 @@
 |---|---|---|
 | Domain models, config, API payloads | **Pydantic v2** (`BaseModel`, `pydantic-settings`) | one validated type system; constraints encode invariants |
 | LLM agents (seller, buyer, optimizer, verifier) | **Pydantic AI** 2.x (`Agent` + `output_type`) | typed structured output + validation retries + provider-agnostic |
-| Model provider | **MiniMax M3** via Pydantic AI's OpenAI-compatible model | OpenAI wire format, custom `base_url`; provider is swappable in one place (`llm.py`) |
+| Inner-loop model provider | **MiniMax M3** via Pydantic AI's OpenAI-compatible model | OpenAI wire format, custom `base_url`; provider is swappable in one place (`llm.py`). Carries the high-volume seller/buyer/verifier calls. |
 | Observability | **Logfire** (`instrument_pydantic_ai`, `instrument_psycopg`) | native Pydantic AI tracing; the live improvement-curve dashboard |
 | Deploy + data | **DigitalOcean** — App Platform, Managed Postgres + pgvector (`psycopg`), Spaces | the whole app runs on DO; inference lives on MiniMax |
 | Reward / integrity | **plain typed Python** (no LLM in the selector) | verifiable, defensible improvement curve |
+| **Self-improving optimizer** | **Gemini Antigravity** (`antigravity-preview-05-2026`) via the **Interactions API**, second backend behind the proposal interface | hosted agent rewrites the tactics `SKILL.md` across generations (stateful `environment_id`); runs **once per generation**, never per move; proposes, never selects |
+| **Voice counterparty** | **LiveKit** room + **Gemini Live / Live Translate** (`gemini-3.5-live-translate-preview`) | the human buyer seat by voice, cross-language; an I/O shell that emits the same typed `BuyerMove` |
+| **Listing media** | **Nano Banana** (Gemini image gen) | the eBay listing photo + text-in-image; Phase 2 |
 
 ## The four agents
 
@@ -81,6 +84,7 @@ class SellerMove(NegotiationMove): ...
 class BuyerMove(NegotiationMove): ...
 
 class OptimizerProposal(BaseModel):
+    tactics: str = Field(default="", max_length=2000)               # the rewritten tactics block — becomes Strategy.tactics
     lessons: list[str] = Field(default_factory=list, max_length=3)   # anti-bloat cap, was merge_tactics
     opening_anchor_ratio: float = Field(ge=0.90, le=1.00)            # constraints replace _clamp()
     concession_rate: float       = Field(ge=0.05, le=0.80)
@@ -99,6 +103,43 @@ class AuditVerdict(BaseModel):                                       # every que
     buyer_in_character: AuditAnswer    # buyer conceded only for legitimate reasons
     honest: AuditAnswer                # item described honestly
 ```
+
+### Context models (the `deps_type`s) — the concrete types every agent and parallel team builds against
+
+```python
+class SellerContext(BaseModel):                  # (also shown in the agent sketch below)
+    item: Item; strategy: Strategy; current_ask: float
+
+class BuyerContext(BaseModel):
+    item: Item
+    persona: BuyerPersona                        # carries language (see model additions below)
+    budget: float                                # the hidden reservation — never leaves this context
+    current_offer: float | None = None
+
+class OptimizerContext(BaseModel):               # input to BOTH optimizer backends
+    strategy: Strategy                           # current policy (incl. .tactics)
+    transcripts: list[str]                       # worst-scoring episodes' public transcripts
+    surplus: list[float]                         # matching verifiable surplus per transcript
+    audit_flags: list[AuditVerdict]              # matching Tier-2 verdicts (dense feedback)
+    held_out_score: float                        # current held-out surplus (for the promotion gate)
+
+class AuditContext(BaseModel):
+    transcript: str                              # Episode.transcript() — public channel only
+    floor_price: float                           # the secret floor (below-floor / leak checks)
+    list_price: float
+
+class BuyerUtterance(BaseModel):                 # output_type of the voice `to_move` extraction
+    text: str
+    action: Literal["offer", "accept", "walk"]
+    offer: float | None = None
+```
+
+- **`_render(ctx)`** builds the user-turn prompt from a context (public transcript so far + the
+  current ask/offer) — one tiny helper per agent, pure string assembly, no hidden state.
+- **Model additions the new paths need** (in `models.py`): `BuyerPersona.language: str = "en-US"`
+  (BCP-47, drives Gemini translate) and `Episode.last_seller_text() -> str` (the latest seller
+  `text` — what the voice seat speaks to the human). The Antigravity `transcripts.json` /
+  `audit_flags.json` are just `OptimizerContext.transcripts` / `.audit_flags` serialized.
 
 ### Agent definition (seller, illustrative)
 
@@ -160,6 +201,98 @@ def model_for(role: str) -> OpenAIChatModel:
     name = {"chat": settings.minimax_model, "buyer": settings.minimax_model,
             "verifier": settings.verifier_model or settings.minimax_model}[role]
     return OpenAIChatModel(name, provider=_provider())
+```
+
+## Self-improving optimizer — Gemini Antigravity (managed agent)
+
+The optimizer is the one role with **two interchangeable backends behind a single proposal
+interface** — exactly the `Policy`-protocol move, applied to self-improvement:
+
+```python
+class OptimizerBackend(Protocol):
+    async def propose(self, ctx: OptimizerContext) -> OptimizerProposal: ...
+
+class LocalOptimizer:       # default + offline: the Pydantic AI `optimizer` agent on MiniMax
+    async def propose(self, ctx) -> OptimizerProposal:
+        return (await optimizer.run(_render(ctx), deps=ctx)).output
+
+class AntigravityOptimizer: # Gemini managed agent via the Interactions API
+    async def propose(self, ctx) -> OptimizerProposal: ...
+```
+
+`LocalOptimizer` stays the default (and the only offline path). `AntigravityOptimizer` is the
+upgrade: instead of a single structured call, it spins a **hosted, stateful agent** that *works* on
+the strategy the way an engineer would.
+
+- **The skill file IS the policy — and it must flow back.** `Strategy.tactics` is materialized as
+  `.agents/skills/seller-tactics/SKILL.md` in the agent's environment. The agent reads the
+  generation's transcripts + `AuditVerdict` flags, sanity-checks a change against the mounted eval
+  harness, and **rewrites `SKILL.md`**. Critically, the seller runs on **MiniMax**, not in the
+  sandbox — so the rewritten tactics must return to the host. The agent emits the new tactics in the
+  **`OptimizerProposal.tactics`** JSON field (the reliable read-back path); the host applies
+  `proposal.tactics → candidate Strategy.tactics`. We do *not* depend on reading the file back out of
+  the sandbox — the JSON field is the contract; the in-sandbox `SKILL.md` is the agent's working copy.
+- **Validate-and-repair, then a deterministic gate.** A managed (multi-step) run's final turn is not
+  *guaranteed* schema-valid (`response_format` + `agent=` is allowed but unproven for agentic runs).
+  So: `model_validate_json` with one re-ask on failure, and if it still fails, **fall back to the
+  `LocalOptimizer` proposal for that generation**. A malformed proposal can never reach the selector —
+  the verifiable surplus + held-out promotion gate decide what is kept regardless.
+- **Stateful across generations — but re-mount fresh inputs each call.** The first call creates the
+  environment; persist `environment_id` + the last `interaction.id` (in `improve_loop` state / the DB)
+  and pass them next generation so the skill file and scratch notes survive. **Each call must re-mount
+  that generation's fresh `transcripts.json` / `audit_flags.json`** — they are not already in the
+  reused environment. Environments go idle after ~15 min and are reclaimed after ~7 days, so treat the
+  inline `environment` config as the source of truth and **re-seed (recreate from the current
+  `SKILL.md`) if reuse fails**.
+- **Persona via files.** `AGENTS.md` (constant `PERSONA_MD`) declares the optimizer's persona ("a
+  negotiation coach that distills tactics from evidence"); `SKILL.md` is the editable tactics —
+  inspectable and diffable between generations.
+- **It proposes, it never selects.** The managed agent is only a stronger *proposer* — the integrity
+  wall in Principle 4 is unchanged.
+- **Cost discipline.** Antigravity runs an ephemeral Linux sandbox per call, so it fires **once per
+  generation** (the optimizer step), never per move. The thousands of per-move calls stay on MiniMax.
+
+```python
+# AntigravityOptimizer.propose (sketch) — Interactions API, stateful environment.
+# self._env_id / self._prev_id persist across generations (improve_loop state or DB).
+from google import genai
+client = genai.Client()  # GEMINI_API_KEY
+
+PERSONA_MD = "# Optimizer\nYou are a negotiation coach who distills tactics from evidence.\n"
+
+# Fresh per-generation inputs are ALWAYS mounted — a reused env does not contain them.
+fresh = [
+    {"type": "inline", "target": "/workspace/transcripts.json", "content": ctx.model_dump_json(include={"transcripts", "surplus"})},
+    {"type": "inline", "target": "/workspace/audit_flags.json", "content": json.dumps([v.model_dump() for v in ctx.audit_flags])},
+]
+# Reuse the env if we have one; otherwise (or if reuse fails) seed it from the current SKILL.md.
+seed = [
+    {"type": "inline", "target": ".agents/AGENTS.md", "content": PERSONA_MD},
+    {"type": "inline", "target": ".agents/skills/seller-tactics/SKILL.md", "content": ctx.strategy.tactics},
+    {"type": "inline", "target": "/workspace/eval_harness.py", "content": EVAL_HARNESS_SRC},  # offline scorer the agent runs
+]
+environment = self._env_id or {"type": "remote", "sources": seed + fresh}
+# When reusing: re-mount fresh inputs into the persisted env (sources still allowed alongside an env id).
+
+interaction = client.interactions.create(
+    agent="antigravity-preview-05-2026",
+    input="Read /workspace/transcripts.json and audit_flags.json. Improve "
+          ".agents/skills/seller-tactics/SKILL.md to raise verifiable surplus without tripping any "
+          "audit flag. Verify with `python /workspace/eval_harness.py`, then emit the proposal "
+          "with the FULL rewritten tactics in the `tactics` field.",
+    environment=environment,
+    previous_interaction_id=self._prev_id,
+    response_format={"type": "text", "mime_type": "application/json",
+                     "schema": OptimizerProposal.model_json_schema()},
+)
+self._env_id, self._prev_id = interaction.environment_id, interaction.id
+
+# Read-back + validate-and-repair; fall back to the LocalOptimizer if the agentic run won't conform.
+try:
+    proposal = OptimizerProposal.model_validate_json(interaction.output_text)
+except ValidationError:
+    proposal = await self._local.propose(ctx)     # never blocks a generation on a malformed proposal
+# Host applies proposal.tactics → candidate Strategy.tactics; the deterministic gate decides promotion.
 ```
 
 ## The negotiation loop is a referee over two `Policy` objects
@@ -243,6 +376,78 @@ Ground truth is unchanged: the buyer-hat is *assigned* a hidden reservation draw
 distribution, so the seller's verifiable surplus stays well-defined. Self-play removes the scripted
 *behavior*, not the hidden-budget concept.
 
+## Voice buyer seat — LiveKit + Gemini Live (a parallel-buildable module)
+
+**LiveKit and Gemini Live are different layers, not alternatives.** Gemini Live is the *brain* —
+native speech-to-speech with a dedicated **live-translate mode** (`models/gemini-3.5-live-translate-preview`
++ `translationConfig`, continuous, a few seconds behind the speaker). LiveKit is the *transport +
+orchestration* — WebRTC rooms, semantic turn detection, server-side echo/noise cancellation,
+SIP/PSTN dial-in, and the Agents worker runtime. **LiveKit does not dilute "powered by Gemini":**
+its Google plugin (`livekit-agents[google]`, `google.realtime.RealtimeModel`) is model-agnostic
+relay — you set the exact Gemini model id, and Gemini stays the brain.
+
+**Decision.** Use **LiveKit in front of Gemini Live.** You *can* talk to the Gemini Live WebSocket
+straight from a browser with no LiveKit, and for a single-tab demo that's enough — but you then
+hand-roll mic capture/PCM chunking, echo cancellation, reconnection, and you get no multi-party and
+no phone dial-in. For Gambit we want the showcase to be robust (and to earn the LiveKit prize), so
+LiveKit owns the media plane and Gemini owns the translation/voice.
+
+> **Translate path — use the bridge as PRIMARY, not fallback (verified).** `translationConfig` is
+> **not** a first-class parameter of LiveKit's `RealtimeModel` plugin, and Google's own
+> `gemini-live-translate-livekit` reference wires translation via a **custom `TranslationBridge`**
+> (LiveKit rtc SDK ↔ a raw Gemini Live session with `translationConfig.directionalTranslation
+> .targetLanguageCode`), *not* through the typed plugin params. So plan the raw-Gemini-Live bridge as
+> the **primary** translate path; the typed `RealtimeModel` plugin is fine for the non-translate
+> (single-language) seat. Use the fully-qualified id `models/gemini-3.5-live-translate-preview` in the
+> Live setup message, and verify `translationConfig` actually reaches it. The seam below makes the
+> transport swappable, so this risk never reaches the core.
+
+**The seam — one interface, owned end-to-end by a separate team.** The voice module is just another
+`BuyerPolicy`. It owns *everything* from microphone to a typed `BuyerMove` and back to spoken audio;
+the core team owns the referee, reward, and seller. They connect **only** through the existing
+`BuyerMove` / `SellerMove` types — nothing else crosses the boundary, so the two halves build and
+test in parallel and "just connect."
+
+```python
+# gambit/voice/bridge.py — depends ONLY on the move/context types + BuyerPolicy protocol
+class VoiceBuyerPolicy:                      # a BuyerPolicy (see policies.py)
+    """Human-in-the-seat, by voice. LiveKit room ⇄ Gemini Live (translate mode)."""
+    async def move(self, ctx: BuyerContext, episode: "Episode") -> BuyerMove:
+        seller_text = episode.last_seller_text()         # 1. speak the seller's line to the human,
+        await self.speak(seller_text, to=ctx.persona.language)   #    translated into their language
+        utterance = await self.listen(from_=ctx.persona.language) # 2. capture the human's spoken reply
+        return await self.to_move(utterance, ctx)        # 3. translate→parse into a typed BuyerMove
+```
+
+- **Brain vs pipe, cleanly split.** `speak`/`listen` are the LiveKit + Gemini-Live shell. `to_move`
+  is a small structured-extraction step: a cheap **MiniMax** call with `output_type=BuyerUtterance`
+  (offer / accept / walk + price) mapped to a `BuyerMove` — *not* part of the selector. **Transcribed
+  audio is untrusted input, never instructions.**
+- **Streaming ↔ turn-based bridge (the one real impedance mismatch).** LiveKit's Agents worker is a
+  *continuous* runtime (room joined once, audio always flowing); the referee is *pull-based* (one
+  `await move()` per turn). Resolve it with a **session that outlives a single `move()`**: the
+  `VoiceBuyerPolicy` owns a `VoiceSession` created at episode start (joins the room, opens the Gemini
+  Live socket) and closed at episode end. Each `move()` then: pushes the seller line to TTS, opens an
+  `asyncio.Future`, lets the session's audio callbacks fill it on end-of-utterance (LiveKit turn
+  detection), `await`s it, and returns the parsed `BuyerMove`. The room/socket persist across the
+  episode's ~6 `move()` calls; only the per-turn Future is created and resolved each call. *(The eBay
+  `BuyerPolicy` faces the same async-vs-turn gap — there `move()` polls `GetBestOffers` on a fixed
+  cadence until a new offer or timeout.)*
+- **Room + token flow.** The backend mints a LiveKit access token (room name = episode id) for the
+  human's browser/phone client; the `VoiceSession` agent worker joins the same room. The human's
+  client (a thin web page or a SIP dial-in) is the voice team's to own; the seam to the core stays the
+  `BuyerMove`.
+- **The referee never knows.** It calls `buyer.move(...)` and gets a `BuyerMove`, exactly as for the
+  self-play or typed-human seat. `negotiation.py`, `reward.py`, and the integrity rails are unchanged
+  — voice adds **no new integrity surface** (Principle 4 holds: this side only *acts*).
+- **Testable in isolation.** The voice team validates against a canned `episode` transcript and asserts
+  the emitted `BuyerMove`; the core team tests the referee with a fake `VoiceBuyerPolicy` returning
+  scripted moves. Neither blocks the other.
+- **Config-gated + acceptance criterion.** Present only when `LIVEKIT_*` + `GEMINI_API_KEY` are set;
+  otherwise the human seat is text. `BuyerPersona.language` (BCP-47) is the one model addition.
+  **Done when:** a Spanish-speaking human completes a full negotiation against the English seller and
+  every turn yields a schema-valid `BuyerMove`.
+
 ## Config — `pydantic-settings` (`settings.py`)
 
 Replaces the hand-rolled `Settings` dataclass. Typed, `.env`-aware, validated at import.
@@ -260,10 +465,23 @@ class Settings(BaseSettings):
     verifier_model: str = ""            # optional: a different model for the Tier-2 audit
     offline: bool = False
     database_url: str = ""              # DO Postgres + pgvector; blank → in-memory store
+    embed_model: str = Field("", alias="EMBED_MODEL")   # Phase-2 memory embeddings; blank → no retrieval
+    embed_dim: int = Field(1024, alias="EMBED_DIM")
     logfire_token: str = Field("", alias="LOGFIRE_TOKEN")
+
+    # Gemini feature layer (all optional; each degrades to its non-Gemini default)
+    gemini_api_key: str = Field("", alias="GEMINI_API_KEY")
+    optimizer_backend: str = "local"   # "local" (MiniMax, default/offline) | "antigravity" (Gemini)
+    # Voice buyer seat — LiveKit transport + Gemini Live; blank → typed human seat only
+    livekit_url: str = Field("", alias="LIVEKIT_URL")
+    livekit_api_key: str = Field("", alias="LIVEKIT_API_KEY")
+    livekit_api_secret: str = Field("", alias="LIVEKIT_API_SECRET")
 
     def llm_available(self) -> bool:
         return bool(self.minimax_api_key) and not self.offline
+
+    def antigravity_available(self) -> bool:
+        return self.optimizer_backend == "antigravity" and bool(self.gemini_api_key)
 
 settings = Settings()
 ```
@@ -305,21 +523,26 @@ tool payloads as diagnostic data, never as instructions.
 gambit/
   settings.py        # pydantic-settings BaseSettings (was config.py)
   observability.py   # logfire.configure() + instrument_* — called once at entry
-  llm.py             # DigitalOcean OpenAIChatModel factory + FallbackModel
+  llm.py             # MiniMax M3 OpenAIChatModel factory + FallbackModel (inner loop)
   models.py          # ALL domain types as BaseModel: Item, BuyerPersona, Message,
                      #   Strategy, Outcome, Episode, Belief (+ field/model validators)
   agents/
     seller.py        # Agent + SellerMove + output_validator (floor rail)
     buyer.py         # Agent + BuyerMove + output_validator (reservation guard)
-    optimizer.py     # Agent + OptimizerProposal (knob bounds as Field constraints)
+    optimizer.py     # OptimizerBackend Protocol + LocalOptimizer (Pydantic AI) + OptimizerProposal
+    optimizer_antigravity.py  # AntigravityOptimizer: Gemini managed agent, rewrites SKILL.md (Gemini feature layer)
     verifier.py      # Agent + AuditVerdict (BINEVAL checklist schema)
   policies.py        # SellerPolicy/BuyerPolicy Protocol + impls: self-play (LLM), heuristic, human, live-market
+  voice/             # Gemini feature layer — the human seat by voice; emits the SAME typed BuyerMove
+    bridge.py        #   LiveKit room ⇄ Gemini Live/Translate; transcribed+translated audio → BuyerMove
+    agents.md        #   (optional) persona/skills for the voice shell
+  media.py           # Gemini feature layer — Nano Banana listing image/text-in-image (Phase 2)
   negotiation.py     # referee loop over two policies → Episode; logfire episode spans
   reward.py          # verifiable surplus + Tier-1 integrity audit (was metrics.py) — NO LLM
   opponent.py        # belief estimation (pure Python); used by BOTH sides; Belief is a BaseModel
   improve_loop.py    # generational loop + head-to-head + checkpoint league (train vs past selves)
   memory.py          # pgvector store on DO Postgres (Phase 2)
-  connectors/        # Phase 2: base.py + ebay.py — live-market BuyerPolicy; Trading API payloads as BaseModels
+  connectors/        # Phase 2: base.py + ebay.py — live-market BuyerPolicy via the eBay API; payloads as BaseModels
 scripts/run_demo.py  # entry: logfire.configure() → run loop
 ```
 
@@ -337,10 +560,59 @@ scripts/run_demo.py  # entry: logfire.configure() → run loop
 | `try/except: fall back to heuristic` inside each agent | explicit `Policy` selection at wiring time |
 | no tracing | Logfire spans + `instrument_pydantic_ai` |
 
+## Feature-layer build specs (eBay connector · Nano Banana · pre-build gates)
+
+**eBay connector — `connectors/base.py` (typed) and `connectors/ebay.py`.** The live-market buyer is
+a `BuyerPolicy` backed by the eBay API; the connector interface is:
+
+```python
+class MarketConnector(Protocol):
+    async def post_listing(self, item: Item) -> str: ...                 # returns listing_id (AddItem/AddFixedPriceItem)
+    async def get_offers(self, listing_id: str) -> list[BuyerMove]: ...  # GetBestOffers → typed offers
+    async def respond_offer(self, listing_id: str, move: SellerMove) -> None: ...  # SellerMove → RespondToBestOffer
+```
+
+- `SellerMove.action` maps to `RespondToBestOffer`: `accept → Accept`, `walk → Decline`,
+  `offer → Counter` (with `move.offer`). The live-market `BuyerPolicy.move()` polls `get_offers` on a
+  fixed cadence (e.g. every 10 s, with a turn timeout → `walk`) to bridge async marketplace ↔ turn-based
+  referee. Trading API payloads are XML over HTTP — build/parse with stdlib `xml.etree`, model the
+  parsed shapes as `BaseModel`. Auth + call sequence + sandbox gotchas are in [`docs/ebay.md`](./ebay.md).
+- **Done when:** a sandbox item is listed, a sandbox test buyer's Best Offer is countered, and the
+  loop reaches Accept/Decline — surfaced as the same `Episode` the reward scores.
+
+**Nano Banana listing media — `media.py`.**
+
+```python
+async def generate_listing_image(item: Item) -> str:    # returns a DO Spaces URL
+    # client.models.generate_content(model="gemini-2.5-flash-image", contents=_listing_prompt(item))
+    # _listing_prompt: item.name + condition + key attributes + "clean product shot, white bg,
+    #   bold readable price tag $<list_price>"  (Nano Banana renders crisp text-in-image)
+    ...  # upload bytes to DO Spaces, return the public URL for AddItem's PictureURL
+```
+
+- **Done when:** an `Item` yields a hosted image URL accepted by eBay `AddItem`. Peripheral / Phase-2.
+
+**Pre-build gates (run these spikes before committing the rebuild):**
+1. **MiniMax structured-output spike (the load-bearing bet).** Prove
+   `OpenAIChatModel(minimax) + output_type=SellerMove` returns schema-valid output and that
+   `response_format` JSON-schema enforcement works on the M3 endpoint — *before* the whole typed-agent
+   architecture is committed. Fill `MINIMAX_BASE_URL` / `MINIMAX_MODEL` from MiniMax (currently TBD).
+2. **Interactions API shape spike.** One `interactions.create(agent=…, environment=…)` round-trip in
+   the installed `google-genai` SDK, confirming `environment_id` reuse + `output_text` read-back.
+3. **Translate-bridge spike.** Confirm `translationConfig` reaches a raw Gemini Live session (the
+   primary translate path) before wiring the LiveKit room.
+
 ## Out of scope (unchanged)
 
 `reward.py` and `opponent.py` stay LLM-free deterministic Python (only their data types become
 `BaseModel`). Multi-turn message history and tool/function-calling are deliberately *not* used in
 a negotiation turn: seller and buyer are two separate policy instances (one shared policy under
 self-play) refereed by `negotiation.py`, and the offer is structured output, not a tool. Tools become relevant only in Phase 2, when the seller
-calls the eBay Trading API mid-negotiation (`connectors/ebay.py`).
+calls the eBay API mid-negotiation (`connectors/ebay.py`).
+
+**Gemini surfaces we deliberately skip:** **Computer Use** — the live market uses the **eBay API**,
+not UI automation (driving a site with no API is generally a ToS violation, and eBay's API covers
+listing + Best Offer directly). **Gemma 4 on-device** — out of scope (the weight-level RL stretch in
+[`self-learning.md`](./self-learning.md) is future work). The Gemini feature layer we *do* build —
+the Antigravity optimizer, the LiveKit/Gemini-Live voice seat, and Nano Banana media — never touches
+the selector: `reward.py` stays deterministic and LLM-free, Antigravity included.

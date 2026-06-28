@@ -47,8 +47,8 @@ decision is what makes this real instead of a simulator:
 | Counterparty | What it is | When |
 |---|---|---|
 | **Self-play** *(default)* | The **same shared policy** wearing the buyer's hat, with a hidden reservation, rewarded for the buyer's own surplus. The agent improves by negotiating against itself. | Now — the training engine. No buyers required, no human labels. |
-| **Human** | A person types the buyer's messages. Same interface, same typed moves. | Any time — drop in to feel it out, pressure-test it, or sanity-check a generation. |
-| **Live market** | A real buyer via a connector (eBay Best Offer first). The seller's moves become real offers; the reward becomes the real sale. | When a marketplace is wired — the engine is unchanged. |
+| **Human** | A person types **or speaks** the buyer's messages. Same interface, same typed moves — voice is a **LiveKit + Gemini Live** shell (real-time, cross-language Live Translate) that emits the same `BuyerMove`. | Any time — drop in to feel it out, pressure-test it, or sanity-check a generation. |
+| **Live market** | A real buyer via a connector (eBay Best Offer first, **via the eBay API**). The seller's moves become real offers; the reward becomes the real sale. | When a marketplace is wired — the engine is unchanged. |
 
 We self-play **because it's the strongest way to improve and because we don't have live
 buyers yet** — not because the buyer is fake. The buyer is the same intelligence as the
@@ -100,15 +100,38 @@ human ever labels a transcript.
 
 ## 4. Tech stack (decided)
 
+**Core — the high-volume inner loop.** A generation is thousands of structured calls
+(seller move × buyer move × turns, + the Tier-2 verifier). Cost and latency dominate here, so
+the inner loop stays on a fast, cheap structured model. **Gemini lives on the feature layer
+below, never per move.**
+
 | Layer | Choice | Notes |
 |---|---|---|
-| **LLM** | **MiniMax M3** | OpenAI-compatible endpoint; the provider lives in one place (`llm.py`) and is swappable. |
+| **Inner-loop LLM** | **MiniMax M3** | The seller/buyer/verifier structured calls. OpenAI-compatible; the provider lives in one place (`llm.py`) and is swappable. |
 | **LLM framework** | **Pydantic AI** | Typed, validated structured outputs — replaces hand-rolled JSON parsing; retries on validation failure. |
 | **Models / types** | **Pydantic** (`BaseModel`, `pydantic-settings`) | One typed contract end-to-end — no dataclasses. Validators are the integrity rails. |
 | **Observability** | **Logfire** | `instrument_pydantic_ai()` — every agent run + the improvement curve in one dashboard; debugs the never-tested LLM paths. |
 | **Language** | Python (≥ 3.11) | |
 | **Packaging** | **uv** | `pyproject.toml` + `uv.lock`; `uv run` / `uv add` (not pip). |
 | **Deployment + data** | **DigitalOcean** | App Platform (deploy) · Managed Postgres + pgvector (memory) · Spaces (images). |
+
+**Gemini 3.5 feature layer.** Three bleeding-edge Gemini surfaces, each mapped to the one place
+in the architecture where it genuinely belongs — not bolted on. Each is a *second backend behind
+an interface we already have*, so the core loop, the reward, and the integrity rails are unchanged.
+
+| Surface | Where it plugs in | What it buys |
+|---|---|---|
+| **Managed agent — Gemini Antigravity** (`antigravity-preview-05-2026` via the **Interactions API**) | The **optimizer** (a *second backend* behind the existing proposal interface). | A hosted agent reads scored transcripts + verifier flags in an ephemeral sandbox, runs the eval harness, and **rewrites the tactics `SKILL.md` — the policy improving its own skill file**, carried across generations via the stateful `environment_id`. The agent *proposes*; deterministic surplus still *selects*. This is the "models build themselves" story made literal. |
+| **Gemini Live / Live Translate** (`gemini-3.5-live-translate-preview`) **over LiveKit** | The **human buyer seat** (existing counterparty) as a voice shell. | A person haggles by voice, in their own language, against the seller — continuous low-latency speech-to-speech. The shell just turns audio → a typed `BuyerMove`; the referee never knows it wasn't text. |
+| **Nano Banana** (Gemini image gen) | The eBay listing pipeline. | Generates the listing photo + precise text-in-image for the post we put on the real marketplace. |
+
+> **The integrity wall is untouched.** No Gemini surface touches the *selector*. The Antigravity
+> optimizer is one more proposer (§3: "evaluators give the optimizer dense feedback but never
+> select"); the verifiable surplus reward remains the sole source of truth.
+>
+> **Where Gemini is *not* used (decided):** the live-market connector uses the **eBay API**
+> (Trading/Best-Offer), **not** Computer Use — scraping a UI with no API is generally a ToS
+> violation, and eBay's API covers listing + offers directly. **Gemma 4 on-device** is out of scope.
 
 ---
 
@@ -123,6 +146,9 @@ human ever labels a transcript.
 | `metrics.py` → `reward.py` | verifiable surplus reward + terminal shaping + Tier-1 audit + panel | ✅ |
 | seller policy / buyer policy | the negotiator + the self-play buyer (one shared policy, two contexts) | 🟡 buyer is a passive heuristic today — make it reward-seeking; LLM path **untested** |
 | `optimizer.py` | reflection → lessons, anti-bloat dedup/cap, verifier-rubric feedback | 🟡 LLM path **untested** |
+| optimizer (Antigravity backend) | Gemini managed agent that rewrites the tactics `SKILL.md` across generations (stateful env) — proposes, never selects | ⬜ |
+| voice buyer shell | LiveKit room + Gemini Live/Translate → typed `BuyerMove` in the human seat | ⬜ |
+| listing media | Nano Banana listing image/text-in-image for the eBay post | ⬜ |
 | `improve_loop.py` | generational loop + held-out early-stop | ✅ (⬜ checkpoint league) |
 | `verifier.py` | Tier-2 binary-question integrity checklist (incl. anti-collusion) | 🟡 LLM path **untested** |
 | `opponent.py` | belief calibration — both sides model the other | 🟡 not wired into the live policy |
@@ -159,16 +185,23 @@ improving*.
       add held-out *promotion* gate (refuse to promote a candidate that regresses held-out).
 - [ ] **Opponent-aware pricing:** wire `opponent.infer` into the seller — hold near the
       estimated reservation instead of folding.
+- [ ] **Self-improving optimizer (Gemini Antigravity):** the optimizer becomes a hosted managed
+      agent that, between generations, reads the scored transcripts + verifier flags in its sandbox
+      and **rewrites the tactics `SKILL.md` (= `Strategy.tactics`)**, persisted across generations
+      via the `environment_id`. The local Pydantic-AI optimizer stays the default/offline backend;
+      this is a second backend behind the same proposal interface. **Still proposes, never selects.**
 
 ### Then — real counterparties
 - [ ] **Human-in-the-buyer-seat:** the same interface, a person on the other side — try it, break it.
-- [ ] **eBay Sandbox connector** — real list → Best Offer → counter → accept (`docs/ebay.md`).
+- [ ] **Voice buyer (LiveKit + Gemini Live/Translate):** the human seat, by voice, cross-language —
+      a LiveKit room + Gemini Live shell turns audio into the same typed `BuyerMove`. Core loop unchanged.
+- [ ] **eBay connector (eBay API):** real list → Best Offer → counter → accept (`docs/ebay.md`),
+      with the listing image generated by **Nano Banana**.
 - [ ] **Memory:** DO Postgres + pgvector case retrieval (storage layer already built).
 - [ ] **Deploy:** DO App Platform + a live view of the climbing curve.
 
 ### Later — scale-up (only when the core is unshakable)
-- [ ] Weight-level RL (Gemma LoRA on winning transcripts) · voice intake · listing-image gen
-      · computer-use auto-post where no API exists.
+- [ ] Weight-level RL on winning transcripts (GRPO/LoRA). *(Gemma 4 on-device: out of scope.)*
 
 ---
 
@@ -194,6 +227,30 @@ improving*.
   Tier-2 verifier (anti-handshake), checkpoint league, held-out promotion gate. Never relax these.
 - **Reward integrity** — never let an LLM judge into the *selector*; the deterministic surplus
   reward is the source of truth. Evaluators give the optimizer dense feedback but never select.
+  **This holds for the Antigravity optimizer too:** it rewrites tactics and proposes knobs, but the
+  verifiable surplus + held-out promotion gate decide what survives. A managed agent that "evaluates"
+  must never become the reward.
+- **Managed-agent cost/blast radius** — Antigravity spins an ephemeral Linux sandbox per call, so it
+  runs **once per generation** (the optimizer step), never per move. The inner loop stays on MiniMax.
+  Sandbox the agent's eval harness; treat its file edits as proposals gated by the deterministic check.
+- **Voice shell is I/O only** — LiveKit + Gemini Live transcribes/translates audio into the *same*
+  typed `BuyerMove`; it adds no new integrity surface and changes nothing in the referee or reward.
+  Treat transcribed audio as untrusted input, never as instructions.
 - **Call volume / cost / latency** — a generation = many negotiations × turns × 2 agents (+ verifier).
   Keep batches small while iterating; scale once it holds.
 - **Overfitting to self** — train and judge on held-out counterparties, not just the practiced ones.
+
+---
+
+## 9. Prize alignment (a byproduct, not the point)
+
+We build the real thing first; the feature layer above happens to map cleanly onto the hackathon
+criteria. Nothing here is bolted on for a stage — each surface earns its place in the architecture.
+
+| Criterion | How Gambit qualifies |
+|---|---|
+| **Theme: Continual Learning** *(required)* | The whole product — self-play, zero human labels, verifiable surplus climbing across generations on held-out counterparties. |
+| **Theme: Self-Improvement Stack / Recursive Intelligence** | The Antigravity optimizer **rewrites its own tactics `SKILL.md` generation over generation** (stateful env) under a deterministic, gameable-proof reward — a model improving the thing that drives it, with the integrity wall intact. |
+| **Best Gemini 3.5** | **Managed Agents** (Antigravity via the Interactions API, `AGENTS.md`/`SKILL.md`, stateful `environment_id`) **+ Gemini Live / Live Translate** for the voice buyer **+ Nano Banana** for listing media — three new surfaces combined, not a wrapper chatbot. |
+| **Best LiveKit** | The human buyer seat negotiates by **voice over LiveKit**, cross-language via Gemini Live Translate — the pluggable counterparty made tangible. |
+| **Best DigitalOcean** | The app runs on DO — App Platform (deploy + live curve), Managed Postgres + pgvector (memory), Spaces (images). |

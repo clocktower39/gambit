@@ -38,17 +38,22 @@ behavior and expresses it through the typed contract (see [`architecture.md`](./
 - ✅ Opponent modeling + belief-calibration eval (`opponent.py`; `Belief` is a `BaseModel`)
 - ➕ New in the rebuild: per-agent `output_validator`s as hard integrity rails (below-floor /
   over-budget moves trigger a `ModelRetry` instead of reaching the transcript)
+- ➕ New (feature layer): the optimizer can run as a **Gemini Antigravity managed agent** that
+  rewrites its own tactics `SKILL.md` generation over generation in a stateful sandbox — a model
+  editing the instructions that drive it (recursive self-improvement). It is a *stronger proposer*
+  only: the deterministic verifiable surplus + held-out promotion gate still select. The
+  reward-philosophy invariant below is unchanged. See [`architecture.md`](./architecture.md#self-improving-optimizer--gemini-antigravity-managed-agent).
 
 ## Remaining refinements (prioritized menu — none are blockers)
 
 1. **Opponent-aware pricing (highest demo value).** Wire `opponent.infer` into
-   `SellerAgent`: estimate the buyer's reservation from their offers and hold near it.
+   `agents/seller.py`: estimate the buyer's reservation from their offers and hold near it.
    `opponent.recommend_ask(belief, item)` already returns the target ask. Effort: ~30
-   lines in `seller_agent.py` + a `read_opponent: bool` knob on `Strategy`. Story:
+   lines in `agents/seller.py` + a `read_opponent: bool` knob on `Strategy`. Story:
    *"it figures out you're eager and stops conceding."*
 2. **Belief calibration on the panel (TERMS-Bench).** Add `opponent.calibration_report`'s
    accuracy to the metric panel so eval shows *type inference*, not just deal-rate.
-3. **Surplus↔deal-rate dial (bilateral-trade lesson).** Expose `α` in `metrics.reward`
+3. **Surplus↔deal-rate dial (bilateral-trade lesson).** Expose `α` in `reward.reward`
    (`α·surplus + (1−α)·closed`) and sweep it for a small Pareto curve — *"dial from
    closer to maximizer."* Effort: tiny; keep `α=1` as default so nothing regresses.
 4. **Strategic-phase labels (RLVR narrative).** Classify each generation from existing
@@ -59,6 +64,7 @@ behavior and expresses it through the typed contract (see [`architecture.md`](./
 
 ## Explicitly out of scope for the 18h core (cite as scale-up)
 
-GRPO/weight-level RL on a 30B (the RLVR recipe) → maps only to the optional Gemma-4
-LoRA stretch. Agentic-commerce protocol rails (LLM-X, Universal Commerce Protocol),
+GRPO/weight-level RL on a 30B (the RLVR recipe) → the scale-up "weight-level RSI" stretch
+(LoRA on winning transcripts, DO GPU droplet). **Gemma 4 on-device specifically is out of
+scope.** Agentic-commerce protocol rails (LLM-X, Universal Commerce Protocol),
 device-native privacy, and full authorization layers → future-work framing, not built.
