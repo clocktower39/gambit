@@ -55,6 +55,12 @@ We self-play **because it's the strongest way to improve and because we don't ha
 buyers yet** — not because the buyer is fake. The buyer is the same intelligence as the
 seller. Swapping in a human or a real marketplace is a policy swap, not a rewrite.
 
+The seller side is **one policy managing many listings and many buyer threads**. Self-play should
+therefore become one seller policy against a market panel, not a pile of isolated one-buyer games.
+Parallel buyers and active inventory are the seller's real BATNA: if three buyers are alive on one
+listing, hold firmer; if a stale listing has one serious buyer, flex; if a buyer wants multiple active
+items, grow the deal. Each buyer can still be another negotiation agent under a walled-off context.
+
 ### Why self-play (the AlphaZero move)
 
 A scripted buyer caps how good the seller can get — you can't out-negotiate your own
@@ -177,6 +183,7 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 | seller policy / buyer policy | the negotiator + the self-play buyer (one shared policy, two contexts) | 🟡 buyer is a passive heuristic today — make it reward-seeking; LLM path **untested** |
 | `optimizer.py` | reflection → lessons, anti-bloat dedup/cap, verifier-rubric feedback | 🟡 LLM path **untested** |
 | `policy.py` (the learned artifact) | hybrid `PolicyStore`: global parametric `KnobPolicy` + per-bucket text lessons; one-atomic-change promotion via paired locked-held-out A/B (min-support + FDR + global non-regression + demotion) | ⬜ |
+| `market.py` / portfolio state | one seller, multiple listings, parallel buyer threads, first-firm-commitment guard | 🟡 typed state seam + feature tests |
 | optimizer (Antigravity backend) | Gemini managed agent — multi-step sandbox loop improving **one bucket's** lesson fragment per call (stateful env); proposes, never selects (deferred post-MVP) | ⬜ |
 | voice buyer shell | LiveKit room + Gemini Live/Translate → typed `BuyerMove` in the human seat | ⬜ |
 | listing media | Nano Banana listing image/text-in-image for the eBay post | ⬜ |
@@ -224,6 +231,9 @@ improving*.
       paired single-toggle A/B on a **locked, structurally-different** held-out, with **min-support + FDR
       + global non-regression + a demotion path**. This is what makes "improves without weight updates"
       real (not a prompt that plateaus, not a 27-bin table that starves).
+- [ ] **MarketplaceDomain:** one seller policy manages a portfolio: multiple active listings, many buyer
+      threads, truthful competing-interest state, bundle opportunities, and first-firm-commitment wins.
+      This is the next self-play substrate because BATNA is portfolio state, not a constant.
 - [ ] **Reward-seeking buyer:** the buyer-hat optimizes its own surplus (today it's a passive
       reservation-respecting heuristic). This is what turns "two agents" into real self-play.
 - [ ] **Structurally-different held-out:** make the held-out promotion gate run against a different

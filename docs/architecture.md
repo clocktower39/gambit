@@ -54,6 +54,12 @@ maximizes `price − floor`; the buyer sees the reservation and maximizes `budge
 them, so the information asymmetry the reward depends on is preserved by construction. This is what
 makes the buyer a real adversary rather than a script. See [self-play](#self-play--the-pluggable-counterparty).
 
+**The seller is singular; buyers are plural.** In the real marketplace loop there is one seller policy
+managing a portfolio of listings and many buyer threads. A buyer context remains walled off to one
+thread and one hidden reservation; the seller context can see seller-visible portfolio state: active
+threads on the same listing, best competing offer, listing age, inventory pressure, and bundle interest.
+That is how BATNA stops being a slogan and becomes an input to the policy.
+
 | Agent | `deps_type` | `output_type` | Integrity rail (output validator) |
 |---|---|---|---|
 | `seller` | `SellerContext` (item, resolved `bucket`, current ask) | `SellerMove` | reject any move that offers/accepts below `item.floor_price` → `ModelRetry` |
@@ -119,7 +125,27 @@ class SellerContext(BaseModel):                  # (also shown in the agent sket
     knobs: Knobs                                 # resolved from the GLOBAL parametric KnobPolicy(features)
     bucket: BucketPolicy                         # the per-bucket lessons for the resolved situation_key
     current_ask: float
+    market: MarketplaceState | None = None       # seller-visible portfolio state; None in one-buyer MVP
     # Routing: bucket is re-resolved each turn — buyer_type is "unknown" until K offers exist (see situation_key)
+
+class ListingState(BaseModel):
+    listing_id: str
+    item: Item
+    status: Literal["active", "sold", "closed"] = "active"
+    days_live: int = 0
+    watchers: int = 0
+
+class BuyerThreadState(BaseModel):
+    thread_id: str
+    listing_id: str
+    current_offer: float | None = None
+    status: Literal["active", "walked", "accepted", "closed"] = "active"
+    interested_listing_ids: list[str] = Field(default_factory=list)  # bundle opportunity, still seller-visible only
+
+class MarketplaceState(BaseModel):
+    listings: dict[str, ListingState]
+    threads: dict[str, BuyerThreadState]
+    inventory_pressure: float = 0.0              # 0..1 seller pressure to clear inventory
 
 class BuyerContext(BaseModel):
     item: Item
@@ -252,6 +278,11 @@ class Features(BaseModel):                 # continuous + scale-free, computed p
     reservation_gap: float                 # (current_ask - est_reservation) / list   (from opponent.infer)
     urgency: float                         # 0..1 time pressure
     turns_elapsed: int
+    active_buyers: float = 0.0              # live competing buyer threads for the listing
+    best_offer_gap: float = 0.0             # (current_ask - best competing offer) / list
+    listing_age: float = 0.0                # normalized days live
+    inventory_pressure: float = 0.0         # seller pressure to clear stock
+    bundle_opportunity: float = 0.0         # buyer has multi-listing interest
 
 class Knobs(BaseModel):                     # the 5 resolved scalars for one turn
     opening_anchor_ratio: float = Field(ge=0.90, le=1.00)

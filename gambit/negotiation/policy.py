@@ -26,7 +26,18 @@ _BOUNDS: dict[str, tuple[float, float]] = {
     "walkaway_patience": (2, 10),
 }
 
-_FEATURES: tuple[str, ...] = ("thin_margin", "fat_margin", "reservation_gap", "turn_frac", "urgency")
+_FEATURES: tuple[str, ...] = (
+    "thin_margin",
+    "fat_margin",
+    "reservation_gap",
+    "turn_frac",
+    "urgency",
+    "active_buyers",
+    "best_offer_gap",
+    "listing_age",
+    "inventory_pressure",
+    "bundle_opportunity",
+)
 
 
 def _default_coeffs() -> dict[str, dict[str, float]]:
@@ -38,17 +49,29 @@ def _default_coeffs() -> dict[str, dict[str, float]]:
             "reservation_gap": 0.08,
             "turn_frac": -0.10,
             "urgency": 0.15,
+            "active_buyers": -0.08,
+            "best_offer_gap": 0.06,
+            "listing_age": 0.10,
+            "inventory_pressure": 0.08,
+            "bundle_opportunity": 0.04,
         },
         "accept_ratio": {
             "thin_margin": 0.20,
             "fat_margin": -0.12,
             "turn_frac": -0.04,
             "urgency": -0.08,
+            "active_buyers": 0.04,
+            "listing_age": -0.05,
+            "inventory_pressure": -0.04,
+            "bundle_opportunity": -0.03,
         },
         "walkaway_patience": {
             "thin_margin": -2.0,
             "reservation_gap": -1.0,
             "urgency": -2.0,
+            "active_buyers": 1.0,
+            "listing_age": -1.0,
+            "inventory_pressure": -1.0,
         },
     }
 
@@ -65,6 +88,11 @@ class Features(BaseModel):
     reservation_gap: float = 0.0      # (standing ask - observed buyer offer) / list; proxy until opponent.infer
     turn_frac: float = 0.0            # round_idx / max_turns
     urgency: float = 0.0              # seller time pressure, 0..1
+    active_buyers: float = 0.0         # live competing buyer threads for the same listing; scaled in values()
+    best_offer_gap: float = 0.0        # (standing ask - best competing offer) / list
+    listing_age: float = 0.0           # 0..1 normalized days-live pressure
+    inventory_pressure: float = 0.0    # 0..1 seller pressure to clear inventory
+    bundle_opportunity: float = 0.0    # 0..1 buyer/listing fit for a multi-item deal
 
     def values(self) -> dict[str, float]:
         """Feature basis used by the global coefficient policy."""
@@ -74,6 +102,11 @@ class Features(BaseModel):
             "reservation_gap": _clamp_value(self.reservation_gap, -1.0, 1.0),
             "turn_frac": _clamp_value(self.turn_frac, 0.0, 1.0),
             "urgency": _clamp_value(self.urgency, 0.0, 1.0),
+            "active_buyers": _clamp_value(self.active_buyers / 3.0, 0.0, 1.0),
+            "best_offer_gap": _clamp_value(self.best_offer_gap, -1.0, 1.0),
+            "listing_age": _clamp_value(self.listing_age, 0.0, 1.0),
+            "inventory_pressure": _clamp_value(self.inventory_pressure, 0.0, 1.0),
+            "bundle_opportunity": _clamp_value(self.bundle_opportunity, 0.0, 1.0),
         }
 
 

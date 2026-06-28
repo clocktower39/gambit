@@ -43,6 +43,7 @@ The negotiation loop is a referee over two policies; eval swaps the *buyer*:
 | Buyer | Role in eval |
 |---|---|
 | **Self-play** (shared policy, assigned hidden reservation) | the training engine — generates the signal |
+| **Market panel** (one seller, many buyer threads/listings) | the real self-play substrate — tests BATNA, inventory pressure, bundles, and thread arbitration |
 | **Held-out — a *different policy family*** | the truth signal for generalization |
 | **Human / live eBay** | post-MVP; converts "lift in simulation" into lift in reality |
 
@@ -107,18 +108,28 @@ ever sees. Rotate gating seeds across generations so the gate can't memorize the
 - **Metric / pass:** # buckets with ≥ *k* episodes climbs across generations; the optimizer's
   `target_bucket` is among the lowest-surplus buckets ≥ 90% of the time.
 
-### d) Opponent modeling / belief calibration (TERMS-Bench)
+### d) Portfolio / parallel-buyer orchestration
+- **Tested:** one seller policy can manage multiple listings and active buyer threads without
+  destroying its own BATNA.
+- **Metrics / pass:** no double-sales; no fabricated competing-interest claims; first firm commitment
+  wins; active competing buyers make the policy firmer; stale inventory / explicit inventory pressure
+  makes it more flexible; bundle opportunities improve portfolio reward without below-floor sales.
+- **Method:** deterministic `MarketplaceState` panels first (2-3 listings, 2-5 buyers), then LLM buyer
+  panels. Score portfolio reward as sold-item surplus + sell-through value − holding/time cost, and
+  still report per-sale `skill` against each hidden budget.
+
+### e) Opponent modeling / belief calibration (TERMS-Bench)
 - **Tested:** `opponent.infer` recovers the buyer's hidden reservation & type from early offers.
 - **Metric / pass:** mean reservation error (÷ list) within target; `type_label` accuracy reported.
   This is what makes `situation_key`'s `buyer_type` trustworthy — a bad belief routes to the wrong bucket.
 
-### e) Self-play integrity & anti-overfit (SAFETY + VALIDITY)
+### f) Self-play integrity & anti-overfit (SAFETY + VALIDITY)
 - **Tested:** the shared-policy risks named in `architecture.md`.
 - **Metric / pass:** `viol=0` specifically under self-play; **checkpoint league** (train vs gen-0…N)
   shows held-out doesn't degrade vs latest-only; the held-out **promotion gate refuses** a candidate that
   regresses held-out.
 
-### f) Demotion check (active re-audit, not "never evict")
+### g) Demotion check (active re-audit, not "never evict")
 - **Tested:** promoted entries still *earn their place* — and dead ones are removed. "Never evict" would
   lock in every false-positive promotion permanently, so the design demotes, it doesn't hoard.
 - **Mechanism:** each generation, re-audit a sample of promoted lessons/knob-nudges on **fresh** gating

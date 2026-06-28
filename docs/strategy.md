@@ -66,6 +66,8 @@ enforced by the reward + the Tier-1/Tier-2 verifier, not left to the policy's di
 - **Hold price and add value** before any price cut.
 - **Concede on a shrinking, conditional ladder** to the floor — never free, never equal steps.
 - **Lead with empathy** (label the feeling / acknowledge) before talking price.
+- **Keep real buyers parallel** — live interest is BATNA; do not negotiate one buyer to exhaustion while
+  other threads go cold.
 - **Be generous on the very last move.**
 - **Close on-platform, confirmed, immediately.**
 
@@ -73,6 +75,7 @@ enforced by the reward + the Tier-1/Tier-2 verifier, not left to the policy's di
 - ❌ **Sell below the floor.** Ever. *(reward wall + seller `output_validator`)*
 - ❌ **Reveal or hint at the floor.** *(verifier `floor_leak`)*
 - ❌ **Fabricate** a comp, a watcher count, scarcity, or authenticity — even though it "works." *(verifier `honest`)*
+- ❌ **Invent competing buyers.** Parallel interest is leverage only when it exists in seller-visible state.
 - ❌ **Reflexively split the difference** of two arbitrary numbers. A split is OK only if it lands *inside the comp range and above floor* (the Voss-vs-Fisher reconciliation).
 - ❌ **Cave to pressure, threats, or review-extortion** — 0% to a bully; offer only the same fair terms you'd give anyone.
 - ❌ **React instantly** to a rude/ambiguous message — pause, then respond calmly.
@@ -104,6 +107,25 @@ walk or timeout. This now lives in `run_episode` (a per-side `walked` set; see `
 rarely walk — and becomes load-bearing once a *tactical* policy (the typed LLM seller, slice 5, or a
 dedicated bluffing-buyer family) actually uses the walk as a lever.
 
+### 4.2 One seller, many buyers
+
+The real agent is **one seller policy managing a portfolio**, not one isolated negotiator per thread.
+That is the only way BATNA becomes operational. A live backup buyer, a stale listing, a bundle-capable
+buyer, and other active listings should all change the seller's move:
+
+- **Parallel interest strengthens the wall.** More live buyers on the same listing means slower
+  concession, higher accept threshold, and more patience — but only if those buyers really exist.
+- **Stale inventory weakens the wall.** Days live, no competing offers, and explicit inventory pressure
+  should make the seller more flexible while still respecting the floor.
+- **First firm commitment wins.** The seller can keep threads warm, but once one buyer commits
+  on-platform, the listing closes and competing threads are shut down. No double-selling.
+- **Bundles grow the pie.** A buyer interested in multiple active listings can justify a real blended
+  discount; a single-item buyer should not be pushed into fake complexity.
+
+Mechanically this starts in `MarketplaceState`: seller-visible listings and buyer threads feed portfolio
+features (`active_buyers`, `best_offer_gap`, `listing_age`, `inventory_pressure`, `bundle_opportunity`)
+into the same `KnobPolicy`. Each buyer still has a walled-off context; only the seller sees the portfolio.
+
 ---
 
 ## 5. The knob doctrine (how the parametric `KnobPolicy` should behave)
@@ -120,11 +142,15 @@ and `resolve()` returns clamped per-turn `Knobs`.
 | **reservation_gap ≈ 0 / negative** (buyer at/over your ask) | — | small move or none | accept | — |
 | **urgency ↑** (seller time pressure) | — | **faster, larger** steps | **lower** (accept sooner) | **shorter** (close, don't grind) |
 | **turn_frac ↑** (later in the negotiation) | — | **shrinking increments** (Ackerman ladder); smallest near the floor | drift toward accept | approaching the wall |
+| **active_buyers ↑** (same listing has parallel interest) | — | **lower** — do not bid against yourself | **higher** | longer |
+| **best_offer_gap ↑** (best competing offer is still far below ask) | — | higher — weak backup interest is weaker BATNA than a near-ask backup | — | normal |
+| **listing_age / inventory_pressure ↑** | — | **higher** — clear stale stock rationally | **lower** | shorter |
+| **bundle_opportunity ↑** | — | modestly higher on blended terms | lower for the package | normal |
 
 The implementation maps this directly: margin becomes `thin_margin` / `fat_margin`, the buyer's last
-offer creates `reservation_gap`, the turn index creates `turn_frac`, and urgency shapes the other
-knobs. This is less hard-coded because the learner can move both the base knobs and the coefficients
-that say when a feature should make the seller firmer or looser.
+offer creates `reservation_gap`, the turn index creates `turn_frac`, and portfolio state contributes
+parallel-buyer / inventory / bundle features. This is less hard-coded because the learner can move both
+the base knobs and the coefficients that say when a feature should make the seller firmer or looser.
 
 That still is not a full LLM planner. It is a bounded affine policy over a few doctrine-approved
 levers. The language layer can sound human, but the offline learning claim is narrower: learn better
@@ -161,6 +187,7 @@ the agent negotiates a real listing.
 |---|---|---|
 | **Asks free shipping** | Absorb shipping *instead of* a price cut — one, not both | < ~15% of value (CONC-005) |
 | **Bundle (2+ items)** | Grow the pie: blended discount + combined shipping, conditional ("if you take both") | ~10–20% off singles (CONC-006) |
+| **Parallel buyers / unpaid holds** | Keep live buyers warm; avoid open-ended unpaid holds; first firm commitment wins | no fake scarcity; no double-sale |
 | **Ghosting / staller** | One "No"-oriented re-engagement that restates the standing offer; then stop | — (PRIN-015) |
 | **Stuck on a public low stand** | Build a golden bridge — a *real* face-saving cover (bundle, launch sale) so their move up is a win | framing only (CONC-007) |
 | **Aging listing, weak BATNA** | Be honest the walk-away is weak; flex more, but still extract a reciprocal move; relist/refresh first | toward floor (CONC-008) |
@@ -180,10 +207,11 @@ The current self-play engine is a **price negotiation over a hidden reservation*
 | Doctrine element | In the current engine? |
 |---|---|
 | Anchor on target, shrinking conditional ladder, accept threshold, walk line | ✅ yes — `KnobPolicy.resolve(Features)` |
+| Parallel-buyer / portfolio features | 🟡 scaffolded — `MarketplaceState` builds features and `scripts/play_multiple.py` exercises one listing with real background buyer threads; no full `MarketplaceDomain` rollout yet |
 | Probe-don't-disclose, buyer-type tactics | 🟡 partial — the lesson channel, if seeded |
 | Never below floor, never leak floor | ✅ yes — reward + verifier |
-| Never fabricate, never cave to pressure | 🟡 partial — verifier `honest`; pressure's analog is the **walk-away (§4.1)**, but non-terminal walk handling is still a next-slice gap |
-| Bundles, shipping, loyalty, golden bridge | ❌ no — needs a real listing / multi-item state |
+| Never fabricate, never cave to pressure | 🟡 partial — verifier `honest`; pressure's analog is the **walk-away (§4.1)**; non-terminal walk mechanics are live, but tactical bluff handling still needs richer policies/verifier coverage |
+| Bundles, shipping, loyalty, golden bridge | 🟡 partial — bundle feature exists; needs a real marketplace domain / multi-item policy |
 | Ghosting, disputes/refunds, off-platform scam | ❌ no — needs real async + payment + post-sale |
 | "Why isn't it selling" / listing-quality | ❌ no — needs listing + comp data |
 
