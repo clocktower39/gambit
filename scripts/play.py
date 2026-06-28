@@ -57,6 +57,7 @@ from gambit.negotiation import (
 from gambit.negotiation.domain import run_episode
 from gambit.negotiation.fixtures import PERSONAS
 from gambit.settings import settings
+from gambit import observability as obs
 
 PACING_HORIZON = 10        # the agent's sense of tempo (turn_frac + the "Round N/M" prompt); NOT a hard cap
 UNCAPPED = 200             # referee backstop when --turns is unset; a human ends the game long before this
@@ -540,19 +541,19 @@ def load_policy(path: str | None) -> tuple[PolicyStore, str]:
 def _configure_logfire(console: bool) -> bool:
     global _TRACE_CONSOLE
     _TRACE_CONSOLE = console
-    # scrubbing OFF: our prompts say "secret floor"/"budget" — negotiation terms, not real
-    # credentials — and Logfire's default redaction would hide the very chat we want to walk.
-    console_opt = logfire.ConsoleOptions(span_style="indented") if console else False
-    # inspect_arguments=False: we always pass explicit kwargs, and f-string introspection fails
-    # under the script's sys.path shim (the noisy InspectArgumentsFailedWarning mid-game).
-    if settings.logfire_token:
-        logfire.configure(token=settings.logfire_token, service_name="gambit",
-                          console=console_opt, scrubbing=False, inspect_arguments=False)
-        logfire.instrument_pydantic_ai()
-        return True
-    logfire.configure(send_to_logfire=False, console=console_opt, scrubbing=False,
-                      inspect_arguments=False)
-    return False
+    return obs.configure(console=console)            # the one shared Logfire seam (gambit/observability.py)
+
+
+def _checkpoint_label(policy_desc: str) -> str:
+    """A short checkpoint id for the trace, so 'all play vs gen8' is one filter."""
+    if "seeded" in policy_desc:
+        return "seeded"
+    if "(latest)" in policy_desc:
+        return "latest"
+    for tok in policy_desc.split():
+        if tok.endswith(".json"):
+            return Path(tok).stem
+    return "unknown"
 
 
 _TRACED = False
@@ -568,33 +569,24 @@ def _record_episode(ep, *, seat: str, policy_desc: str, reward_val: float,
     it apart from self-play — as PROPOSER fuel, never straight into the deterministic promotion gate
     (humans aren't paired/reproducible; that would confound the A/B and invite poisoning)."""
     o = ep.outcome
-    bucket = situation_key(item)
-    result = "deal" if o.deal else "no-deal"
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     record = {
-        "source": "human", "ts": ts, "seat": seat, "policy": policy_desc, "bucket": bucket,
+        "source": "human", "ts": ts, "seat": seat, "policy": policy_desc, "bucket": situation_key(item),
         "reward": reward_val, "surplus": o.surplus, "skill": o.skill,
         "viol": len(viol), "violations": viol,
         "deal": o.deal, "price": o.price, "turns": o.turns, "reason": o.reason,
         "episode": ep.model_dump(mode="json"),
     }
-    path = None
     try:
         HUMAN_EPISODES_DIR.mkdir(parents=True, exist_ok=True)
         slug = "".join(c if c.isalnum() else "-" for c in item.name).strip("-").lower()[:32]
         stamp = ts.replace(":", "").replace("-", "")
         path = HUMAN_EPISODES_DIR / f"{stamp}-{slug}-{seat}-{uuid.uuid4().hex[:6]}.json"
         path.write_text(json.dumps(record, indent=2))
+        return path
     except Exception as e:  # noqa: BLE001 — never crash a finished game on a write error
-        logfire.warn("could not save human episode: {err}", err=str(e))
-    # A standalone, filterable trace marking this real interaction as a learning datapoint.
-    with logfire.span("human episode · {bucket} · {result}", kind="human_episode", source="human",
-                      bucket=bucket, result=result, seat=seat, policy=policy_desc,
-                      reward=reward_val, surplus=o.surplus, skill=o.skill, viol=len(viol),
-                      deal=o.deal, price=o.price, turns=o.turns,
-                      path=str(path) if path else None, transcript=ep.transcript()):
-        pass
-    return path
+        obs.emit("could not save human episode", level="warn", err=str(e))
+        return None
 
 
 def play(seat: str, item: Item, persona: BuyerPersona, policy: PolicyStore, policy_desc: str,
@@ -632,19 +624,30 @@ def play(seat: str, item: Item, persona: BuyerPersona, policy: PolicyStore, poli
               f"patience {k.walkaway_patience}" + (f", {len(lessons)} learned lesson(s)" if lessons else ""))
     print("Type naturally: ask, counter, accept, or pass. Ctrl-D also passes.\n")
 
-    with logfire.span("negotiation: {item} — {matchup}", item=item.name, matchup=matchup,
-                      seat=seat, source="human-vs-agent", policy=policy_desc,
-                      list_price=item.list_price, floor=item.floor_price):
+    bucket = situation_key(item)
+    jt, src = "human-vs-agent", "human"
+    trace_id = None
+    # One job span tags the whole game [human-vs-agent, human]; baggage (run_id/checkpoint) auto-stamps
+    # every child — the per-turn spans AND the pydantic-ai model calls — so it filters cleanly.
+    with obs.job(jt, source=src, checkpoint=_checkpoint_label(policy_desc), seat=seat,
+                 matchup=matchup, item=item.name, list_price=item.list_price, floor=item.floor_price), \
+         obs.episode(bucket=bucket, seat=seat):
+        trace_id = obs.current_trace_id()
         ep = run_episode(item, seller, buyer, max_turns=referee_turns)
         o = ep.outcome
         viol = audit_episode(ep)
         r = reward(ep)
-        logfire.info("outcome: {result}", result=("deal" if o.deal else "no deal"),
-                     deal=o.deal, price=o.price, turns=o.turns, reward=r,
-                     surplus=o.surplus, skill=o.skill, viol=len(viol), bucket=situation_key(item))
-
-    saved = _record_episode(ep, seat=seat, policy_desc=policy_desc, reward_val=r,
-                            viol=viol, item=item) if save else None
+        obs.record_reward(r, job_type=jt, source=src, bucket=bucket)
+        if o.deal:
+            obs.record_surplus(o.surplus, job_type=jt, source=src, bucket=bucket)
+            obs.record_skill(o.skill, job_type=jt, source=src, bucket=bucket)
+        obs.record_episode(deal=o.deal, viol=len(viol), job_type=jt, source=src, bucket=bucket)
+        saved = _record_episode(ep, seat=seat, policy_desc=policy_desc, reward_val=r,
+                                viol=viol, item=item) if save else None
+        obs.emit("human episode {result}", result=("deal" if o.deal else "no-deal"),
+                 kind="human_episode", deal=o.deal, price=o.price, turns=o.turns, reward=r,
+                 surplus=o.surplus, skill=o.skill, viol=len(viol), bucket=bucket,
+                 saved=str(saved) if saved else None, transcript=ep.transcript())
 
     print("\nScorecard")
     print("─" * 60)
@@ -662,9 +665,11 @@ def play(seat: str, item: Item, persona: BuyerPersona, policy: PolicyStore, poli
     else:
         print("Audit: clean")
     if saved:
-        print(f"Saved: {saved}  (source=human — proposer fuel + its own 'human_episode' Logfire trace)")
-    print("Trace: Logfire captured the episode, turns, intent calls, and chat lines."
-          if _TRACED else "Trace: set LOGFIRE_TOKEN in .env to walk the chat natively in Logfire.")
+        print(f"Saved: {saved}  (source=human — proposer fuel, tagged human-vs-agent in Logfire)")
+    if trace_id:
+        print(f"Trace: walk this game in Logfire (job=human-vs-agent · trace {trace_id})")
+    elif not _TRACED:
+        print("Trace: set LOGFIRE_TOKEN in .env to walk the chat natively in Logfire.")
     return 0
 
 
