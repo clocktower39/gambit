@@ -64,7 +64,7 @@ def _i(x):
 
 
 def _in_clause(ids: list[str]) -> str:
-    safe = [i for i in ids if re.fullmatch(r"[0-9a-fA-F]{1,64}", i or "")]
+    safe = [i for i in ids if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", i or "")]
     return "(" + ",".join("'" + i + "'" for i in safe) + ")" if safe else "('')"
 
 
@@ -179,7 +179,7 @@ async def fetch_run_detail(client: httpx.AsyncClient, run_id: str) -> dict:
     """Reconstruct ONE run from a single query over all its records (by gambit.run_id): the moves
     (read directly from gambit.role/action/offer/text), per-episode outcomes, the Gemini lessons,
     and a reward-by-generation curve."""
-    rid = run_id if re.fullmatch(r"[0-9a-fA-F]{1,64}", run_id or "") else ""
+    rid = run_id if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", run_id or "") else ""
     empty = {"run_id": run_id, "title": None, "moves": [], "outcomes": [], "reflections": [], "curve": [], "spans": 0}
     if not rid:
         return empty
