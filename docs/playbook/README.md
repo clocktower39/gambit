@@ -4,10 +4,16 @@ Synthesized from 7 negotiation/persuasion/communication books into **product mat
 
 > Method: **Pass 1** — extract each book to a structured profile (product material, not summary). **Pass 2** — dedupe/merge/rank into canonical assets + 9 synthesis sections. Source-supported takeaways are cited to the book; synthesized/inferred content is flagged.
 
+## 👉 Dev team: start at [HANDOFF.md](HANDOFF.md)
+The curated handoff set (PRD → Playbook → Decision Framework → Eval Plan → Self-Improving System → Metrics), the 6-step architecture, deferred tracks, and open questions. Conventions are pinned in [CONVENTIONS.md](CONVENTIONS.md) (source of truth). **MVP scope: general items · simulated buyer · hybrid autonomy.**
+
 ## How to read this
 
 | If you want… | Go to |
 |---|---|
+| **The dev handoff (read this first)** | [HANDOFF.md](HANDOFF.md) + [CONVENTIONS.md](CONVENTIONS.md) |
+| **The PRD** | [00-PRD.md](00-PRD.md) |
+| **The eval plan** | [EVAL-PLAN.md](EVAL-PLAN.md) |
 | The 60-second version (philosophy + top-10 lists + MVP features + riskiest bets) | [Section 9 — Final synthesis](SECTION-9-final-synthesis.md) |
 | Which book is good for what | [Section 1 — Source audit](SECTION-1-source-audit.md) |
 | The merged psychology, principles, tactics, objections | [Section 2 — Cross-source synthesis](SECTION-2-cross-source-synthesis.md) |

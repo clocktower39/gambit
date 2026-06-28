@@ -20,39 +20,88 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 
 ---
 
-## Stage 1 — Listing creation (win the deal before the table)
+## Changelog (v2)
+
+Aligned to `CONVENTIONS.md` (v2). What changed since v1:
+
+- **Stage 1 recast as a listing-review & approval flow** (CONVENTIONS §A). The AI drafts listing + price, but nothing goes live until the seller reviews and supplies the **seller input schema / three-price model** (list/target/walkaway + urgency + objective_weight + ship/returns + condition_notes). Added the input-schema table, the `walkaway ≤ target ≤ list` invariant, and the warn-if-`list=target` rule. The existing quality/anchoring/comps/trust guidance now feeds the AI's *draft*.
+- **Added a brand-voice subsection** (CONVENTIONS §C): the re-skin rule (tactics = what, voice = how), a before/after example, the rude-buyer override. Every template in this doc is rendered through the voice layer.
+- **General-items first:** fashion-specific levers (bundles, size/fit) demoted to clearly-marked *secondary (fashion)* notes — kept, no longer centered.
+- **Stage 3:** concession behavior (CONC-xxx) is now **modulated by `objective_weight` + `urgency`** (CONVENTIONS §E) — opening counter, increment size/cadence, accept threshold — not static. CONC/OBJ tables retained; added a "how urgency/objective change this" note.
+- **Stages 2/3:** noted **hybrid autonomy** (CONVENTIONS §B) — which moves auto-send vs. hold-for-approval — cross-referencing SECTION-4 for the full table (not duplicated here).
+- **Stage 5:** aligned with the corrected learning loop — **seller edits + outcomes are the training signal** (self-score is a gate, not the teacher); references SECTION-5.
+
+---
+
+## Stage 1 — Listing review & approval flow (win the deal before the table)
 
 > **3-D thesis (3DN):** most of the negotiation is won *away from the table* — in parties, framing, comps, terms, and timing. A comp-anchored, well-framed listing draws fair offers without a fight. The copilot's first and highest-leverage job is to build the listing so the buyer offers fairly. Per **COACH-006**, never slash price when the real problem is the listing.
 
-### Copilot behavior
+### Review & approval flow (the AI drafts; the seller approves)
 
-1. **Price the anchor, not the floor.** The copilot pulls sold comps and recommends a list price near the **top of the comp range** — high but defensible (PRIN-009, PRIN-003). It simultaneously asks the seller for / computes two private numbers it will use later: a **floor** (BATNA = relist/hold value) and a **trip wire** ("reconsider below $X") — PRIN-010, COACH-001.
+The AI **drafts the full listing AND the recommended price**, but it does **not** publish on its own. The draft goes live only after the seller **reviews it and supplies the seller input schema** below (CONVENTIONS §A). This is step 1 of the 6-step loop — "understand the seller's constraints" — and the listing-review step is where those constraints are captured. All the listing-quality / anchoring / comps / trust guidance in this stage is what the AI uses to *build the draft*; the seller's schema then sets the bounds the rest of the lifecycle obeys.
+
+#### Seller input schema (captured at the review step, BEFORE the AI posts)
+
+| Field | Meaning | Notes |
+|-------|---------|-------|
+| `list_price` | **Public anchor.** High-but-justifiable. | AI proposes from comps; seller approves. **THREE-PRICE MODEL.** |
+| `target_price` | Ideal outcome the AI steers toward. | Drives accept threshold (§E). |
+| `walkaway_price` | Reservation / floor. **AI never goes below — hard bound.** | Replaces the v1 "floor"; same role, now seller-set. |
+| `urgency` | `gone_today` \| `this_week` \| `no_rush` | Pins the speed weight; compresses concession/relist timelines. |
+| `objective_weight` | Price ↔ Speed slider (0 = fastest sale … 100 = max price). | The seller's objective. Drives concession aggressiveness (Stage 3, §E). |
+| `will_ship`, `ship_pays`, `returns` | Logistics. | Feed the listing draft + Stage 4 closing terms. |
+| `condition_notes` | Known flaws for honest disclosure. | Feeds accusation-audit / trust plays + flaw photos (PRIN-037, COACH-023). |
+| `bundle_ok` + rules | *Secondary (fashion / multi-item).* | See secondary note below; not required for general items. |
+
+**Invariant the AI enforces:** `walkaway_price ≤ target_price ≤ list_price`. If the seller sets **`list = target`**, the copilot **warns** — they've pre-conceded the entire bargaining range and left no room to anchor (anchoring principle PRIN-009). The AI blocks publish until the invariant holds.
+
+### Copilot behavior (drives the AI's draft, then awaits seller approval)
+
+1. **Price the anchor, not the floor.** The copilot pulls sold comps and recommends a `list_price` near the **top of the comp range** — high but defensible (PRIN-009, PRIN-003). The seller then confirms the **three-price model** at the review step: `list_price` (the public anchor), `target_price` (the steer-toward number), and `walkaway_price` (the hard floor / BATNA = relist/hold value) — PRIN-010, COACH-001. The AI uses `target`/`walkaway` privately through Stages 3–4; the buyer only ever sees `list`.
 2. **Embed objective criteria.** Listing copy states the comp basis in buyer-facing language ("priced in line with recent sold ones in this condition") so price reads as *market*, not *seller opinion* (PRIN-003, GTY).
 3. **Scarcity / social proof — only if true.** The copilot surfaces real signals: "last one in this size," genuine save/watcher counts, sold count, star rating (PRIN-011, PRIN-029, INF). **COACH-013 guardrail:** any claim about demand, supply, authenticity, or comparison is checked against real listing/seller data before it can be written; fabricated scarcity, phantom buyers, fake comps, and unbacked authentication are **hard-blocked**.
 4. **Trust signals up front (skeptic pre-empt).** Authentic-proof scaffolding for higher-value items: date-code/serial photos, receipt mention, sales history, returns/authenticity-guarantee note (PRIN-030, INF) — pre-empts INTENT-012 and OBJ-trust-authenticity.
 5. **Set the spirit of the deal (dispute pre-empt).** The generator proactively states **condition with flaw photos, dispatch time, and return policy** concisely (PRIN-037, COACH-023). This is the single biggest lever against post-sale OBJ-condition-doubt and OBJ-trust-authenticity disputes.
-6. **Design the deal for bundles + shipping.** Mark bundle-eligible related stock, set combined-shipping rules, and frame the listing for the highest-value buyer / right audience (PRIN-035, PRIN-006, 3DN). This pre-loads Stage 3 northeast moves.
-7. **Plan the timing cadence.** The copilot schedules relist/refresh timing and a measured markdown ladder (e.g. −10% per 7–10 days, timed to paydays/season) rather than reactive deep cuts (PRIN-038, COACH-021).
+6. **Frame for the right audience + shipping terms.** Set combined-shipping / dispatch terms from the schema and frame the listing for the highest-value buyer / right audience (PRIN-035, PRIN-006, 3DN).
+   - **Secondary (fashion / multi-item):** if `bundle_ok`, mark bundle-eligible related stock and combined-shipping rules to pre-load Stage 3 northeast moves. Not relevant for most general single-item listings.
+7. **Plan the timing cadence.** The copilot schedules relist/refresh timing and a measured markdown ladder (e.g. −10% per 7–10 days, timed to paydays/season), compressed by `urgency`, rather than reactive deep cuts (PRIN-038, COACH-021).
 
 ### Listing checklist (copilot enforces before publish)
 
 | # | Check | Principle / Coach | Pass criterion |
 |---|-------|-------------------|----------------|
-| 1 | List price near top of comp range | PRIN-009, PRIN-003, COACH-002 | Price ≤ top comp, ≥ goal |
-| 2 | Private floor + trip wire set | PRIN-010, COACH-001 | Both numbers stored |
+| 1 | List price near top of comp range | PRIN-009, PRIN-003, COACH-002 | Price ≤ top comp, ≥ target |
+| 2 | Three-price model set + invariant holds | PRIN-010, COACH-001 | `walkaway ≤ target ≤ list`; warn if `list = target` |
 | 3 | Comp basis stated in copy | PRIN-003 | Buyer-facing reason present |
 | 4 | Scarcity / social proof is TRUE | PRIN-011, PRIN-029, COACH-013 | Verified against real data |
 | 5 | Condition graded + flaw photos | PRIN-037, COACH-023 | Every known flaw shown |
 | 6 | Dispatch time + return policy stated | PRIN-037, COACH-023 | Both present |
 | 7 | Authenticity proof (if value warrants) | PRIN-030 | Serial/receipt/guarantee noted |
-| 8 | Bundle-eligible stock tagged + combined shipping rule | PRIN-006, PRIN-035 | Rules set |
-| 9 | Relist/markdown cadence scheduled | PRIN-038, COACH-021 | Cadence stored |
+| 8 | *Secondary (fashion):* bundle-eligible stock tagged + combined shipping rule | PRIN-006, PRIN-035 | Rules set (only if `bundle_ok`) |
+| 9 | Relist/markdown cadence scheduled (compressed by urgency) | PRIN-038, COACH-021 | Cadence stored |
 | 10 | Photos pass quality bar | 3DN, COACH-006 | Lighting/angles OK |
+| 11 | **Seller reviewed + approved draft** | CONVENTIONS §A | Approval recorded; nothing goes live before it |
 
 ### Example listing block (copilot-generated)
 
 > **Vintage wool coat — size M — graded 9/10**
 > Barely worn, no flaws beyond one tiny mark on the inner hem (pic 4). Priced at **$50**, in line with recent sold ones in this condition ($48–$55). Ships tracked within 1 business day. Returns accepted if not as described. Last one I have in this size. Bundle with anything else in my shop and I'll combine shipping.
+
+---
+
+## Brand voice (applies to every template in this doc)
+
+> **Re-skin rule (CONVENTIONS §C): tactics decide WHAT to say; voice decides HOW it reads.** Every template, message, and turn-by-turn reply in this playbook is **rendered through the voice layer** before it is sent or shown for approval. The voice never changes the move — it changes the wording.
+
+**House voice:** friendly, respectful, gen-z, still professional. Sounds like a real person — warm, lightly casual, contractions, at most one emoji where natural. No corporate stiffness, no forced slang, no over-apologizing.
+
+**Before / after (an accusation-audit move, PRIN-019/020):**
+
+- **Tactic, stiff:** *"You're probably going to think I'm being stubborn..."*
+- **Same tactic, brand voice:** *"you're prob thinking i'm being stubborn lol — fair. honestly i've already got it priced under what these go for, so i can't do $15. but tell me what works for you?"*
+
+**Rude-buyer override:** when the buyer is rude/accusatory (INTENT-007/008, OBJ-rude-aggressive), the Difficult-Conversations **calm layer outranks casualness** — stay warm and steady, drop the jokes and emoji. Influence guardrails hold regardless of tone: never manipulate, never fabricate, even casually. (MVP ships **one** consistent voice; buyer/category-adaptive voice is later.)
 
 ---
 
@@ -69,7 +118,7 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 | "I've seen it cheaper / another seller…" | INTENT-003 Anchor-shopper | Probe the comp, differentiate, don't disparage | PRIN-003, PRIN-011, PRIN-036 | "Totally fair to compare — send the link and I'll take a real look. Mine ships tracked and condition's verified." |
 | "Not sure," "never bought used," reassurance questions | INTENT-004 Hesitant | **Proof, not discount**; small-yes ladder | PRIN-013, PRIN-030, PRIN-036, PRIN-032 | "Totally fair to want to be sure — I'll send extra close-ups + measurements. Anything specific you want to see?" |
 | Silence 24h+, "maybe later," likes-no-message | INTENT-005 Ghoster | One 'No'-oriented revive; keep offer visible | PRIN-015, PRIN-023, PRIN-011 | "Have you given up on this one? Totally fine either way — just want to know whether to keep holding it." |
-| Multiple items liked, "any deal if I take a few?" | INTENT-006 Bundler | **Move northeast**; build the bundle | PRIN-006, PRIN-005, PRIN-028 | "Love that — pick three and I'll knock 15% off the total and combine shipping. Sound good?" |
+| Multiple items liked, "any deal if I take a few?" *(secondary — fashion / multi-item)* | INTENT-006 Bundler | **Move northeast**; build the bundle | PRIN-006, PRIN-005, PRIN-028 | "Love that — pick three and I'll knock 15% off the total and combine shipping. Sound good?" |
 | Insults, mockery, ALL CAPS lowball | INTENT-007 Rude | Balcony → acknowledge → deflect to problem; **no counter-punch** | PRIN-019, PRIN-020, PRIN-021, PRIN-033 | "Sounds like the price feels way off — I don't want it to feel unfair. What would feel right, and what's it based on?" |
 | "Discount or I leave a one-star," serial nibbles, "or else" | INTENT-008 Bully | Hold on leverage; one fair offer; **document + report threats** | PRIN-040, PRIN-019, PRIN-021 | "I price fairly and can't do that. Reviews should reflect the actual item and service. Glad to help at the listed price." |
 | "Pay outside the app," ship-first, overpayment, "payment sent" screenshot | INTENT-009 Scam | **SAFETY STOP** — decline, keep on-platform, never ship unpaid | PRIN-044 | "I keep all sales on the app — it protects us both. Happy to finish right here whenever you're ready." |
@@ -80,6 +129,8 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 | Two-word/cryptic ("k.", "seriously?") | INTENT-014 Ambiguous | Neutral clarifier; **don't assume hostility** | PRIN-019, PRIN-012 | "Want to make sure I read that right — were you asking about price, or something else?" |
 
 **"Is it available?" handling (OBJ-is-it-available / INTENT-010):** treated as a **low-signal buying cue**. The copilot answers warmly, names the seller (liking, PRIN-031), and adds exactly **one** forward-motion step (a small-yes or one true scarcity note) — never a dead "yes," never a hard pitch off a one-liner.
+
+> **Hybrid autonomy (CONVENTIONS §B):** first-contact moves split by branch. Low-signal/factual openers — greeting & rapport, "is it available?" (INTENT-010), and questions answerable straight from the listing (measurements/condition) — are **auto-sent** within bounds. Anything that involves a price move, a concession, objection handling, or a high-touch tactic is **held for seller approval**; off-platform/scam asks (INTENT-009) **escalate** and never auto-send. **See SECTION-4 for the full auto-send / hold / escalate table** — not duplicated here.
 
 ---
 
@@ -99,7 +150,17 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 7. CLOSE/LOOP  → if inside fair range, push to Stage 4; else loop with smaller move
 ```
 
+> **Hybrid autonomy in the loop (CONVENTIONS §B):** every negotiation MOVE is AI-drafted, but **any counteroffer, any price move, and any concession (any discount) is HELD for seller approval** before it sends — these are the high-stakes branches and the seller's edits to them are the primary training signal (Stage 5). The only auto-send case in this loop is an incoming **offer ≥ `target_price`** (auto-lock to Stage 4). An offer **< `walkaway_price`**, or any off-platform/abuse turn, **escalates** and never auto-sends. **Full table in SECTION-4** — not duplicated here.
+
 ### When to hold vs. concede (CONC map)
+
+> **How urgency / objective change this (CONVENTIONS §E):** the CONC-xxx rows below are the **defaults** — synthesized starting points, not static law. The seller's `objective_weight` and `urgency` modulate them per interaction:
+> - **Opening counter** — price-weighted → counter near `list_price`; speed-weighted → counter near `target_price`.
+> - **Increment size & cadence** — price-weighted → small, shrinking steps, hold longer; speed-weighted → larger, faster steps toward `walkaway_price`.
+> - **Accept threshold** — price-weighted → only at/above `target`; speed-weighted → auto-accept at a lower % of list.
+> - **Relist / price-drop cadence** — `urgency = gone_today` → immediate drops, accept faster.
+>
+> `walkaway_price` remains a hard bound under every setting — the AI never goes below it. (In the rows below, the legacy "floor" = `walkaway_price`; "goal" = `target_price`.)
 
 | Situation | Concession policy | Max discount | Hold-firm trigger |
 |-----------|-------------------|--------------|-------------------|
@@ -108,7 +169,7 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 | Multi-round on higher value | CONC-003: shrinking ladder to floor, odd ending + tiny add-on | down to floor only | Floor reached, buyer stops reciprocating |
 | "Just split the difference" | CONC-004: counter odd above midpoint; split only inside comps | inside comps, above floor | Midpoint below floor, or absurd anchor |
 | "Free shipping?" | CONC-005: absorb shipping OR flat number — **not both** | shipping if <~15% item value | Thin margin + heavy item, or wants cut AND shipping |
-| Bundle 2+ items | CONC-006: blended discount + combined shipping, labeled If/then | ~10–20% off singles | Re-cutting after adds; below item floors |
+| Bundle 2+ items *(secondary — fashion / multi-item)* | CONC-006: blended discount + combined shipping, labeled If/then | ~10–20% off singles | Re-cutting after adds; below item floors |
 | Stuck on a public low stand | CONC-007: golden bridge (real cover), keep best offer | = underlying floor | No real interest to meet; only cover would be fake |
 | Aging listing, lone buyer, weak BATNA | CONC-008: flex but extract small reciprocal/bundle | toward true floor via ladder | Genuinely scarce; better to relist at season |
 | Repeat/loyal/local | CONC-009: small loyalty courtesy, warm | ~5–15% | Buyer exploiting relationship for repeat deep cuts |
@@ -123,7 +184,7 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 | "Cheaper elsewhere" | OBJ-competitor-cheaper | Probe claim, differentiate, don't disparage | PRIN-003, PRIN-011, PRIN-036 |
 | "What condition really?" | OBJ-condition-doubt | Proof + contingent terms; no price drop pre-sale | PRIN-013, PRIN-030, PRIN-036 |
 | "Shipping too high / free?" | OBJ-shipping-cost | Absorb or flat-number; spread fee over bundle | PRIN-005, PRIN-006, PRIN-028 |
-| "Bundle deal?" | OBJ-wants-bundle-deal | Embrace, move northeast, labeled If/then | PRIN-006, PRIN-005, PRIN-022 |
+| "Bundle deal?" *(secondary — fashion)* | OBJ-wants-bundle-deal | Embrace, move northeast, labeled If/then | PRIN-006, PRIN-005, PRIN-022 |
 | Silence / "thinking about it" | OBJ-stalling-ghosting | Find blocker, 'No'-question, keep offer visible | PRIN-015, PRIN-023, PRIN-011 |
 | "Pay outside the app" | OBJ-off-platform-request | **Safety stop**, decline on principle, never ship unpaid | PRIN-044 |
 | "How do I know it's real?" | OBJ-trust-authenticity | Genuine proof/authority, platform protection | PRIN-030, PRIN-029, PRIN-036, PRIN-041 |
@@ -151,7 +212,7 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 
 *If the buyer instead repeats "$25" with hostility after two exchanges → disengage politely, leave the standing offer, relist (OBJ-lowball escalate rule).*
 
-### Turn-by-turn example B — Bundle request (INTENT-006 / OBJ-wants-bundle-deal / CONC-006)
+### Turn-by-turn example B — Bundle request *(secondary — fashion / multi-item)* (INTENT-006 / OBJ-wants-bundle-deal / CONC-006)
 
 > Buyer has liked 3 items: tee $15, cap $15, jacket $40 (singles total $70).
 
@@ -192,7 +253,9 @@ The five canonical asset families are referenced throughout: **PRIN-xxx** (princ
 
 ## Stage 5 — Post-interaction learning (feed the loop)
 
-> Every closed (or dead) thread is training data. The copilot logs structured outcomes so it can tune anchoring, concession depth, intent classification, and per-seller coaching over time. Seller **edits to drafts** are the strongest signal — they reveal where the copilot's judgment diverges from the seller's.
+> Every closed (or dead) thread is training data. The copilot logs structured outcomes so it can tune anchoring, concession depth, intent classification, and per-seller coaching over time.
+>
+> **The corrected learning loop (CONVENTIONS §D steps 5–6):** the ground-truth training signal is **seller edits to drafts + realized outcomes** — not the copilot's own self-score. The pre-send self-check is a **gate** (within bounds? on-voice? honest?), and its score is recorded **only to track its calibration against outcomes**, never used as the teacher (LLM self-grading is unreliable/sycophantic). Seller edits to **held** drafts (CONVENTIONS §B) are the strongest signal — they reveal where the copilot's judgment or voice diverges from the seller's. **See SECTION-5 for the full self-improving-system design**; this stage defines what Section 3 logs into it.
 
 ### What gets logged per thread
 

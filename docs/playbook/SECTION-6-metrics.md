@@ -1,8 +1,31 @@
 # Section 6 — Metrics for Success (NOT just highest price)
 
-> The copilot's job is **not** to maximize sale price. A price-only optimizer learns to manipulate, burns trust, kills repeat business, and triggers disputes — all of which a casual seller pays for later. Success is a *balance* of three things the books care about: **profit**, **trust/relationship**, and **speed**. This dashboard makes that balance explicit and gives the §5 learning loop its reward terms.
->
+## Changelog (v2)
+- **New primary/north-star metric (§6.0):** "% of completed sales that meet the seller's *stated* objective" — measured **relative to the seller's per-listing objective**, not a global "highest price" (CONVENTIONS §G).
+- **Added technique-lift** as a first-class validity metric (agent-with-techniques vs. naive-baseline seller on matched buyer seeds). See §6.0 and EVAL-PLAN.md.
+- **Added self-score calibration** (step-5 self-check score vs. actual outcome) — guards the sycophantic-self-grading failure; ties to the loop fix in SECTION-5 / CONVENTIONS §D steps 5–6.
+- **Added bound-compliance / guardrail metrics** (never-breach-walkaway %, guardrail catch-rate) as explicit hard floors (§6.0).
+- Existing 14-metric table (§6.2) preserved unchanged; added an **objective_weight mapping** note (§6.2.1) so price-weighted vs. speed-weighted sellers read the right metrics.
+
+## 6.0 Primary metric (north-star) and hard floors
+**North-star — Stated-objective hit rate.** % of completed sales that meet the **seller's stated objective for that listing**:
+- **Price-weighted sellers** (`objective_weight` high): sale closes **≥ `target_price`**.
+- **Speed-weighted sellers** (`objective_weight` low): sale closes **within the `urgency` window** (`gone_today` / `this_week` / `no_rush`).
+- **Always, for every seller:** **never below `walkaway_price`** (hard bound, CONVENTIONS §A).
+
+> **Measured RELATIVE to the objective, not absolutely.** Because the objective is **seller-set per listing** (the price↔speed `objective_weight` slider, §E mapping), success is *not* a global "highest price." A fast close at `target` for a `gone_today` seller is a full win; the same outcome for a max-price seller may be a miss. This is the single number the §5 reward and the eval rubric optimize against — but it is reported *with* the §6.1 three-axis band, never alone.
+
+**Technique-lift (validity, not just safety).** Outcome of **agent-with-techniques vs. naive-baseline seller on matched buyer seeds** (same simulated-buyer persona + hidden WTP + seed, CONVENTIONS §F). This is how we **prove the playbook actually works**, not merely that it stays safe: lift on stated-objective hit rate, final-price-vs-ask, and time-to-sale at equal-or-better trust metrics. Full A/B design and significance handling: **EVAL-PLAN.md**.
+
+**Self-score calibration (anti-sycophancy).** Agreement between the **step-5 self-check score** (the pre-send FILTER, CONVENTIONS §D step 5) and the **actual outcome**. The self-score is a gate, **never** the learning signal; this metric exists to detect drift where the model grades its own drafts optimistically (the sycophantic-self-grading failure). Low calibration → distrust the self-score and lean on edits+outcomes (ties to the loop fix in SECTION-5, CONVENTIONS §D step 6). Measured as correlation / agreement between self-score and realized outcome on held-out transcripts.
+
+**Bound-compliance & guardrails (hard floors — never trade-offs).**
+- **Walkaway-compliance:** % of conversations that **never** breach `walkaway_price`. **Target ≈ 100%.** Any breach is a defect, not a tuning knob.
+- **Guardrail catch-rate:** % of injected violations **caught and blocked** — off-platform/payment-change requests, fabricated scarcity/comps/authority, and below-floor accepts (CONVENTIONS §B ESCALATE, §D step 4–5). Target high catch-rate; watch false-positive rate on legit buyers as the only acceptable failure mode.
+
 > **Source note:** The negotiation logic these metrics measure is source-supported. The specific metric set, formulas, and "failure mode if over-optimized" framing are **synthesized** for this product. Targets are placeholders to be tuned from real data (§8).
+
+> The copilot's job is **not** to maximize sale price. A price-only optimizer learns to manipulate, burns trust, kills repeat business, and triggers disputes — all of which a casual seller pays for later. Success is a *balance* of three things the books care about: **profit**, **trust/relationship**, and **speed**, all in service of the seller's stated objective (§6.0). This dashboard makes that balance explicit and gives the §5 learning loop its reward terms.
 
 ## 6.1 The three axes
 Every metric maps to one of three axes. A healthy seller is good on all three; over-optimizing any one degrades the others.
@@ -30,9 +53,20 @@ Every metric maps to one of three axes. A healthy seller is good on all three; o
 | 13 | **Bundle / pie-growth rate** | 💰/🤝 | Captures integrative value (PRIN-006, INTENT-006) — more units moved at better blended margin, win-win | % multi-item sales; mean items per sale | Forcing bundles on single-item buyers → friction, abandoned carts (PRIN-006 when_not_to_use) |
 | 14 | **Trust-preserved composite** | 🤝 | The relationship counterweight in the §5 reward; rolls up disputes + reviews + repeats + non-ghosting | weighted index of #5–#7, #10 | If weighted too high vs. profit → the system becomes a pushover; the *balance* between this and #2/#4 is the product's core tuning knob |
 
+### 6.2.1 Which metrics map to which `objective_weight`
+The 14 metrics above are universal, but **price-weighted and speed-weighted sellers read different ones as primary** (the §E objective→behavior mapping in action). The north-star (§6.0) collapses these into one objective-relative number; this table is for diagnostics.
+
+| `objective_weight` setting | Reads as primary | De-prioritized (still gated, never breached) |
+|---|---|---|
+| **Price-weighted** (high) | #2 final-price-vs-ask, #4 margin-vs-floor, #8 discount discipline, #13 bundle/pie-growth | #1 sell-through, #3 time-to-sale (tolerated longer) |
+| **Speed-weighted** (low) | #1 sell-through, #3 time-to-sale, #7 ghosting-recovery, #12 message-to-sale | #2 final-price-vs-ask (accept lower % of list, per §E accept threshold) |
+| **Both, always (hard floors)** | #4 sub-floor count (→ §6.0 walkaway-compliance), #11 off-platform/scam-avoidance (→ §6.0 guardrail catch-rate) | — never traded off for either objective |
+
+Trust metrics (#5, #6, #10, #14) gate *both* settings — neither speed nor price may be bought by burning trust.
+
 ## 6.3 The balance, stated plainly
 - **Never report a single number.** A "win" is a green band across all three axes, not a high price.
 - **Profit metrics (#2, #4, #8, #13) are gated by trust metrics (#5, #6, #10, #14).** The §5 reward function encodes exactly this: margin terms are net of dispute/ghost/edit penalties.
 - **Speed (#1, #3, #7, #12) is the tie-breaker, not the goal** — a casual seller wants their stuff *gone at a fair price with no drama*, which is all three axes at once.
-- **Two metrics are hard floors, not tradeoffs:** off-platform/scam-avoidance (#11) and never-below-floor (#4 sub-floor count). Everything else is balanced; these two are absolute.
+- **The hard floors are never tradeoffs:** off-platform/scam-avoidance (#11 → §6.0 guardrail catch-rate) and never-below-floor (#4 sub-floor count → §6.0 walkaway-compliance, target ≈ 100%). Everything else is balanced; these are absolute.
 - **The one knob that defines the product's personality** is the weight of #14 (trust composite) against #2/#4 (margin). Ship a sensible default; expose it to the seller as a "firm ↔ friendly" dial (PRIN-027 made tangible) rather than letting it drift inside the optimizer.
