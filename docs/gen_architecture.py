@@ -159,7 +159,7 @@ arrow([right(l8), (480, 639), (480, 410), left(hub)], color="#16a34a", width=3, 
 text("SELF-IMPROVEMENT LOOP  ★ centerpiece", 1010, 110, size=16, color="#b45309")
 r1 = box(1010, 200, 340, 64, "🧪  Buyer Simulator\npersonas + hidden reservation price", role="gray", size=12)
 r2 = box(1010, 286, 340, 44, "💬  Episodes — transcripts + outcomes", role="loop", size=13)
-r3 = box(1010, 354, 340, 60, "📊  Score:  surplus capture · close rate · turns\n+ LLM-as-judge (DO)", role="loop", size=12)
+r3 = box(1010, 354, 340, 60, "📊  Verifiable surplus reward (selects)\n+ Tier-2 integrity verifier (shapes)", role="loop", size=12)
 r4 = box(1010, 438, 340, 60, "🪞  Optimizer — reflect on transcripts →\npropose an improved Strategy", role="loop", size=12)
 r5 = box(1010, 522, 340, 48, "⚖️  A/B select — keep better → next generation", role="loop", size=12)
 r6 = box(1010, 594, 340, 60, "🔥  (stretch) Gemma 4 LoRA fine-tune\non winning transcripts · DO GPU", role="gemini", size=12, dashed=True)
