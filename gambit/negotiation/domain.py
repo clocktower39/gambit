@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from ..engine.seam import EpisodeResult
 from .models import Episode, Item, Outcome, budget_of, situation_key
-from .policies import BuyerCounterparty, SellerPolicy
+from .policy import Features, PolicyStore
+from .policies import BuyerCounterparty, KnobSellerPolicy, SellerPolicy
 from .reward import audit_episode, reward
 
 
@@ -79,9 +80,11 @@ class NegotiationDomain:
         self.items = items
         self.max_turns = max_turns
 
-    def rollout(self, policy: SellerPolicy, counterparty: BuyerCounterparty, seed: int) -> EpisodeResult:
+    def rollout(self, policy: PolicyStore, counterparty: BuyerCounterparty, seed: int) -> EpisodeResult:
         item = self.items[seed % len(self.items)]          # seed selects the scenario, deterministically
-        ep = run_episode(item, policy, counterparty, self.max_turns)
+        knobs = policy.knobs.resolve(Features(margin_ratio=item.margin_ratio))  # global parametric → per-episode
+        seller = KnobSellerPolicy(knobs)
+        ep = run_episode(item, seller, counterparty, self.max_turns)
         o = ep.outcome
         return EpisodeResult(
             bucket=situation_key(item),                    # buyer_type stays "unknown" until belief inference

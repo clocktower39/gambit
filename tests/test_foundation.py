@@ -13,8 +13,7 @@ from gambit.negotiation import (
     Episode,
     HeuristicBuyer,
     Item,
-    Knobs,
-    KnobSellerPolicy,
+    PolicyStore,
     Move,
     NegotiationDomain,
     Outcome,
@@ -109,10 +108,10 @@ def test_no_deal_is_neutral():
 
 def test_rollout_is_clean_and_reproducible():
     domain = NegotiationDomain(ITEMS)
-    seller = KnobSellerPolicy(Knobs())
+    policy = PolicyStore()
     buyer = HeuristicBuyer(PERSONAS[1])  # Fence-sitter Fran (feasible)
-    r1 = domain.rollout(seller, buyer, seed=0)
-    r2 = domain.rollout(seller, buyer, seed=0)
+    r1 = domain.rollout(policy, buyer, seed=0)
+    r2 = domain.rollout(policy, buyer, seed=0)
     assert isinstance(r1, EpisodeResult)
     assert r1.model_dump() == r2.model_dump()      # deterministic by seed
     assert r1.viol == 0                            # the deterministic policies never cheat
@@ -124,21 +123,21 @@ def test_rollout_is_clean_and_reproducible():
 def test_infeasible_buyer_never_deals_below_floor():
     # Tire-kicker Tess: budget below any floor → a deal would require going sub-floor.
     domain = NegotiationDomain(ITEMS)
-    seller = KnobSellerPolicy(Knobs())
+    policy = PolicyStore()
     tess = HeuristicBuyer(PERSONAS[3])
     for seed in range(len(ITEMS)):
         item = ITEMS[seed % len(ITEMS)]
         assert budget_of(item, tess.persona) < item.floor_price   # infeasible by construction
-        r = domain.rollout(seller, tess, seed=seed)
+        r = domain.rollout(policy, tess, seed=seed)
         assert r.viol == 0                  # integrity holds: never sells below floor
         assert r.reward >= 0.0              # no below-floor deal (no -1); walking is neutral
 
 
 def test_batch_summary_panel():
     domain = NegotiationDomain(ITEMS)
-    seller = KnobSellerPolicy(Knobs())
+    policy = PolicyStore()
     buyers = [HeuristicBuyer(p) for p in PERSONAS]
-    results = run_batch(domain, seller, buyers, seeds=list(range(len(ITEMS))))
+    results = run_batch(domain, policy, buyers, seeds=list(range(len(ITEMS))))
     panel = summarize(results)
     assert panel["n"] == len(buyers) * len(ITEMS)
     assert panel["viol"] == 0              # whole batch is integrity-clean
