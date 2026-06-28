@@ -125,7 +125,11 @@ async def _verify_llm(ep: Episode, model=None) -> dict:
     # retries: MiniMax occasionally returns a structured response that fails schema validation;
     # a few re-asks (pydantic-ai's built-in budget, not a custom retry layer) make the live path
     # reliable instead of dropping straight to the deterministic fallback on a single bad parse.
-    agent = Agent(model or model_for("verifier"), output_type=Verdict, system_prompt=SYSTEM,
+    # fresh=True is load-bearing for integrity: the shared (lru_cached) client binds its httpx pool
+    # to the event loop it was first used on, but `_run` spawns a new `asyncio.run` per call — reusing
+    # the shared client then raises, and `verify_episode` silently degrades to the OFFLINE (semantically
+    # vacuous) verdict, i.e. a fake clean viol=0. A dedicated client keeps the live Tier-2 audit running.
+    agent = Agent(model or model_for("verifier", fresh=True), output_type=Verdict, system_prompt=SYSTEM,
                   retries=2)
     verdict = (await agent.run(_build_prompt(ep))).output
     answers = {q.id: bool(getattr(verdict, q.id)) for q in QUESTIONS}
