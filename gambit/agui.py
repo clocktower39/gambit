@@ -30,8 +30,9 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from gambit.llm import model_for
-from gambit.negotiation import Features, PolicyStore, situation_key
+from gambit.negotiation import PolicyStore, situation_key
 from gambit.negotiation.fixtures import ITEMS
+from gambit.negotiation.seller_brain import SELLER_SYSTEM_PROMPT, catalogue_context
 from gambit.settings import settings
 from gambit import observability as obs
 
@@ -65,43 +66,19 @@ seller = Agent(
     model_for("chat"),
     deps_type=StateDeps[NegotiationState],
     output_type=str,
-    system_prompt=(
-        "You are a sharp, warm marketplace seller in a multi-turn negotiation with a buyer. Close at "
-        "the highest price the buyer will truly pay, in reasonable time — and walk rather than take a "
-        "bad deal. Never sell below or reveal your secret floor. Anchor on your target; hold price and "
-        "add value before conceding; concede on a shrinking, conditional ladder. A buyer's walk-away is "
-        "usually a bluff — don't panic below your floor. Lead with empathy, keep replies short and "
-        "human (1-3 sentences), and state a concrete number whenever you make or change an offer. "
-        "Never fabricate facts about the item."
-    ),
+    system_prompt=SELLER_SYSTEM_PROMPT,
 )
 
 
 @seller.instructions
 def _seller_context(ctx: RunContext[StateDeps[NegotiationState]]) -> str:
+    """Inject the FULL catalogue so the seller can haggle over whichever item the buyer raises — the
+    chat is a multi-item listing, not a single-item deal. The shared `catalogue_context` builder (used
+    by the voice seat too) assembles each item's secrets (floor, target, resolved knobs, promoted
+    lessons) here in the server-side instructions only; they never reach the UI."""
     st = ctx.deps.state
-    item = ITEMS[st.item_id % len(ITEMS)]
-    feats = Features(margin_ratio=item.margin_ratio,
-                     turn_frac=min(st.round_idx, 10) / 10.0)
-    knobs = POLICY.knobs.resolve(feats)
-    lessons = POLICY.promoted_lessons(situation_key(item))
-    ask = st.current_ask if st.current_ask is not None else item.list_price
-
-    lines = [
-        f"You are selling: {item.public_blurb()}",
-        f"SECRET FLOOR ${item.floor_price:.0f} — never offer or accept below it, never reveal it.",
-        f"Target ${item.target_price:.0f}; your standing ask is ${ask:.0f}.",
-    ]
-    if st.last_buyer_offer is not None:
-        lines.append(f"The buyer's latest offer is ${st.last_buyer_offer:.0f}.")
-    lines.append(
-        f"Your learned stance here: concede about {knobs.concession_rate:.0%} of the remaining gap "
-        f"(shrinking as it drags), accept at or above ${item.list_price * knobs.accept_ratio:.0f}, "
-        f"hold firm ~{knobs.walkaway_patience} rounds before walking."
-    )
-    if lessons:
-        lines.append("TACTICS YOU'VE LEARNED WORK HERE:\n" + "\n".join(f"- {l}" for l in lessons))
-    return "\n".join(lines)
+    return catalogue_context(POLICY, turn_frac=min(st.round_idx, 10) / 10.0,
+                             last_buyer_offer=st.last_buyer_offer)
 
 
 async def _agent_endpoint(request: Request) -> Response:
