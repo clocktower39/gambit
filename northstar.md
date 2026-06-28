@@ -34,7 +34,8 @@ Done is not a date — it's three properties that have to hold and keep holding.
    deterministic, and an independent verifier audits every gain.
 
 When all three hold and the curve is still climbing, we've built the thing. The more it
-negotiates, the better it gets — that's the product.
+negotiates, the better it gets — that's the product. How each property is measured (safety vs.
+transferable validity, the held-out curve, the substrate ablation) is in [`docs/eval-plan.md`](docs/eval-plan.md).
 
 ---
 

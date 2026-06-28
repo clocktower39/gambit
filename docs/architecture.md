@@ -304,6 +304,8 @@ per-bucket ceiling itself.
 held-out set is *structurally different* from training — a different buyer-policy family (the LLM
 buyer, a human), **not** the same simulator with a different `budget_ratio`. Same generator + new
 params is in-distribution; it does not validate transfer, and the curve's credibility rests on this.
+How all of this is measured — the safety/validity gates, the held-out generational curve, the
+substrate ablation vs a global prompt — is in **[`eval-plan.md`](./eval-plan.md)**.
 
 ## Self-improving optimizer — Gemini Antigravity (managed agent)
 

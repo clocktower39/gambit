@@ -1,5 +1,12 @@
 # Evaluation Plan — "Gambit" marketplace selling copilot
 
+> ⚠️ **SUPERSEDED — historical reference.** This plan is for the earlier *hybrid-autonomy selling
+> copilot* (6-step loop, INTENT/CONC/OBJ assets, seller-approval). The project has since pivoted to a
+> **self-play auto-negotiator** with a frozen model and a situation-keyed `PolicyStore`. The current
+> eval plan is **[`docs/eval-plan.md`](../eval-plan.md)**. This file is kept as part of the
+> "reference, not code" playbook — its safety-vs-validity framing and harness/statistics skeleton were
+> carried forward, but its assets and the 6-step loop do not exist in the current system.
+
 > Conforms to `CONVENTIONS.md` (authoritative). Spine references: §D the 6-step loop, §F simulated buyer harness, §G north-star. Supporting: `SECTION-6-metrics.md`, `SECTION-8-gaps.md`. Asset IDs (PRIN/INTENT/OBJ/CONC/COACH) cited from `assets/json/`.
 >
 > Audience: the dev team. This is how we prove the agent works and how we measure the foundational bet — *before* any real marketplace integration. Everything here runs against the **simulated buyer harness** (§F); no live platform.

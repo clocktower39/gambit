@@ -23,7 +23,7 @@ had, rewrites its own negotiation strategy, and keeps what measurably wins.
             │   private info on each side)                               ▼   │
             │         ▲                                                      │
             │         └──────────  Optimizer  ◄── reflect on wins/losses ────┘
-            │            (rewrites tactics + tunes knobs, keeps what scores higher)
+            │            (improves the weakest situation-bucket; promotes what wins on held-out)
 ```
 
 - **Pluggable counterparty** — the loop is a *referee* over two policies; what's on the other
@@ -32,12 +32,18 @@ had, rewrites its own negotiation strategy, and keeps what measurably wins.
   (lowballer, fence-sitter, in-a-hurry, tire-kicker) and rewarded for its own surplus — so the
   agent improves by negotiating against itself, no human labels. A **human** (by text or voice)
   or a **live market** (eBay) drops into the same seat unchanged. The seller never sees the budget.
-- **Seller** — negotiates from a `Strategy` (anchor, concession schedule, accept threshold,
-  walk-away patience, free-text tactics).
-- **Optimizer** — the self-improvement brain. With an LLM it reflects on real transcripts and
-  rewrites its own tactics + knobs; offline it runs a deterministic search so the loop is
-  testable with no API key. A **Gemini Antigravity** backend can run this as a managed agent that
-  edits its own `SKILL.md` across generations. Either way it *proposes* — the deterministic reward *selects*.
+- **Seller** — negotiates from the **resolved situation-bucket** of a learned `PolicyStore`, keyed
+  by `(price_band, margin_band, buyer_type)`: per-bucket anchor, concession schedule, accept
+  threshold, walk-away patience, **plus that bucket's validated lessons**. The model's weights are
+  frozen — *the policy table is what learns.*
+- **Optimizer** — the self-improvement brain. The weights can't change, so it improves the **data the
+  agent reads**: each generation it finds the weakest bucket and proposes a scoped knob tweak or
+  lesson, kept only if a **per-bucket held-out A/B** raises surplus with `viol=0` (Beta/Thompson
+  exploration; validated lessons are never evicted → no forgetting). Offline it runs a deterministic
+  search so the loop is testable with no API key. A **Gemini Antigravity** backend can run this as a
+  managed agent that edits *one weak bucket's* skill fragment across generations. Either way it
+  *proposes* — the deterministic reward *selects*. (Why a table, not one global prompt: a single
+  prompt plateaus, forgets, and can't attribute gains — see [`docs/architecture.md`](docs/architecture.md).)
 - **Reward** — a *deterministic, verifiable* surplus from the secret floor drives selection
   (no LLM judge — following arXiv:2604.09855), with a terminal penalty for going below floor and
   neutral credit for walking away. A reward-integrity guard audits every transcript so the
@@ -81,7 +87,8 @@ held-out buyers (never trained on):  surplus 0.16 -> 0.36
 | Phase | What | Status |
 |---|---|---|
 | **1 — Learning core** | seller + self-play buyer (one shared policy) + self-improvement loop + reward + head-to-head | ✅ runnable (offline + MiniMax M3) |
-| **1 — Self-improving optimizer** | **Gemini Antigravity** managed agent rewrites its own tactics `SKILL.md` across generations (stateful env) — proposes, never selects | ⬜ |
+| **1 — Learned artifact** | situation-keyed `PolicyStore` (per-bucket knobs + value-attributed lessons) + per-bucket held-out A/B promotion — replaces the global tactics blob | ⬜ |
+| **1 — Self-improving optimizer** | **Gemini Antigravity** managed agent improves one weak bucket's skill fragment across generations (stateful env) — proposes, never selects | ⬜ |
 | **2 — Real marketplace** | eBay connector (real list + Best Offer loop, **eBay API**) — see `docs/ebay.md` | ⬜ |
 | **2 — Voice buyer seat** | **LiveKit + Gemini Live/Translate**: a human haggles by voice, cross-language, in the buyer seat | ⬜ |
 | **2 — Listing images** | **Nano Banana** (Gemini) listing photo + text-in-image | ⬜ |
@@ -108,7 +115,9 @@ gambit/
   settings.py      # pydantic-settings BaseSettings (env / .env, validated)
   observability.py # logfire.configure() + instrument_pydantic_ai (once, at entry)
   llm.py           # MiniMax M3 OpenAIChatModel factory + FallbackModel (inner loop)
-  models.py        # ALL domain types as Pydantic BaseModel (+ validators)
+  models.py        # ALL domain types as Pydantic BaseModel (+ validators): Item, Strategy
+                   #   (per-bucket knobs), Lesson, BucketPolicy, PolicyStore, Episode, Belief
+  policy.py        # the learned artifact: situation_key() + PolicyStore + per-bucket held-out promotion
   agents/          # seller · buyer · optimizer · verifier (typed Agents)
                    #   + optimizer_antigravity.py — Gemini managed-agent optimizer backend
   policies.py      # Policy protocol: self-play (LLM) · heuristic · human · live-market
@@ -122,6 +131,7 @@ gambit/
 scripts/run_demo.py
 docs/architecture.md  # engineering design & approach
 docs/self-learning.md # research grounding (which paper buys what)
+docs/eval-plan.md     # how we prove it works & keeps improving (safety vs transferable validity)
 docs/ebay.md          # Phase-2 eBay connector runbook
 ```
 
@@ -130,7 +140,8 @@ docs/ebay.md          # Phase-2 eBay connector runbook
   two sandbox test users + OAuth user token.
 - **MiniMax** (the LLM): API key → `MINIMAX_API_KEY`, plus the M3 `MINIMAX_BASE_URL` / `MINIMAX_MODEL`.
 - **DigitalOcean** (deploy + data): claim credits → App Platform (deploy) + Managed Postgres
-  (pgvector) for memory + Spaces (images). Inference now lives on MiniMax.
+  (persists the `PolicyStore` as plain indexed rows; pgvector only for optional Tier-C exemplar
+  retrieval) + Spaces (images). Inference now lives on MiniMax.
 - **Logfire** (optional, fast): logfire.pydantic.dev → write token → `LOGFIRE_TOKEN`. Without it
   tracing runs locally; with it the improvement curve is a live dashboard.
 - **LiveKit**: Cloud project → URL + API key/secret (the voice buyer seat's transport).
