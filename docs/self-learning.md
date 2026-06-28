@@ -1,5 +1,9 @@
 # Gambit's self-learning loop — standing on the 2026 negotiation-RL frontier
 
+> This is the **research grounding** (which paper buys what). The engineering design that
+> implements it — typed agents, Pydantic everywhere, Logfire — is in [`architecture.md`](./architecture.md).
+> Module/type names below refer to that rebuild target.
+
 The 2026 shift is from *prompted haggling bots* to *trained agents in verifiable
 bargaining environments*. Gambit is built on that thesis: a constrained economic
 game with **structured actions, private information, a verifiable-outcome reward,
@@ -7,28 +11,33 @@ and integrity rails** — not a better chat prompt.
 
 ## What each paper buys us, and where it lives in the code
 
-| Source | Lesson we adopted | In Gambit |
+| Source | Lesson we adopted | In Gambit (typed rebuild) |
 |---|---|---|
-| **RLVR** — *Instructing LLMs to Negotiate w/ Verifiable Rewards* (arXiv:2604.09855) | Reward = programmatic surplus, **not** an LLM judge; terminal shaping; reservation-enforced sim; `<reasoning>/<dialogue>/<action>` schema | `metrics.reward` (surplus from secret floor, −1 integrity / 0 walk / surplus), `Message.reasoning|text|offer`, hidden reasoning excluded from `transcript()` |
-| **Bilateral Trade w/ Private Info** (arXiv:2604.16472) | Separate **binding structured offers** from the NL channel; surplus↔deal-rate tension | `Message.offer` (binding) ⊥ `Message.text` (dialogue); deal-rate is implicit in the reward (no-deal = 0) |
-| **BINEVAL** (arXiv:2606.27226) | Decompose fuzzy quality into **atomic binary checks**; prompt-opt gains collapse after 1–2 iters | `verifier.py` (binary checklist on a stronger model), `optimizer.merge_tactics` (dedup + length cap) |
-| **TERMS-Bench** (arXiv:2605.13909) / **AgenticPay** (arXiv:2602.06008) | Go beyond deal-rate: **infer counterparty type/reservation**, calibrate beliefs | `opponent.py` — reservation estimation + belief-calibration metric (95% offline) |
-| hud-trace-explorer (patterns only) | Adversarial reward-integrity guard so the curve is defensible | `metrics.audit_episode` (Tier-1 deterministic) + `verifier.audit_run` (Tier-2) |
+| **RLVR** — *Instructing LLMs to Negotiate w/ Verifiable Rewards* (arXiv:2604.09855) | Reward = programmatic surplus, **not** an LLM judge; terminal shaping; reservation-enforced sim; `<reasoning>/<dialogue>/<action>` schema | `reward.reward` (surplus from secret floor, −1 integrity / 0 walk / surplus); the schema is a Pydantic `NegotiationMove` (`reasoning · text · action: Literal · offer`), reasoning excluded from `Episode.transcript()` |
+| **Bilateral Trade w/ Private Info** (arXiv:2604.16472) | Separate **binding structured offers** from the NL channel; surplus↔deal-rate tension | `NegotiationMove.offer` + `action` (binding channel) ⊥ `.text` (dialogue); deal-rate implicit in the reward (no-deal = 0) |
+| **BINEVAL** (arXiv:2606.27226) | Decompose fuzzy quality into **atomic binary checks**; prompt-opt gains collapse after 1–2 iters | `agents/verifier.py` → `AuditVerdict` schema (one `AuditAnswer{answer, reason}` per question — the checklist *is* the type); anti-bloat is a schema constraint: `OptimizerProposal.lessons = Field(max_length=3)` |
+| **TERMS-Bench** (arXiv:2605.13909) / **AgenticPay** (arXiv:2602.06008) | Go beyond deal-rate: **infer counterparty type/reservation**, calibrate beliefs | `opponent.py` — reservation estimation + belief-calibration metric (95% offline); `Belief` is a `BaseModel` |
+| hud-trace-explorer (patterns only) | Adversarial reward-integrity guard so the curve is defensible | `reward.audit_episode` (Tier-1 deterministic) + `agents/verifier.py` (Tier-2); plus per-agent `output_validator`s that reject below-floor / over-budget moves before they ever enter a transcript |
 
 **Reward philosophy (the load-bearing nuance):** binary/LLM evaluators give *dense
 qualitative feedback* to the optimizer, but **never select**. Money-moving selection
 stays on the deterministic verifiable surplus. This is the best anti-reward-hacking
 defense — the judge would be the hackable component.
 
-## Done
+## Proven in scaffolding → carried into the typed rebuild
 
-- ✅ Verifiable surplus reward + Tier-1 deterministic integrity audit (`metrics.py`)
-- ✅ Tier-2 BINEVAL binary-question verifier on a stronger model (`verifier.py`)
-- ✅ **Verifier → optimizer dense feedback**: `propose_llm` audits the worst transcripts
-  and turns each flag into a targeted lesson (shapes proposals, never selects)
-- ✅ Anti-bloat: lessons merged with dedup + hard length cap (`optimizer.merge_tactics`)
-- ✅ Held-out personas + early-stop when held-out plateaus (`improve_loop.improve`)
-- ✅ Opponent modeling + belief-calibration eval (`opponent.py`)
+These mechanisms were validated end-to-end in the throwaway scaffolding; the rebuild keeps the
+behavior and expresses it through the typed contract (see [`architecture.md`](./architecture.md)).
+
+- ✅ Verifiable surplus reward + Tier-1 deterministic integrity audit (`reward.py`)
+- ✅ Tier-2 BINEVAL binary-question verifier on a stronger model (`agents/verifier.py` → `AuditVerdict`)
+- ✅ **Verifier → optimizer dense feedback**: the optimizer audits the worst transcripts and turns
+  each flag into a targeted lesson (shapes proposals, never selects)
+- ✅ Anti-bloat: lessons capped at the schema level (`OptimizerProposal.lessons = Field(max_length=3)`) + dedup validator
+- ✅ Held-out personas + early-stop when held-out plateaus (`improve_loop`)
+- ✅ Opponent modeling + belief-calibration eval (`opponent.py`; `Belief` is a `BaseModel`)
+- ➕ New in the rebuild: per-agent `output_validator`s as hard integrity rails (below-floor /
+  over-budget moves trigger a `ModelRetry` instead of reaching the transcript)
 
 ## Remaining refinements (prioritized menu — none are blockers)
 

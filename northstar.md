@@ -53,7 +53,10 @@ integration + validation task** (swap inference to MiniMax, confirm it climbs on
 |---|---|---|
 | **LLM** | **MiniMax M3** | We have an API key; MiniMax is a hackathon sponsor. |
 | **LLM framework** | **Pydantic AI** | Typed, validated structured outputs — replaces hand-rolled JSON parsing. |
-| **Language** | Python | |
+| **Models / types** | **Pydantic** (`BaseModel`, `pydantic-settings`) | One typed contract end-to-end — no dataclasses. Validators are the integrity rails. |
+| **Observability** | **Logfire** | `instrument_pydantic_ai()` — every agent run + the improvement curve in one dashboard; debugs the never-tested LLM paths. |
+| **Language** | Python (≥ 3.11) | |
+| **Packaging** | **uv** | `pyproject.toml` + `uv.lock`; `uv run` / `uv add` (not pip). |
 | **Deployment + data** | **DigitalOcean** | App Platform (deploy) · Managed Postgres + pgvector (memory) · Spaces (images). |
 | **Demo surface** | **CLI first (Tier 0)** → web (Tier 1) | Fastest path to "it works live." |
 
@@ -110,12 +113,15 @@ The **Gemini $5k** hooks are dropped unless re-added in Tier 3.
 
 ### 🟢 Tier 0 — MVP (the only thing that MUST work)
 **Goal:** the self-improvement loop climbs **live on MiniMax M3**, shown via CLI.
-- [ ] Confirm `pydantic-ai` installed; pin in `requirements.txt`.
+- [x] uv project set up (`pyproject.toml` + `uv.lock`); **`pydantic-ai` 2.0.0 installed**.
 - [ ] New `gambit/llm.py`: Pydantic AI model pointed at MiniMax (OpenAI-compatible, key from env) + typed
       output models (`SellerMove`, `BuyerMove`, `OptimizerProposal`, `AuditVerdict`).
 - [ ] Refactor `seller_agent`, `buyer_sim`, `optimizer.propose_llm`, `verifier._verify_llm` to the
       Pydantic AI agents; keep offline heuristics as the fallback. Delete `inference.py`'s JSON parsing.
-- [ ] Config: `MINIMAX_API_KEY`, `MINIMAX_BASE_URL`, `MINIMAX_MODEL`; keep `OFFLINE`.
+- [ ] Config: `MINIMAX_API_KEY`, `MINIMAX_BASE_URL`, `MINIMAX_MODEL`; keep `OFFLINE`. Use
+      `pydantic-settings` (`gambit/settings.py`) — typed, `.env`-aware.
+- [ ] Observability: `logfire.configure()` + `instrument_pydantic_ai()` at the entry point —
+      every agent run + the curve traced (invaluable for debugging the never-run LLM paths). `LOGFIRE_TOKEN` optional.
 - [ ] Run `run_demo.py` (LLM mode) on a small batch (1 item × 3–4 personas × ~4 gens); tune for cost/latency.
 - **Done when:** live MiniMax run shows surplus climbing across generations with `viol=0%`, and we
   capture real (non-heuristic) head-to-head numbers.

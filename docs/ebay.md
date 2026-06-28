@@ -77,5 +77,8 @@ def trading_call(call_name, xml_body, token):
 ```
 
 **Maps to our code:** implement `connectors/ebay.py` against the `connectors/base.py` interface
-(`post_listing`, `get_offers`, `respond_offer`). The negotiation *brain* stays the same
-`SellerAgent` + `Strategy`; the connector just translates its decisions into Trading API calls.
+(`post_listing`, `get_offers`, `respond_offer`). Model the Trading API request/response payloads as
+Pydantic `BaseModel`s so the untrusted XML/JSON is validated at the boundary. The negotiation
+*brain* is unchanged: the `seller` agent emits a typed `SellerMove`, and the connector translates
+`action`/`offer` into `RespondToBestOffer` (Accept / Decline / Counter) calls. See
+[`architecture.md`](./architecture.md).
