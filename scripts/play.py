@@ -58,7 +58,8 @@ from gambit.negotiation.domain import run_episode
 from gambit.negotiation.fixtures import PERSONAS
 from gambit.settings import settings
 
-MAX_DEFAULT = 10
+PACING_HORIZON = 10        # the agent's sense of tempo (turn_frac + the "Round N/M" prompt); NOT a hard cap
+UNCAPPED = 200             # referee backstop when --turns is unset; a human ends the game long before this
 CHECKPOINTS_DIR = Path("checkpoints")
 DEFAULT_CHECKPOINT = CHECKPOINTS_DIR / "latest.json"      # the loop's pointer to its newest trained policy
 HUMAN_EPISODES_DIR = Path("data/human_episodes")
@@ -580,21 +581,27 @@ def _record_episode(ep, *, seat: str, policy_desc: str, reward_val: float,
 
 
 def play(seat: str, item: Item, persona: BuyerPersona, policy: PolicyStore, policy_desc: str,
-         turns: int, show_thinking: bool, save: bool = True) -> int:
+         turns: int | None, show_thinking: bool, save: bool = True) -> int:
+    # The game ends when someone deals or walks — the human can always pass/Ctrl-D. `horizon` is only
+    # the agent's sense of tempo (turn_frac + the prompt); the referee runs to a high backstop, not 10.
+    horizon = turns if turns is not None else PACING_HORIZON
+    referee_turns = turns if turns is not None else UNCAPPED
+
     log: list[Move] = []
     if seat == "buyer":
-        seller = LlmSeller(log, turns, show_thinking, policy)
-        buyer = HumanBuyer(log, turns, show_thinking)
+        seller = LlmSeller(log, horizon, show_thinking, policy)
+        buyer = HumanBuyer(log, horizon, show_thinking)
         matchup = "you (buyer) vs the trained seller"
     else:
-        seller = HumanSeller(log, turns, show_thinking)
-        buyer = LlmBuyer(log, turns, show_thinking, persona)
+        seller = HumanSeller(log, horizon, show_thinking)
+        buyer = LlmBuyer(log, horizon, show_thinking, persona)
         budget_tag = f" [hidden budget {_money(budget_of(item, persona))}]" if show_thinking else ""
         matchup = f"you (seller) vs {buyer.name}{budget_tag}"
 
     print(f"\n{item.name}")
     print("─" * max(len(item.name), 12))
-    print(f"You are the {seat}. {turns} turns max.")
+    cap_note = f"{turns} turns max." if turns is not None else "No turn limit — deal, walk, or pass/Ctrl-D to leave."
+    print(f"You are the {seat}. {cap_note}")
     if seat == "seller":
         print(f"List: {_money(item.list_price)} · your floor: {_money(item.floor_price)}")
     else:
@@ -611,7 +618,7 @@ def play(seat: str, item: Item, persona: BuyerPersona, policy: PolicyStore, poli
     with logfire.span("negotiation: {item} — {matchup}", item=item.name, matchup=matchup,
                       seat=seat, source="human-vs-agent", policy=policy_desc,
                       list_price=item.list_price, floor=item.floor_price):
-        ep = run_episode(item, seller, buyer, max_turns=turns)
+        ep = run_episode(item, seller, buyer, max_turns=referee_turns)
         o = ep.outcome
         viol = audit_episode(ep)
         r = reward(ep)
@@ -674,7 +681,8 @@ def main() -> int:
     p.add_argument("--list-items", action="store_true", help="print the catalog and exit")
     p.add_argument("--persona", default="Fence-sitter Fran",
                    help="the M3 buyer's hidden persona (only when --seat seller)")
-    p.add_argument("--turns", type=int, default=MAX_DEFAULT)
+    p.add_argument("--turns", type=int, default=None,
+                   help="hard turn cap (default: none — the game ends on a deal or a walk)")
     p.add_argument("--show-thinking", action="store_true", help="reveal the agent's private reasoning")
     p.add_argument("--trace-console", action="store_true",
                    help="also print the Logfire span tree inline in the terminal")
