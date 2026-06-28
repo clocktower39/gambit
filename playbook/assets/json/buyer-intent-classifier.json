@@ -1,0 +1,234 @@
+{
+  "asset": "buyer-intent-classifier",
+  "id_scheme": "INTENT-NNN",
+  "description": "Clean set of buyer intent/type categories the copilot detects from a message, merged from all books' Section-10 personas and buyer_psychology (including Never Split the Difference's three buyer styles + three-voice model, pulled from its plays/psychology since its classifiers_personas was empty). Each category lists concrete observable signals, the likely underlying interest, the recommended PRIN ids to deploy, risk flags, and source books. NOTE: several signals (e.g. like-counts, days-on-market, repeat-buyer status, off-platform payment patterns) are marketplace-data features the books do not supply — flagged in gaps.",
+  "source_books_key": {
+    "NSD": "Never Split the Difference (Voss)",
+    "GTY": "Getting to Yes (Fisher/Ury/Patton)",
+    "GPN": "Getting Past No (Ury)",
+    "BFA": "Bargaining for Advantage (Shell)",
+    "3DN": "3-D Negotiation (Lax & Sebenius)",
+    "INF": "Influence (Cialdini)",
+    "DC": "Difficult Conversations (Stone/Patton/Heen)"
+  },
+  "intents": [
+    {
+      "id": "INTENT-001",
+      "label": "Serious / interest-driven buyer",
+      "description": "Engaged, responsive buyer asking genuine questions, stating a real budget or use, ready to move to purchase. The highest-conversion intent — don't over-negotiate.",
+      "observable_signals": [
+        "asks specific questions (measurements, condition, ship time)",
+        "states a real budget or 'is this for me/a gift'",
+        "responsive and timely replies",
+        "fair or near-list offer",
+        "explains why they want it"
+      ],
+      "likely_underlying_interest": "Wants this specific item at a fair price and to buy with confidence (security + economic well-being).",
+      "recommended_strategy": ["PRIN-032", "PRIN-018", "PRIN-024", "PRIN-025"],
+      "risk_flags": ["over-negotiating a ready yes and souring it", "missing the close by stalling on more questions"],
+      "source_books": ["GPN", "BFA", "3DN", "GTY", "INF"]
+    },
+    {
+      "id": "INTENT-002",
+      "label": "Lowballer",
+      "description": "Opens with an offer far below ask, often with little engagement; may be a bargain-hunter, a competer, or a value-claimer testing how far you'll drop.",
+      "observable_signals": [
+        "offers <50-60% of ask, often instantly",
+        "'$X take it or leave it' with no reasoning",
+        "no item-specific questions",
+        "frames it as winning / 'you're overpriced'",
+        "repeats the same low number"
+      ],
+      "likely_underlying_interest": "Could be a hard budget cap, habitual haggling for bragging rights, or a value-claimer probing your floor — decode before reacting.",
+      "recommended_strategy": ["PRIN-002", "PRIN-004", "PRIN-003", "PRIN-009", "PRIN-007", "PRIN-008"],
+      "risk_flags": ["caving to the anchor and signalling lots of room", "splitting the difference reflexively", "over-investing effort on a non-serious bargain-hunter"],
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "INTENT-003",
+      "label": "Anchor-shopper / comparison buyer",
+      "description": "Justifies a low price by citing a cheaper alternative ('I've seen it for $25', 'another seller is cheaper'); may be a real comparison or a bluff.",
+      "observable_signals": [
+        "'I can get this cheaper elsewhere / on another account'",
+        "cites a competitor price or sold listing",
+        "'this brand isn't worth that much'",
+        "asks you to match a price"
+      ],
+      "likely_underlying_interest": "Wants reassurance they're not overpaying; may be over-estimating their alternative (the cheaper one may be worse condition/unauthenticated/slow).",
+      "recommended_strategy": ["PRIN-003", "PRIN-011", "PRIN-036", "PRIN-002"],
+      "risk_flags": ["dropping price to a fabricated or non-comparable comp", "disparaging the competitor instead of differentiating", "matching a bluff"],
+      "source_books": ["GTY", "GPN", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "INTENT-004",
+      "label": "Hesitant / uncertain buyer",
+      "description": "Wants the item but isn't sure — about fit, condition, authenticity, or budget; a nervous or first-time secondhand buyer. The interest is usually NOT price.",
+      "observable_signals": [
+        "'hmm, not sure', 'idk'",
+        "'never bought secondhand before'",
+        "asks lots of basic/reassurance questions",
+        "'$40 feels like a lot for something used'",
+        "saves/likes but hesitates to commit"
+      ],
+      "likely_underlying_interest": "Value-doubt or fit/condition fear, not price — needs proof and confidence, not a discount.",
+      "recommended_strategy": ["PRIN-013", "PRIN-004", "PRIN-029", "PRIN-030", "PRIN-036", "PRIN-032"],
+      "risk_flags": ["dropping price when proof would have closed it", "pressuring into reactance", "skipping the small-yes ladder"],
+      "source_books": ["NSD", "GTY", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "INTENT-005",
+      "label": "Ghoster / staller / fence-sitter",
+      "description": "Went quiet after engaging, or keeps saying 'maybe later / next payday' without committing; saved or liked but won't message or pay.",
+      "observable_signals": [
+        "silence 24h+ after a question or offer",
+        "'thinking about it', 'maybe next payday'",
+        "multiple likes/saves then no message",
+        "slow, non-committal replies",
+        "committed verbally then went silent before paying"
+      ],
+      "likely_underlying_interest": "An unmet blocker (price, fit, trust, timing) or simple inertia; may be conflict-averse (avoider) who flees pressure.",
+      "recommended_strategy": ["PRIN-015", "PRIN-004", "PRIN-023", "PRIN-011", "PRIN-033", "PRIN-025"],
+      "risk_flags": ["nagging into reactance", "fabricating scarcity to force a move", "no commitment device so the verbal yes evaporates"],
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "INTENT-006",
+      "label": "Bundler / collaborator",
+      "description": "Open and exploratory, interested in multiple items, asks 'can we make this work?' — the highest-value persona for integrative deals.",
+      "observable_signals": [
+        "interested in / has liked multiple items",
+        "'any deal if I take three?'",
+        "'is there a way we can work something out?'",
+        "receptive to bundles, open about needs"
+      ],
+      "likely_underlying_interest": "Wants overall value and a fair package; happy to grow the deal if it benefits both.",
+      "recommended_strategy": ["PRIN-006", "PRIN-005", "PRIN-028", "PRIN-031"],
+      "risk_flags": ["giving away margin by stacking free concessions", "complicating a buyer who actually wants just one item"],
+      "source_books": ["GTY", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "INTENT-007",
+      "label": "Rude / aggressive buyer",
+      "description": "Uses insults, mockery, or hostility ('is this a joke', 'total ripoff'); may be a competer being blunt, or an attacker trying to throw you off balance.",
+      "observable_signals": [
+        "insults / mocking ('is this a joke', 'overpriced garbage')",
+        "ALL CAPS, derisive lowball",
+        "attacks on the item or your credibility",
+        "hostile tone with a demand"
+      ],
+      "likely_underlying_interest": "Often fear (of being ripped off) or a tactic to rattle you into a concession; the power comes from your reaction.",
+      "recommended_strategy": ["PRIN-019", "PRIN-020", "PRIN-002", "PRIN-021", "PRIN-033"],
+      "risk_flags": ["counter-punching (tanks the deal and your liking)", "caving to stop the discomfort", "escalating an ambiguous-terse message you misread"],
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "INF", "DC"]
+    },
+    {
+      "id": "INTENT-008",
+      "label": "Bargaining bully / extortionist",
+      "description": "Treats everything as principle, uses threats (bad reviews, disputes) and serial nibbling as tactics, never reciprocates. A persona, not a style — respond on leverage, route real threats to safety.",
+      "observable_signals": [
+        "'discount or I leave a one-star'",
+        "feedback/review extortion ('pay me $50 extra or...')",
+        "repeated escalation when pushed back on",
+        "serial nibbling after a deal",
+        "'or else' ultimatums"
+      ],
+      "likely_underlying_interest": "To grind you down and extract more than fair; respects only strength.",
+      "recommended_strategy": ["PRIN-040", "PRIN-019", "PRIN-021", "PRIN-010"],
+      "risk_flags": ["rewarding the threat with a concession (invites more)", "matching abuse / retaliating", "not documenting the thread before reporting"],
+      "source_books": ["BFA", "DC", "NSD", "INF"]
+    },
+    {
+      "id": "INTENT-009",
+      "label": "Scam / off-platform actor",
+      "description": "Pushes to leave the platform or sets up a payment scam — off-platform pay, overpayment/refund, fake payment screenshot, ship-before-pay, chargeback bait. SAFETY STOP, not a negotiation.",
+      "observable_signals": [
+        "'pay outside the app / Venmo F&F / this link'",
+        "'ship it first and I'll pay you'",
+        "overpayment then 'refund me the difference'",
+        "sends a 'payment confirmation' screenshot before you see funds",
+        "asks for email/phone to 'finish off-platform'",
+        "urgency to move off-platform fast"
+      ],
+      "likely_underlying_interest": "To remove buyer/seller protections so they can take the item or money — not a genuine buyer.",
+      "recommended_strategy": ["PRIN-044"],
+      "risk_flags": ["HARD STOP: never negotiate, never apply balcony/bridge logic", "never ship before confirmed on-platform payment", "report and disengage if pressed"],
+      "source_books": ["GTY", "GPN", "BFA", "3DN", "INF", "DC", "NSD"]
+    },
+    {
+      "id": "INTENT-010",
+      "label": "'Is it available?' low-signal pinger",
+      "description": "Sends a one-line availability check with no other engagement. A weak buying signal — convert gently, don't over-negotiate.",
+      "observable_signals": [
+        "'is this still available?' and nothing else",
+        "'still got this?'",
+        "no number, no questions, no context"
+      ],
+      "likely_underlying_interest": "Mild interest / casual browsing; possibly a buying signal that needs a nudge to become real.",
+      "recommended_strategy": ["PRIN-039", "PRIN-032", "PRIN-031"],
+      "risk_flags": ["a dead 'yes' that kills momentum", "launching a hard pitch off a one-liner"],
+      "source_books": ["NSD", "GTY", "INF", "3DN", "DC"]
+    },
+    {
+      "id": "INTENT-011",
+      "label": "Relationship / loyal / repeat buyer",
+      "description": "Warm, polite, complimentary; a repeat buyer, follower, or local who values your service and the item's story. Accommodate to keep the relationship.",
+      "observable_signals": [
+        "'I bought from you before'",
+        "follows your shop / is local",
+        "warm, complimentary tone ('I love this!', 'totally fine if not')",
+        "cares about the item's story or your service",
+        "defers to you"
+      ],
+      "likely_underlying_interest": "Ongoing relationship and feeling valued; a small genuine concession buys big goodwill and repeat business.",
+      "recommended_strategy": ["PRIN-027", "PRIN-031", "PRIN-024", "PRIN-028"],
+      "risk_flags": ["over-charging and losing a repeat customer", "treating warmth as weakness", "letting an accommodator over-defer into a regretted sale"],
+      "source_books": ["BFA", "INF", "GPN"]
+    },
+    {
+      "id": "INTENT-012",
+      "label": "Skeptic / authenticity-wary buyer",
+      "description": "Fixated on legitimacy and risk ('is this legit?', 'how do I know it's real?', 'don't want to get scammed'); aggression here usually springs from fear.",
+      "observable_signals": [
+        "'is this real / legit?'",
+        "'don't want to get scammed'",
+        "over-questioning authenticity and condition",
+        "asks about your sales history / reviews"
+      ],
+      "likely_underlying_interest": "Security — fear of buying a fake or being defrauded; wants proof and a safety net.",
+      "recommended_strategy": ["PRIN-030", "PRIN-029", "PRIN-036", "PRIN-041", "PRIN-037"],
+      "risk_flags": ["bluffing expertise/authentication you lack", "getting defensive instead of providing proof", "reading their fear as an attack"],
+      "source_books": ["INF", "GTY", "3DN", "DC", "BFA"]
+    },
+    {
+      "id": "INTENT-013",
+      "label": "Complainer / post-sale dispute",
+      "description": "Already bought and something went wrong — not as described, damaged, late, wrong item. Acknowledge feelings, own real fault, resolve with options. Distinct from pre-sale haggling.",
+      "observable_signals": [
+        "'this isn't the color in the photos'",
+        "'arrived damaged / not as described'",
+        "'these don't fit at all'",
+        "'I want a refund'",
+        "loaded blame ('this is your fault', 'you didn't mention X')"
+      ],
+      "likely_underlying_interest": "To feel heard and made whole; behind the anger is often fear of losing money or being dismissed.",
+      "recommended_strategy": ["PRIN-020", "PRIN-013", "PRIN-042", "PRIN-043", "PRIN-041"],
+      "risk_flags": ["jumping to a fix before acknowledging the feeling", "defending good intentions before owning the harm", "over-conceding (panic refund) or stonewalling on policy"],
+      "source_books": ["DC", "GPN", "NSD"]
+    },
+    {
+      "id": "INTENT-014",
+      "label": "Ambiguous-terse message (unreadable tone)",
+      "description": "Two-word or cryptic message ('k.', 'wow.', 'seriously?') with no context — tone unreadable in text; do not assume hostility.",
+      "observable_signals": [
+        "two-word / cryptic replies",
+        "'wow.', 'unbelievable.', 'seriously?'",
+        "no context, no question",
+        "all-caps or no punctuation that could read several ways"
+      ],
+      "likely_underlying_interest": "Unknown — could be anger, sarcasm, excitement, or nothing about you; needs a neutral clarifier.",
+      "recommended_strategy": ["PRIN-019", "PRIN-012"],
+      "risk_flags": ["over-reacting to a misread negative tone", "firing an irreversible defensive reply"],
+      "source_books": ["DC", "NSD"]
+    }
+  ]
+}

@@ -1,0 +1,474 @@
+{
+  "book": {
+    "slug": "influence",
+    "title": "Influence: The Psychology of Persuasion",
+    "author": "Robert B. Cialdini",
+    "category": "persuasion",
+    "domain_fit_note": "Cialdini's six principles map almost 1:1 onto the levers a casual reseller already pulls — social proof (sold counts, likes, reviews), scarcity (one-of-a-kind, others have it saved), authority (proof of authenticity), liking (rapport), reciprocity (free shipping/extras), commitment (small yeses to purchase). Best source for listing copy and trust framing. Also the highest guardrail-risk book: every principle has an honest version and a manipulative/dark-pattern version.",
+    "applicability_score": 5
+  },
+  "core_thesis": "People in an information-saturated world rely on mental shortcuts ('click, whirr') in which one trigger feature stands in for a full judgment. Six shortcuts — reciprocation, commitment & consistency, social proof, liking, authority, scarcity — reliably produce compliance because each is usually a sensible rule of thumb. Compliance professionals exploit them by manufacturing the trigger without the underlying reality (fake scarcity, salted tip jars, counterfeit authority). The ethical line is whether the trigger is genuine: the principles work as well honestly as dishonestly, so a seller never needs to fake them.",
+  "plays": [
+    {
+      "id": "influence-play-01",
+      "principle": "Social proof — quantified demand",
+      "what_it_means": "People judge what is correct/desirable by what others are doing; 'many others chose this' is treated as proof of quality.",
+      "why_it_matters": "Removes buyer uncertainty without arguing the item is good ('95 percent of people are imitators'). Lowers perceived risk on a stranger's listing.",
+      "when_to_use": "Listing has real traction: genuine sold counts, multiple likes/saves, repeat buyers, positive reviews.",
+      "when_NOT_to_use": "No real demand yet — do NOT invent it. Fabricated counts are the canonical abuse (salted tip jars, disco lines, telethon ringers).",
+      "marketplace_mapping": "Surface true numbers: Depop/Posh likes, 'X people have this saved,' 'sold 3 already,' star rating + review count, 'from a 200+ sale shop.'",
+      "example_buyer_message": "Is this actually any good? bit nervous buying secondhand.",
+      "recommended_agent_reply": "Totally fair! For what it's worth, 14 people have this saved and I've sold two of the same style this month — both buyers left 5 stars. Happy to send extra photos too.",
+      "source_quote_or_locator": "Ch.4 Social Proof — 'we determine what is correct... by find[ing] out what other people think is correct'; salted tip jars; '95 percent... are imitators.'",
+      "product_stage_tags": ["listing", "trust", "reply-gen", "objection"]
+    },
+    {
+      "id": "influence-play-02",
+      "principle": "Social proof under uncertainty + similarity",
+      "what_it_means": "Social proof is strongest when the buyer is uncertain and the proof comes from people like them.",
+      "why_it_matters": "A nervous first-time buyer is exactly the uncertain audience; 'people like you bought this' beats a generic count.",
+      "when_to_use": "Buyer signals doubt/inexperience and you can honestly cite a similar real buyer.",
+      "when_NOT_to_use": "No comparable real buyer to reference — don't fabricate a persona.",
+      "marketplace_mapping": "Tailor the proof in reply-gen: 'most people buying this are collectors like you' only if sales actually skew that way.",
+      "example_buyer_message": "I've never bought trainers secondhand before, do they come up small?",
+      "recommended_agent_reply": "You're in good company — a lot of first-time secondhand buyers grab these. The last two buyers were also a UK 8 and both said they fit true to size.",
+      "source_quote_or_locator": "Ch.4 Social Proof — proof works best amid uncertainty and from similar others (O'Connor film study; 'a variety of other children').",
+      "product_stage_tags": ["trust", "reply-gen", "objection", "intent-detection"]
+    },
+    {
+      "id": "influence-play-03",
+      "principle": "Scarcity — limited supply (genuine)",
+      "what_it_means": "Opportunities feel more valuable as they become less available; 'rare = better.'",
+      "why_it_matters": "Drives the buyer to act now. One-of-a-kind resale items are genuinely scarce, so this is honest here.",
+      "when_to_use": "Item truly is one-of-one, last size, deadstock, or you genuinely have multiple interested buyers.",
+      "when_NOT_to_use": "Mass-available item, or inventing competing buyers. Faking 'only one left' / restocking the 'sold out' item is the appliance-store scam.",
+      "marketplace_mapping": "State the true fact: 'only one I have, not restocking,' 'last M.' Note real saves. Never a fake countdown timer.",
+      "example_buyer_message": "Might come back for this next payday.",
+      "recommended_agent_reply": "No pressure at all — just so you know it's the only one I have and it's not being restocked, and a couple of people have it saved. Happy to answer anything in the meantime.",
+      "source_quote_or_locator": "Ch.7 Scarcity — 'opportunities seem more valuable to us when their availability is limited'; 'limited-number' tactic ('sometimes... true, sometimes... wholly false').",
+      "product_stage_tags": ["listing", "pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "influence-play-04",
+      "principle": "Scarcity — loss framing",
+      "what_it_means": "People are more motivated to avoid losing something than to gain the same thing; frame around what they'd miss.",
+      "why_it_matters": "'You could own this' is weaker than 'you'd miss out on this.' Lifts conversion on a fence-sitter.",
+      "when_to_use": "Genuinely limited item and a hesitating buyer; frame the real, true loss.",
+      "when_NOT_to_use": "When the 'loss' is invented (it'll restock, you have ten). Manufactured loss = manipulation.",
+      "marketplace_mapping": "Reframe a wishlist reply: 'didn't want you to miss it since it's the last one' — only when true.",
+      "example_buyer_message": "Still deciding between this and another seller's.",
+      "recommended_agent_reply": "Makes sense to compare! Only flag: mine's the last in this colourway, so I'd hate for you to miss it if you do land on this one. Either way no worries.",
+      "source_quote_or_locator": "Ch.7 Scarcity — 'people seem to be more motivated by the thought of losing something than... gaining something of equal value' (insulation / breast-self-exam studies).",
+      "product_stage_tags": ["pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "influence-play-05",
+      "principle": "Reciprocity — the small genuine gift",
+      "what_it_means": "We feel obliged to repay what we receive; an unsolicited favor creates a sense of debt that can even override dislike of the giver.",
+      "why_it_matters": "A small real extra (free shipping, freebie, discount) generates goodwill and a return purchase — Regan's Coke study: recipients bought twice as many tickets.",
+      "when_to_use": "Warm up a cold lead, reward a repeat buyer, or break a stalemate when you can genuinely afford the extra.",
+      "when_NOT_to_use": "As a manufactured obligation designed to trap ('I gave you free shipping so you OWE me a review'). The Krishna-flower abuse.",
+      "mechanic": "1. Give first, unprompted, something small and real (free shipping, freebie, bundle discount). 2. Name it plainly as a gift, no strings ('on me'). 3. Only AFTER, make your ask (accept offer, leave honest review, see my other items) — keep it optional. 4. Never invoke the debt out loud; it works best unspoken.",
+      "marketplace_mapping": "eBay: 'I'll cover shipping.' Depop/Vinted: toss in a matching scrunchie/sticker. Posh: a bundle discount applied before they ask.",
+      "example_buyer_message": "Would you do a tiny bit less?",
+      "recommended_agent_reply": "Tell you what — I'll keep the price but cover shipping for you, that's on me. Works out about the same and saves you the hassle. Deal?",
+      "source_quote_or_locator": "Ch.2 Reciprocation — Regan Coke study (recipients 'bought twice as many tickets'); free-sample / Amway BUG; Krishna flower (abuse case).",
+      "product_stage_tags": ["pricing", "objection", "trust", "reply-gen"]
+    },
+    {
+      "id": "influence-play-06",
+      "principle": "Reciprocity — rejection-then-retreat (concession sequence)",
+      "what_it_means": "After you refuse a buyer's first ask, moving from a larger position to a smaller one reads as a concession they feel obliged to reciprocate.",
+      "why_it_matters": "Tripled compliance in the zoo-trip study (17%->50%); combines reciprocity AND contrast so your real price looks like a gift.",
+      "when_to_use": "Buyer lowballs; you want to land near your target without looking inflexible.",
+      "when_NOT_to_use": "If your opening counter is so high it looks unreasonable/bad-faith — Bar-Ilan finding: extreme first position backfires because the retreat isn't seen as a real concession.",
+      "mechanic": "1. Hold a firm, reasonable anchor near (not absurdly above) your target. 2. Decline the lowball without hostility. 3. Retreat one visible step toward them and label it as a concession ('I can come down to X for you'). 4. Stop; reciprocity + contrast pull them up to meet you.",
+      "marketplace_mapping": "eBay Best-Offer / Depop offers: counter, then on their next nudge make ONE labeled move — 'meet me halfway and it's yours.'",
+      "example_buyer_message": "$25? (listed $60)",
+      "recommended_agent_reply": "$25 is a bit low for me on this one — but because you came back, I'll do $45 instead of $60. That's a real drop for you. Shall I send the offer?",
+      "source_quote_or_locator": "Ch.2 Reciprocation — 'rejection-then-retreat technique'; zoo-trip study 17%->50%; Bar-Ilan backfire when first request 'unreasonable.'",
+      "product_stage_tags": ["pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "influence-play-07",
+      "principle": "Commitment & consistency — start with a small yes",
+      "what_it_means": "A small initial commitment shifts self-image and makes a later, larger consistent action more likely (foot-in-the-door).",
+      "why_it_matters": "A buyer who has liked, asked a question, or agreed to something tiny is primed to follow through to purchase. 76% vs 17% in the lawn-sign study.",
+      "when_to_use": "Early in a chat — invite a low-stakes yes (a question answered, size confirmed, 'want me to hold it for an hour?').",
+      "when_NOT_to_use": "Engineering a trivial commitment purely to trap someone into an unwanted purchase, or escalating pressure once they hesitate.",
+      "mechanic": "1. Secure an easy, genuine yes ('Is this for you or a gift?' / 'Want measurements?'). 2. Acknowledge and build on it. 3. Offer the next small step consistent with it ('Shall I hold it while you decide?'). 4. Let purchase be the natural consistent next move — never demand it.",
+      "marketplace_mapping": "Depop/Vinted DMs: answer-a-question -> 'want me to reserve it?' -> checkout. The like itself is the first micro-commitment.",
+      "example_buyer_message": "Do you have measurements?",
+      "recommended_agent_reply": "Yes! Pit-to-pit 52cm, length 70cm. Sounds like it'd fit you — want me to hold it for you for a bit while you check?",
+      "source_quote_or_locator": "Ch.3 Commitment & Consistency — Freedman & Fraser foot-in-the-door (small sign -> 76% accept big sign).",
+      "product_stage_tags": ["intent-detection", "reply-gen", "objection"]
+    },
+    {
+      "id": "influence-play-08",
+      "principle": "Commitment & consistency — get it in writing / make it active",
+      "what_it_means": "Commitments that are active, public, and written-down bind harder than passive or private ones.",
+      "why_it_matters": "A buyer who types 'yes I'll take it at $40' is far more likely to actually pay than one who merely thought it. Reduces ghosting after a verbal deal.",
+      "when_to_use": "Closing a negotiated deal in chat before sending the invoice/offer.",
+      "when_NOT_to_use": "To lock someone into a deal they're clearly unsure of, or to shame them later for 'going back on their word.'",
+      "marketplace_mapping": "Get the explicit confirmation in the thread, then send the eBay offer / Depop payment link immediately while the commitment is fresh.",
+      "example_buyer_message": "ok yeah let's do 40",
+      "recommended_agent_reply": "Perfect — confirming $40 plus the $5 shipping, total $45. Sending you the offer now so you can check out. Thanks!",
+      "source_quote_or_locator": "Ch.3 Commitment & Consistency — written/active/public commitments 'grow their own legs'; more we commit, more we self-justify.",
+      "product_stage_tags": ["pricing", "reply-gen", "safety", "learning-loop"]
+    },
+    {
+      "id": "influence-play-09",
+      "principle": "Authority — genuine proof / credibility",
+      "what_it_means": "We defer to legitimate expertise and credible signals; authority is a trusted shortcut for 'this is right.'",
+      "why_it_matters": "For a stranger selling online, demonstrated knowledge and real proof (receipts, serials, condition specifics) directly answer the trust/authenticity objection.",
+      "when_to_use": "Buyer questions authenticity, condition, or your competence; you genuinely have the proof or knowledge.",
+      "when_NOT_to_use": "Claiming expertise/credentials you don't have, or implying authentication you can't back. Counterfeit authority (actor 'playing a doctor,' con-man titles) is the abuse.",
+      "marketplace_mapping": "Listing/trust copy: receipt photo, batch/serial codes, date code, stitching close-ups; cite specifics; link verified/authenticated badge only if real.",
+      "example_buyer_message": "How do I know this bag is real?",
+      "recommended_agent_reply": "Great question — I've added photos of the date code (inside the side pocket) and the original receipt. The hardware is engraved, not stamped, which is one of the real-vs-fake tells. Happy to photograph any specific detail you want.",
+      "source_quote_or_locator": "Ch.6 Authority — genuine vs symbolic authority; 'connotation, not content' (Robert Young as 'doctor'); titles/clothes/trappings counterfeited 'with the flimsiest of materials.'",
+      "product_stage_tags": ["listing", "trust", "objection", "reply-gen"]
+    },
+    {
+      "id": "influence-play-10",
+      "principle": "Liking — similarity & common ground",
+      "what_it_means": "We comply more with people we like, and we like people similar to us in background, taste, or interests.",
+      "why_it_matters": "A bit of genuine common ground warms the buyer and smooths negotiation. Cheap to build, powerful in effect.",
+      "when_to_use": "Throughout chat; mirror the buyer's tone and surface real shared interests.",
+      "when_NOT_to_use": "Manufacturing fake similarity — Cialdini warns about salespeople who 'just seem to be just like you.'",
+      "marketplace_mapping": "Match the buyer's vibe in DMs (emoji/casual vs precise), reference real shared taste, be a human not a script.",
+      "example_buyer_message": "omg I've been hunting for this colourway forever",
+      "recommended_agent_reply": "Honestly same, this colourway is so hard to find — I almost kept it. You'll love it. Want me to grab a couple more pics in daylight?",
+      "source_quote_or_locator": "Ch.5 Liking — 'We like people who are similar to us'; mirror-and-match warning ('just like you').",
+      "product_stage_tags": ["reply-gen", "trust", "objection", "intent-detection"]
+    },
+    {
+      "id": "influence-play-11",
+      "principle": "Liking — sincere compliments",
+      "what_it_means": "We like (and comply with) people who praise us; praise works even when we suspect a motive.",
+      "why_it_matters": "A genuine compliment on the buyer's taste/eye builds rapport and reciprocal warmth (Joe Girard's 'I like you' cards).",
+      "when_to_use": "When the buyer shows good taste, a thoughtful question, or a fair offer — acknowledge it honestly.",
+      "when_NOT_to_use": "Empty/obvious flattery as a manipulation lever; insincere praise reads as a sales tactic and erodes trust.",
+      "marketplace_mapping": "'Great eye, this is one of my favourite pieces' / 'Honestly a fair offer, I appreciate that' in reply-gen.",
+      "example_buyer_message": "I'll offer $50, hope that's fair.",
+      "recommended_agent_reply": "That's a really fair offer and I appreciate you not lowballing — you've also got great taste, this one always gets saved fast. Accepting now.",
+      "source_quote_or_locator": "Ch.5 Liking — Compliments; 'we are phenomenal suckers for flattery'; Joe Girard 'I like you' cards.",
+      "product_stage_tags": ["reply-gen", "objection", "pricing"]
+    },
+    {
+      "id": "influence-play-12",
+      "principle": "Liking — familiarity & cooperation toward a shared goal",
+      "what_it_means": "Repeated positive contact and working together toward a common goal build liking; contact under conflict does the opposite.",
+      "why_it_matters": "Framing the negotiation as 'us solving this together' rather than buyer-vs-seller defuses adversarial haggling; repeat-buyer relationships compound.",
+      "when_to_use": "Tense price talk, bundle requests, or nurturing repeat buyers.",
+      "when_NOT_to_use": "When 'cooperation' is a veneer over pressure; forced contact under friction reduces liking, so don't badger.",
+      "marketplace_mapping": "'Let's find a number that works for both of us'; reward returning buyers with a loyalty discount; keep tone collaborative in bundle haggling.",
+      "example_buyer_message": "Can you do a deal if I take three items?",
+      "recommended_agent_reply": "Love that — let's build a bundle that works for both of us. Pick your three and I'll knock 15% off the total and combine shipping. Sound good?",
+      "source_quote_or_locator": "Ch.5 Liking — Contact & Cooperation; familiarity raises liking, but contact under conflict 'leads to less liking' (Aronson jigsaw classroom).",
+      "product_stage_tags": ["pricing", "objection", "trust", "reply-gen", "learning-loop"]
+    },
+    {
+      "id": "influence-play-13",
+      "principle": "Perceptual contrast (anchoring)",
+      "what_it_means": "An item seen right after a more expensive one looks cheaper than if seen alone; sequence shapes perceived price.",
+      "why_it_matters": "Lets you make your price or bundle feel like a deal by ordering what the buyer sees — the 'expensive item first' rule.",
+      "when_to_use": "Presenting bundles or upsells; framing your firm price against comparable higher-priced listings.",
+      "when_NOT_to_use": "Using fake 'compare-at' / phantom-high anchors (the realtor's 'setup' dump houses, or a struck-through price that was never real) = deceptive anchoring.",
+      "marketplace_mapping": "Show the pricier comparable first ('similar ones go for $90, mine's $60'), or quote the bundle total against the sum of singles. Real comps only.",
+      "example_buyer_message": "$60 feels like a lot.",
+      "recommended_agent_reply": "Totally get it — for context the same jacket is listed at $85-95 by other sellers right now, so $60 in this condition is a genuine saving. Want me to send those links?",
+      "source_quote_or_locator": "Ch.1 Weapons of Influence — contrast principle; clothiers 'sell the costly item first'; Phil's real-estate 'setup' houses (abuse case).",
+      "product_stage_tags": ["listing", "pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "influence-play-14",
+      "principle": "Scarcity via reactance — protect the buyer's freedom",
+      "what_it_means": "When freedom/choice is threatened, people want the thing MORE (psychological reactance); heavy pressure to buy can backfire into refusal.",
+      "why_it_matters": "Counter-intuitive guardrail play: high-pressure 'buy NOW or lose it' can trigger reactance and a walk-away. Giving the buyer their freedom ('no pressure') often closes better.",
+      "when_to_use": "With a hesitant or independent-minded buyer; whenever you feel tempted to push hard.",
+      "when_NOT_to_use": "Never replace this with manufactured can't-come-back pressure (the vacuum-cleaner 'company policy' lie) — abusive and self-defeating.",
+      "marketplace_mapping": "Default copilot tone: state true scarcity once, then explicitly hand back control — 'no rush, it'll be here.' Avoid repeated nudges/auto-countdowns.",
+      "example_buyer_message": "Stop messaging me, I'm still thinking.",
+      "recommended_agent_reply": "Of course — no pressure at all, take your time. It's here whenever you're ready and I'm happy to answer anything.",
+      "source_quote_or_locator": "Ch.7 Scarcity — Psychological Reactance (Brehm); Romeo-and-Juliet effect; can't-come-back claim exposed as 'nonsense.'",
+      "product_stage_tags": ["safety", "objection", "reply-gen", "coaching"]
+    },
+    {
+      "id": "influence-play-15",
+      "principle": "Authority — trappings/credibility of the shop itself",
+      "what_it_means": "Symbols of legitimacy (clean presentation, complete info, track record) trigger deference and trust even before content is examined.",
+      "why_it_matters": "A polished, complete, well-reviewed shop reads as 'legitimate authority,' lowering buyer risk perception across every listing.",
+      "when_to_use": "Always, at the shop/listing level — it's ambient trust.",
+      "when_NOT_to_use": "Fabricating the trappings (fake badges, borrowed stock photos, invented 'verified' claims) is counterfeit authority — flag and forbid.",
+      "marketplace_mapping": "Real, sharp photos; full measurements/flaws disclosed; consistent branding; genuine review count and tenure; verified/ID badges only if actually held.",
+      "example_buyer_message": "You a legit seller? Don't want to get scammed.",
+      "recommended_agent_reply": "100% fair to ask! I've got 180+ sales with a 4.9 rating, all items shipped tracked, and I disclose every flaw in the photos. Anything specific you'd like to see to feel comfortable?",
+      "source_quote_or_locator": "Ch.6 Authority — symbols of authority (titles, clothes, trappings) trigger deference; legitimacy counterfeited 'with the flimsiest of materials' (abuse case).",
+      "product_stage_tags": ["listing", "trust", "objection"]
+    }
+  ],
+  "communication_tactics": [
+    {
+      "name": "Quantified-proof line",
+      "purpose": "Inject real demand evidence",
+      "phrase_patterns": ["___ people have this saved", "sold ___ already", "from a ___-sale shop"],
+      "overuse_risk": "Sounds boastful/spammy if stacked; loses force if buyer suspects inflation",
+      "good_example": "14 people have this saved.",
+      "bad_example": "EVERYONE is buying this!! (vague, unverifiable)",
+      "source_locator": "Ch.4 Social Proof"
+    },
+    {
+      "name": "Genuine-scarcity flag",
+      "purpose": "Create honest urgency",
+      "phrase_patterns": ["only one I have", "last ___", "not restocking"],
+      "overuse_risk": "Repeating it = pressure -> reactance",
+      "good_example": "It's the last M and I won't restock.",
+      "bad_example": "ONLY 1 LEFT, buy in 10 min! (fake timer)",
+      "source_locator": "Ch.7 Scarcity / limited-number"
+    },
+    {
+      "name": "Loss reframe",
+      "purpose": "Lift fence-sitters",
+      "phrase_patterns": ["didn't want you to miss ___", "I'd hate for you to miss out"],
+      "overuse_risk": "Feels pushy if loss is trivial/untrue",
+      "good_example": "Didn't want you to miss it — it's the last one.",
+      "bad_example": "You'll regret this forever if you don't buy NOW.",
+      "source_locator": "Ch.7 Scarcity / loss aversion"
+    },
+    {
+      "name": "Gift-then-ask",
+      "purpose": "Build goodwill via reciprocity",
+      "phrase_patterns": ["that's on me", "I'll cover ___ for you"],
+      "overuse_risk": "Reads transactional if the debt is named",
+      "good_example": "I'll cover shipping, on me.",
+      "bad_example": "I gave you free shipping so leave 5 stars.",
+      "source_locator": "Ch.2 Reciprocation"
+    },
+    {
+      "name": "Labeled concession",
+      "purpose": "Make your price look generous",
+      "phrase_patterns": ["because you came back, I'll do ___", "I'll meet you at ___"],
+      "overuse_risk": "Constant concessions train buyers to lowball",
+      "good_example": "I'll do $45 instead of $60 for you.",
+      "bad_example": "Opening at $200 then 'dropping' to $60 (bad-faith anchor)",
+      "source_locator": "Ch.2 Rejection-then-retreat"
+    },
+    {
+      "name": "Small-yes ladder",
+      "purpose": "Move toward purchase via consistency",
+      "phrase_patterns": ["Want measurements?", "Shall I hold it?"],
+      "overuse_risk": "Feels like a funnel if obviously scripted",
+      "good_example": "Want me to hold it while you decide?",
+      "bad_example": "Trapping a hesitant buyer into 'you said yes'",
+      "source_locator": "Ch.3 Commitment / foot-in-the-door"
+    },
+    {
+      "name": "Confirm-in-writing",
+      "purpose": "Lock the deal, cut ghosting",
+      "phrase_patterns": ["Confirming ___ total ___, sending now"],
+      "overuse_risk": "None if honest; don't shame on backout",
+      "good_example": "Confirming $45 total, sending the offer.",
+      "bad_example": "You committed, you HAVE to pay.",
+      "source_locator": "Ch.3 Commitment / written"
+    },
+    {
+      "name": "Proof-of-authenticity",
+      "purpose": "Answer trust objection",
+      "phrase_patterns": ["the ___ confirms it's genuine", "added a photo of the ___"],
+      "overuse_risk": "Over-claiming expertise you lack",
+      "good_example": "Date code's in the side pocket — photo added.",
+      "bad_example": "Trust me, I'm an expert, it's 100% real.",
+      "source_locator": "Ch.6 Authority / genuine proof"
+    },
+    {
+      "name": "Sincere compliment",
+      "purpose": "Build liking",
+      "phrase_patterns": ["great eye", "really fair offer, appreciate it"],
+      "overuse_risk": "Empty flattery reads manipulative",
+      "good_example": "Fair offer, I appreciate that.",
+      "bad_example": "Wow you're SO smart and stylish! (transparent)",
+      "source_locator": "Ch.5 Liking / compliments"
+    },
+    {
+      "name": "Common-ground mirror",
+      "purpose": "Build similarity-liking",
+      "phrase_patterns": ["honestly same", "I styled mine with ___"],
+      "overuse_risk": "Faking shared taste backfires",
+      "good_example": "Same, this colourway is so hard to find.",
+      "bad_example": "Fabricating a shared hobby to close",
+      "source_locator": "Ch.5 Liking / similarity"
+    },
+    {
+      "name": "Real-comp contrast",
+      "purpose": "Frame price as a deal",
+      "phrase_patterns": ["similar ones go for ___, mine's ___"],
+      "overuse_risk": "Phantom/fake comps = deceptive",
+      "good_example": "Others list this at $85-95; mine's $60.",
+      "bad_example": "Struck-through 'was $200' that was never real",
+      "source_locator": "Ch.1 Contrast principle"
+    },
+    {
+      "name": "Freedom-restorer",
+      "purpose": "Defuse reactance",
+      "phrase_patterns": ["no pressure", "it's here whenever you're ready"],
+      "overuse_risk": "None — this is the safety default",
+      "good_example": "No rush, take your time.",
+      "bad_example": "Last chance, decide RIGHT NOW.",
+      "source_locator": "Ch.7 Reactance"
+    }
+  ],
+  "objection_material": [
+    {
+      "objection_key": "trust-authenticity",
+      "handling": "Authority via genuine proof — receipts, serials, condition specifics, demonstrated knowledge (Ch.6). Never counterfeit credentials.",
+      "sample_reply": "Fair to ask! Photos of the date code and original receipt are added — hardware's engraved not stamped, a real-vs-fake tell. Want any other detail shot?",
+      "source_locator": "Ch.6 Authority"
+    },
+    {
+      "objection_key": "condition-doubt",
+      "handling": "Authority + full disclosure as legitimacy trappings (Ch.6); social proof from past buyers (Ch.4).",
+      "sample_reply": "I disclose every flaw in the photos — there's one tiny mark on the hem, shown in pic 4. Last two buyers rated condition 5/5. Want a close-up?",
+      "source_locator": "Ch.6 Authority + Ch.4 Social Proof"
+    },
+    {
+      "objection_key": "price-too-high",
+      "handling": "Perceptual contrast with real comps + genuine scarcity (Ch.1, Ch.7).",
+      "sample_reply": "Similar ones run $85-95 right now, so $60 in this condition is a genuine saving — and it's the only one I have.",
+      "source_locator": "Ch.1 Contrast + Ch.7 Scarcity"
+    },
+    {
+      "objection_key": "lowball",
+      "handling": "Rejection-then-retreat: decline warmly, make one labeled concession (Ch.2). Avoid an absurd counter-anchor.",
+      "sample_reply": "$25's a bit low for me — but since you came back I'll do $45 instead of $60. Real drop. Want the offer?",
+      "source_locator": "Ch.2 Rejection-then-retreat"
+    },
+    {
+      "objection_key": "competitor-cheaper",
+      "handling": "Liking (common ground) + authority (proof/reviews) + contrast (what their price omits) (Ch.5,6,1).",
+      "sample_reply": "Totally fine to compare! Mine ships tracked, condition's verified in the photos, and I've 180+ 5-star sales — happy to match value on service even if not the exact penny.",
+      "source_locator": "Ch.5 Liking + Ch.6 Authority + Ch.1 Contrast"
+    },
+    {
+      "objection_key": "is-it-available",
+      "handling": "Small-yes + genuine scarcity to convert the check-in (Ch.3, Ch.7).",
+      "sample_reply": "Yes it's here! It's the last one though — want me to hold it for you for a bit?",
+      "source_locator": "Ch.3 Commitment + Ch.7 Scarcity"
+    },
+    {
+      "objection_key": "wants-bundle-deal",
+      "handling": "Cooperation/liking framing + reciprocity gift (Ch.5, Ch.2).",
+      "sample_reply": "Let's build a bundle that works for both of us — pick three and I'll take 15% off the total and combine shipping.",
+      "source_locator": "Ch.5 Liking + Ch.2 Reciprocation"
+    },
+    {
+      "objection_key": "shipping-cost",
+      "handling": "Reciprocity: absorb it as a genuine gift to break the impasse (Ch.2).",
+      "sample_reply": "I'll cover shipping on this one, that's on me — works out about the same for you.",
+      "source_locator": "Ch.2 Reciprocation"
+    },
+    {
+      "objection_key": "stalling-ghosting",
+      "handling": "Freedom-restorer to avoid reactance + one honest scarcity nudge (Ch.7).",
+      "sample_reply": "No pressure at all, it's here whenever you're ready! Only flag: it's the last one and a couple of people have it saved.",
+      "source_locator": "Ch.7 Scarcity / Reactance"
+    },
+    {
+      "objection_key": "rude-aggressive",
+      "handling": "Liking is broken; do NOT counter-punch. Stay warm/neutral, restore their freedom (Ch.5, Ch.7).",
+      "sample_reply": "No worries at all — happy to help whenever, and totally fine if it's not for you.",
+      "source_locator": "Ch.5 Liking + Ch.7 Reactance"
+    },
+    {
+      "objection_key": "off-platform-request",
+      "handling": "Not a Cialdini topic — handled by safety layer. Decline, keep on-platform. [INFERRED: safety overlay, book does not cover]",
+      "sample_reply": "I keep everything on-platform so we're both protected by buyer/seller protection — happy to finish the deal right here!",
+      "source_locator": "INFERRED (safety overlay; book does not cover)"
+    }
+  ],
+  "buyer_psychology": [
+    "Buyers under uncertainty default to social proof — 'what are others doing?' beats your direct claims about quality. (Ch.4)",
+    "Proof from similar others lands hardest; a nervous first-timer is the prime audience for 'people like you bought this.' (Ch.4)",
+    "Loss looms larger than gain — buyers move faster to avoid missing out than to acquire. (Ch.7)",
+    "Scarcity raises perceived value automatically; 'rare/last one' reads as 'better.' (Ch.7)",
+    "Reactance: pressure on a buyer's freedom can flip desire into refusal — being told they can't have it, or must decide now, can inflame want or trigger a walk-away depending on framing. (Ch.7)",
+    "A received favor creates obligation strong enough to override even dislike of the giver. (Ch.2, Regan)",
+    "Each small commitment a buyer makes (a like, a question, a 'yeah') reshapes self-image and pulls them toward the consistent next step. (Ch.3)",
+    "Buyers defer to credible authority signals and often to mere symbols of authority (badges, polish, confident specifics) without scrutinizing substance. (Ch.6)",
+    "Buyers like — and buy from — sellers who seem similar to them and who praise them, even when the motive is visible. (Ch.5)",
+    "Buyers anchor on whatever price/quality they saw first; sequence quietly shapes their judgment. (Ch.1)"
+  ],
+  "seller_psychology": [
+    "Temptation to fake the trigger — the biggest seller risk this book creates: inventing saves, sold counts, urgency, or comps because the principle 'works.' Cialdini's point is the genuine version works just as well; the copilot must steer to real evidence only.",
+    "Over-pressuring (repeated nudges, fake deadlines) feels like 'closing' but triggers buyer reactance and kills deals. Sellers under-rate the freedom-restorer. (Ch.7)",
+    "Reflexive concession-giving without structure trains buyers to lowball; hold a reasonable anchor and make labeled retreats. (Ch.2)",
+    "Counter-punching rude buyers destroys liking and the sale; disengage warmly. (Ch.5)",
+    "Naming the favor ('I gave you free shipping, so...') converts goodwill into resented obligation; the gift works best unspoken. (Ch.2)",
+    "Under-using cheap rapport — sellers default to transactional copy and skip genuine similarity/compliments. (Ch.5)",
+    "Skipping the small yes — sellers jump to 'buy it?' instead of laddering a question -> hold -> checkout. (Ch.3)",
+    "Failing to confirm in writing before sending the invoice, inviting post-deal ghosting. (Ch.3)"
+  ],
+  "ignore_list": [
+    "Milgram obedience / electric-shock experiments — background for the authority principle only; harmful-obedience drama irrelevant to resale.",
+    "Cults, religious sects (Krishna recruitment), Tupperware-party group dynamics — retained only as abuse exemplars, not tactics to deploy.",
+    "Political logrolling, campaign contributions, jury/courtroom attractiveness bias — wrong domain.",
+    "Boiler-room investment fraud, the 'scarcity scam' — kept as guardrail negative example, never a play.",
+    "In-person-only mechanics (cocktail-party contrast, retail floor staging, door-to-door BUG drop) — adapted to chat where portable, otherwise dropped.",
+    "Deep child-development / reactance-origin material (terrible twos) — theory background, not actionable.",
+    "Material self-interest ('good deal') rule — Cialdini deliberately omits it as a goes-without-saying given; so do we."
+  ],
+  "guardrail_flags": [
+    "FAKE SCARCITY (plays 03, 04, 14): 'only one left,' 'others have it saved,' 'not restocking,' 'selling fast' permitted ONLY when literally true. Fake countdowns, phantom competing buyers, or restocking a 'sold out' item (appliance-store scam, Ch.7) = hard flag. Loss-framing must reference a real loss.",
+    "FABRICATED SOCIAL PROOF (plays 01, 02): real sold counts, saves, likes, reviews only. Inventing numbers, salting reviews, fake 'X people bought this,' or invented similar-buyer personas (salted tip jars / ringers, Ch.4) = hard flag.",
+    "COUNTERFEIT AUTHORITY (plays 09, 15): genuine receipts, serials, condition proof, held badges only. Claiming expertise/credentials/authentication you don't have, borrowed stock photos, fake 'verified' badges (Robert-Young-as-doctor, con-man trappings, Ch.6) = hard flag.",
+    "MANUFACTURED OBLIGATION (plays 05, 06): a real small gift is fine; naming the debt to extract a review/purchase, or a bad-faith inflated opening anchor whose 'concession' is illusory (Ch.2 Bar-Ilan backfire) = caution/flag.",
+    "DARK-PATTERN PRESSURE / REACTANCE ABUSE (plays 07, 08, 14): friendly small-yeses and written confirmation are fine; weaponizing them to shame, trap, or relentlessly nudge a hesitant buyer, or 'can't-come-back' lies (Ch.7) = flag. Default to the freedom-restorer.",
+    "DECEPTIVE ANCHORING (play 13): real comparable prices only. Phantom 'compare-at' prices, struck-through prices never charged, or 'setup' decoys (Phil's dump houses, Ch.1) = flag.",
+    "INSINCERE LIKING (plays 10, 11): genuine common ground and honest compliments only; fabricated shared interests or empty flattery as a lever (the 'just like you' salesperson, Ch.5) = caution.",
+    "GENERAL RULE (Cialdini): because each principle works as well honestly as dishonestly, the copilot should never need to fabricate a trigger. Any generated copy asserting a fact about demand, supply, authenticity, or comparison must be checkable against real listing/seller data before sending."
+  ],
+  "classifiers_personas": [
+    {
+      "name": "Uncertain / first-time buyer",
+      "signals": ["never bought secondhand", "bit nervous", "asks lots of basic questions", "hesitant tone"],
+      "recommended_approach": "Lead with social proof + similar-buyer proof + genuine authority/disclosure; restore freedom, don't pressure.",
+      "source_locator": "Ch.4 Social Proof + Ch.6 Authority"
+    },
+    {
+      "name": "Deal-seeker / haggler",
+      "signals": ["opens with a number", "'best price?'", "'any discount?'", "multiple offers"],
+      "recommended_approach": "Rejection-then-retreat with a labeled concession; reciprocity gift (shipping); real-comp contrast. Hold a reasonable anchor.",
+      "source_locator": "Ch.2 Reciprocation + Ch.1 Contrast"
+    },
+    {
+      "name": "Fence-sitter / staller",
+      "signals": ["'thinking about it'", "'maybe next payday'", "likes but doesn't buy", "slow replies"],
+      "recommended_approach": "One honest scarcity/loss flag, then freedom-restorer; small-yes ladder ('want me to hold it?'). Avoid reactance.",
+      "source_locator": "Ch.7 Scarcity + Ch.3 Commitment"
+    },
+    {
+      "name": "Skeptic / scam-wary",
+      "signals": ["'is this legit'", "'how do I know it's real'", "'don't want to get scammed'"],
+      "recommended_approach": "Genuine authority: proof, serials, reviews, tenure, on-platform protection. Never bluff expertise.",
+      "source_locator": "Ch.6 Authority"
+    },
+    {
+      "name": "Enthusiast / fan",
+      "signals": ["excited tone", "knows the brand/release", "'been hunting for this'", "emoji"],
+      "recommended_approach": "Liking via similarity + sincere compliment; light scarcity ('almost kept it'). Rapport closes it.",
+      "source_locator": "Ch.5 Liking"
+    },
+    {
+      "name": "Independent / pressure-averse",
+      "signals": ["'stop messaging'", "'I'll decide on my own'", "terse", "bristles at nudges"],
+      "recommended_approach": "Maximum freedom-restorer; one factual note at most. High reactance risk — back off.",
+      "source_locator": "Ch.7 Reactance"
+    },
+    {
+      "name": "Rude / aggressive",
+      "signals": ["insults", "demands", "hostile tone"],
+      "recommended_approach": "Liking is unrecoverable via argument — stay warm/neutral, do not counter-punch, hand back control.",
+      "source_locator": "Ch.5 Liking + Ch.7 Reactance"
+    }
+  ]
+}

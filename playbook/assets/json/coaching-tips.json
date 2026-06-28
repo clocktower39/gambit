@@ -1,0 +1,208 @@
+{
+  "asset": "coaching-tips",
+  "id_scheme": "COACH-NNN",
+  "description": "Seller-side coaching tips synthesized from all seven books' seller_psychology sections. Each tip names the seller mistake it corrects, why it matters, and how the copilot operationalizes it (automated nudge / suggestion / guardrail), with source books.",
+  "source_books_key": {
+    "NSD": "Never Split the Difference (Voss)",
+    "GTY": "Getting to Yes (Fisher/Ury/Patton)",
+    "GPN": "Getting Past No (Ury)",
+    "BFA": "Bargaining for Advantage (Shell)",
+    "3DN": "3-D Negotiation (Lax & Sebenius)",
+    "INF": "Influence (Cialdini)",
+    "DC": "Difficult Conversations (Stone/Patton/Heen)"
+  },
+  "tips": [
+    {
+      "id": "COACH-001",
+      "tip": "Set a real floor (BATNA) and a trip wire before you negotiate, not an arbitrary bottom line.",
+      "seller_mistake_it_corrects": "Negotiating with no walk-away in mind, or a wishful bottom line set too high/low, leading to both bad accepts and bad rejects.",
+      "why": "A relist/cross-list/hold value is a smarter measure than a guessed floor; it tells you exactly when to walk and protects against a regret-accept in the heat of the moment.",
+      "how_the_copilot_applies_it": "Guardrail: at listing time computes/asks for a comp-based floor + 'reconsider below $X' trip wire; surfaces a counter/hold/accept prompt instead of one-tap accepting low offers.",
+      "source_books": ["GTY", "GPN", "BFA", "3DN"]
+    },
+    {
+      "id": "COACH-002",
+      "tip": "Anchor on your goal, not your floor — and notice if relief at an offer means you've slipped.",
+      "seller_mistake_it_corrects": "Setting modest goals and relaxing the moment an offer clears the bottom line, leaving money on the table.",
+      "why": "People who expect more generally get more; anchoring on the floor makes you stop striving, and alert buyers sense that relaxation.",
+      "how_the_copilot_applies_it": "Nudge: recommends a list price near the top of the comp range and warns when a user's counter leaks toward their floor ('you're countering near your floor, not your goal').",
+      "source_books": ["BFA", "3DN"]
+    },
+    {
+      "id": "COACH-003",
+      "tip": "Don't chase 'Yes' or over-accommodate to be nice — seek genuine commitment.",
+      "seller_mistake_it_corrects": "Soft/positional bargaining: caving to avoid confrontation, producing counterfeit yeses, ghosting, and exploitation by hard bargainers.",
+      "why": "Being hard on the merits (comps, BATNA) and soft on the person gets better outcomes than people-pleasing; a 'yes' with nothing to lose isn't a deal.",
+      "how_the_copilot_applies_it": "Nudge + guardrail: detects over-accommodation in drafts; pushes a written confirmation + immediate on-platform offer to convert a verbal yes into commitment.",
+      "source_books": ["NSD", "GTY", "BFA"]
+    },
+    {
+      "id": "COACH-004",
+      "tip": "Don't reflexively split the difference; counter with a small odd move or a term.",
+      "seller_mistake_it_corrects": "Splitting two arbitrary numbers out of fear of confrontation, producing an arbitrary result that gives away margin.",
+      "why": "The midpoint of two arbitrary anchors is arbitrary, and reciprocity already drags outcomes toward it; symmetric/large moves leak value.",
+      "how_the_copilot_applies_it": "Suggestion: when the buyer says 'split it', the copilot proposes an odd number / a term above the midpoint, gated by the floor — and only allows a split that lands inside the comp range.",
+      "source_books": ["NSD", "3DN", "BFA", "GTY"]
+    },
+    {
+      "id": "COACH-005",
+      "tip": "Probe before you disclose — ask, don't blab.",
+      "seller_mistake_it_corrects": "Going first / naming your lowest price when asked 'best price?', and over-explaining, which hands away leverage.",
+      "why": "Every reason the buyer wants the deal is your leverage if you know it; skilled negotiators ask ~2x as many questions and disclose last.",
+      "how_the_copilot_applies_it": "Suggestion: defaults to an interest-probing question before any number; flags drafts that disclose the floor or eagerness too early.",
+      "source_books": ["NSD", "GTY", "BFA", "3DN"]
+    },
+    {
+      "id": "COACH-006",
+      "tip": "Don't slash price when the real problem is the listing — run a setup audit first.",
+      "seller_mistake_it_corrects": "Being '1-D': over-focusing on table haggling and panic price-cuts while neglecting photos, comps, audience, framing, and timing.",
+      "why": "A barrier in one dimension usually has its fix in another; the right audience and a comp-anchored, well-framed listing draw fair offers without a fight.",
+      "how_the_copilot_applies_it": "Nudge: a 'why isn't this selling?' diagnostic scoring photos, comp-anchored price, bundle eligibility, framing, and reply latency before recommending a price cut or relist.",
+      "source_books": ["3DN"]
+    },
+    {
+      "id": "COACH-007",
+      "tip": "Don't assume the buyer only wants a lower price — look for non-price interests and trades.",
+      "seller_mistake_it_corrects": "Fixed-pie + confirmation bias: reading every objection as 'cut the price' and missing bundle/shipping/timing/proof fixes.",
+      "why": "Roughly half the time there's shared ground both sides miss; a separate need (speed, reassurance, a bundle) is often cheaper to satisfy than a discount.",
+      "how_the_copilot_applies_it": "Suggestion: surfaces the likely real interest behind an objection and proposes a hold-price-add-value or bundle option before any discount.",
+      "source_books": ["GTY", "BFA", "3DN"]
+    },
+    {
+      "id": "COACH-008",
+      "tip": "Don't react instantly to a triggering message — go to the balcony.",
+      "seller_mistake_it_corrects": "The reaction reflex: firing back at a rude/lowball message, or misreading an ambiguous terse message as hostile and escalating irreversibly.",
+      "why": "Reacting hooks you into the buyer's game; text strips tone, so your worst-case reading is as likely wrong as right, and an angry reply is on the record.",
+      "how_the_copilot_applies_it": "Guardrail: interposes a cool-down/draft step on hostile inbound or an angry seller draft; offers a calmer drafted reply or a neutral clarifier.",
+      "source_books": ["GPN", "DC", "INF", "NSD"]
+    },
+    {
+      "id": "COACH-009",
+      "tip": "Don't counter-punch rude buyers; disarm and deflect to the problem.",
+      "seller_mistake_it_corrects": "Matching hostility with hostility, which tanks the deal, your liking, and your reputation.",
+      "why": "The aggressive buyer's power comes from your reaction; a calibrated question + 'I'-boundary keeps you rational and refocuses on the issue.",
+      "how_the_copilot_applies_it": "Guardrail: rewrites a snippy seller draft into a purposeful one or advises waiting; never generates a counter-attack.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "INF", "DC"]
+    },
+    {
+      "id": "COACH-010",
+      "tip": "Don't vent or hit-and-run — only send a reply with a clear constructive purpose.",
+      "seller_mistake_it_corrects": "Firing off a satisfying jab or passive-aggressive one-liner that feels good but earns a worse review and a dispute.",
+      "why": "Venting and snippy half-messages produce exactly the defensiveness and damage you fear, with none of the benefit.",
+      "how_the_copilot_applies_it": "Guardrail: blocks/reshapes a furious draft ('Maybe read the description next time') into something purposeful, or advises holding it.",
+      "source_books": ["DC"]
+    },
+    {
+      "id": "COACH-011",
+      "tip": "Use power to educate, not threaten; keep your best offer on the table.",
+      "seller_mistake_it_corrects": "Blurting 'I'll just sell to someone else' as an insult, or yanking the offer in anger, which triggers ego and ends the deal.",
+      "why": "A warning is objective and respectful; the contrast between no-deal and an attractive standing offer reduces resistance more than punishment.",
+      "how_the_copilot_applies_it": "Suggestion: frames the relist/other-interest as a neutral fact and always re-states the standing offer in a re-engagement message.",
+      "source_books": ["GPN", "3DN", "BFA"]
+    },
+    {
+      "id": "COACH-012",
+      "tip": "Be generous at the very end — don't squeeze the last dollar.",
+      "seller_mistake_it_corrects": "Nickel-and-diming or gloating at close, risking reneging, bad feedback, and no repeat business.",
+      "why": "An imposed/crushed outcome is unstable; letting the buyer win the last round pays off in completion, reviews, and loyalty.",
+      "how_the_copilot_applies_it": "Suggestion: biases the closing message toward a tiny final courtesy (free shipping, fast dispatch, a sticker) and tracks which closers correlate with reviews/repeat buyers.",
+      "source_books": ["GPN", "GTY", "INF"]
+    },
+    {
+      "id": "COACH-013",
+      "tip": "Never fake the trigger — only use true scarcity, social proof, comps, and authenticity claims.",
+      "seller_mistake_it_corrects": "Inventing saves/sold counts, phantom other buyers, fake countdowns, fabricated comps, or unbacked authentication because the principle 'works'.",
+      "why": "Each persuasion principle works as well honestly as dishonestly, so you never need to fake it; one ethical slip destroys credibility across many future deals and risks the platform.",
+      "how_the_copilot_applies_it": "Guardrail: any generated claim about demand, supply, authenticity, or comparison is checked against real listing/seller data before sending; fabricated triggers are hard-blocked.",
+      "source_books": ["INF", "GTY", "BFA", "3DN"]
+    },
+    {
+      "id": "COACH-014",
+      "tip": "Don't over-pressure — state scarcity once, then hand back control.",
+      "seller_mistake_it_corrects": "Repeated nudges and fake deadlines that feel like 'closing' but trigger buyer reactance and kill the sale.",
+      "why": "Pressure on a buyer's freedom can flip desire into refusal; the freedom-restorer often closes better than pushing.",
+      "how_the_copilot_applies_it": "Guardrail: limits to one factual scarcity note, defaults tone to the freedom-restorer, and suppresses repeated auto-nudges to the same buyer.",
+      "source_books": ["INF", "DC"]
+    },
+    {
+      "id": "COACH-015",
+      "tip": "Acknowledge feelings before problem-solving on any complaint.",
+      "seller_mistake_it_corrects": "Jumping straight to refund math or a policy quote, which reads as 'I don't understand how you feel' and escalates.",
+      "why": "Behind every complaint are invisible questions ('do you care? can I trust you?'); until those get a yes, the buyer won't take in your solution.",
+      "how_the_copilot_applies_it": "Suggestion: drafts complaint replies that lead with a genuine, specific acknowledgment before any options — and skips it on calm transactional messages.",
+      "source_books": ["DC", "GPN", "NSD"]
+    },
+    {
+      "id": "COACH-016",
+      "tip": "When accused of bad intent, answer the harm, not the accusation.",
+      "seller_mistake_it_corrects": "Rushing to 'I'd never scam you / I described it accurately', which changes the topic to your character and makes the buyer angrier.",
+      "why": "Buyers infer intent from impact; acknowledging the harm first and inviting evidence de-escalates and reduces retaliatory reviews/disputes.",
+      "how_the_copilot_applies_it": "Suggestion: on a 'scammer/fake' accusation, drafts an impact-not-intent reply (acknowledge feeling -> set intent aside -> invite proof) and avoids defensive denials.",
+      "source_books": ["DC", "NSD", "GTY"]
+    },
+    {
+      "id": "COACH-017",
+      "tip": "Own your real contribution early when you genuinely erred.",
+      "seller_mistake_it_corrects": "Defaulting to blame or defending, or waiting to be cornered into admitting a vague listing / slow ship / missed flaw.",
+      "why": "Owning your part early signals you've left the blame game, lowers defensiveness, shrinks the demand, and reads as confident not weak.",
+      "how_the_copilot_applies_it": "Suggestion: when the seller clearly contributed, drafts a clean specific ownership + fair options; guardrail prevents misapplying 'we both contributed' to a genuinely defrauded buyer.",
+      "source_books": ["DC"]
+    },
+    {
+      "id": "COACH-018",
+      "tip": "You can't control the buyer's reaction — measure success by a fair, well-said reply.",
+      "seller_mistake_it_corrects": "Contorting to avoid a bad review or end the discomfort, which leads to over-conceding and rewards/ trains extortion.",
+      "why": "Trying to control their mood adds pressure and erodes your fair line; releasing it keeps you grounded enough to hold a fair offer even if they stay angry.",
+      "how_the_copilot_applies_it": "Coaching: during hostile/extortion threads, reminds the seller to hold a fair documented offer and let the platform process protect them, rather than panic-conceding.",
+      "source_books": ["DC", "BFA"]
+    },
+    {
+      "id": "COACH-019",
+      "tip": "Don't tolerate dirty tricks silently or retaliate — name the move and apply reciprocity.",
+      "seller_mistake_it_corrects": "Absorbing post-deal demand creep, phantom 'other offers', or fake authority to keep the peace, which invites more.",
+      "why": "Both reflexes fail; naming a tactic gently often neutralizes it, and a reciprocity test exposes its unfairness without blowing up the deal.",
+      "how_the_copilot_applies_it": "Suggestion: detects nibbles/demand-creep ('ok deal, also add X free') and drafts a 'that's a new deal, here's the agreed terms' reply; guardrail keeps the copilot from coaching the seller to use these tricks.",
+      "source_books": ["GTY", "GPN", "BFA"]
+    },
+    {
+      "id": "COACH-020",
+      "tip": "Coach to your own bargaining-style blind spot.",
+      "seller_mistake_it_corrects": "Style failure modes: accommodators/compromisers cave fast and stop asking; competers bruise relationships and miss non-price value; avoiders never make the ask.",
+      "why": "Self-knowledge is the foundation of effective negotiation; coaching to the personal gap is where the copilot adds the most seller-side value.",
+      "how_the_copilot_applies_it": "Coaching: infers the user's style over time and tailors nudges ('you're dropping fast — hold a round and ask', 'they're a repeat buyer, warm up', 'you can just ask — worst case is a no').",
+      "source_books": ["BFA", "DC"]
+    },
+    {
+      "id": "COACH-021",
+      "tip": "Treat deadlines as cutting both ways — patience is leverage, panic-dropping is not.",
+      "seller_mistake_it_corrects": "Rushing to relist or accept before an end-of-listing, and panic markdowns instead of a measured, well-timed cadence.",
+      "why": "Deadlines pressure the buyer too; dropping price too fast leaves money on the table, while timing to paydays/season and a measured ladder nets more.",
+      "how_the_copilot_applies_it": "Nudge: recommends relist timing and a measured markdown ladder (e.g. -10% per 7-10 days) and discourages reactive deep cuts.",
+      "source_books": ["NSD", "3DN"]
+    },
+    {
+      "id": "COACH-022",
+      "tip": "Don't damage your own walk-away — avoid open-ended unpaid 'holds' and keep buyers parallel.",
+      "seller_mistake_it_corrects": "Granting open-ended holds and negotiating one buyer to exhaustion in series, destroying leverage and losing other live buyers.",
+      "why": "Open-ended holds spring a leak in your BATNA (and invite off-platform risk); parallel interest keeps competition alive and outcomes higher.",
+      "how_the_copilot_applies_it": "Guardrail + suggestion: counsels against unpaid holds (offer a deposit/first-to-checkout instead) and advises responding to all interested buyers, accepting the first firm on-platform commitment.",
+      "source_books": ["3DN", "GTY"]
+    },
+    {
+      "id": "COACH-023",
+      "tip": "Set the spirit of the deal up front — disclose condition, ship time, and returns honestly.",
+      "seller_mistake_it_corrects": "Leaving the social contract unspoken, so vague condition/shipping expectations cause disputes, returns, and bad reviews.",
+      "why": "Deals unravel on divergent unspoken expectations; embedding them in the listing pre-empts 'not as described' cases and protects your rating.",
+      "how_the_copilot_applies_it": "Suggestion: the listing generator proactively states condition (with flaw photos), dispatch time, and return policy concisely.",
+      "source_books": ["3DN", "DC"]
+    },
+    {
+      "id": "COACH-024",
+      "tip": "One complaint isn't your identity — don't panic-refund or deny out of self-image threat.",
+      "seller_mistake_it_corrects": "An all-or-nothing reaction ('I'm a bad/incompetent seller') that tips into denial or panic-refunding.",
+      "why": "Grounding the identity keeps you steady enough to handle the substance fairly instead of over-reacting in either direction.",
+      "how_the_copilot_applies_it": "Coaching: reframes a single complaint as a normal, solvable event and steers toward the two-option fair resolution rather than an emotional swing.",
+      "source_books": ["DC"]
+    }
+  ]
+}

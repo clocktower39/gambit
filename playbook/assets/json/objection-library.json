@@ -1,0 +1,232 @@
+{
+  "asset": "objection-library",
+  "id_scheme": "OBJ-<objection_key>",
+  "description": "Canonical objection handlers keyed by the standard taxonomy. Each merges every book's objection_material for that key, maps to the canonical PRIN ids, and supplies three reply variations (warm / firm / data-backed), an escalate-or-disengage condition, and source books.",
+  "source_books_key": {
+    "NSD": "Never Split the Difference (Voss)",
+    "GTY": "Getting to Yes (Fisher/Ury/Patton)",
+    "GPN": "Getting Past No (Ury)",
+    "BFA": "Bargaining for Advantage (Shell)",
+    "3DN": "3-D Negotiation (Lax & Sebenius)",
+    "INF": "Influence (Cialdini)",
+    "DC": "Difficult Conversations (Stone/Patton/Heen)"
+  },
+  "objections": [
+    {
+      "id": "OBJ-price-too-high",
+      "objection_key": "price-too-high",
+      "buyer_says": [
+        "$45 is way too much for this",
+        "that's expensive for a used item",
+        "this brand isn't worth that much",
+        "seems high"
+      ],
+      "what_they_really_mean": "Either a value-doubt ('convince me it's worth it'), a budget signal, or a desire to feel they got a fair deal — rarely a flat refusal.",
+      "recommended_approach": "Acknowledge the concern, justify with sold comps reasoning-first, hold your goal-anchor, and pivot to terms/value rather than caving on the number.",
+      "principles_used": ["PRIN-020", "PRIN-003", "PRIN-009", "PRIN-021", "PRIN-005"],
+      "sample_replies": {
+        "warm": "Totally fair to push on price — I hear it feels steep for secondhand. If the price is the blocker I can cover shipping or bundle to add value. What would feel right to you?",
+        "firm": "Yes, it's at the higher end — and that's because it's barely worn and authenticated. The way I see it, that's where the value is. I'd rather be upfront than haggle.",
+        "data_backed": "Recent sold ones in this condition went for $48-$55 (happy to screenshot) — I'm at $50, already inside that range. I can do $47 if you close today."
+      },
+      "escalate_or_disengage_if": "Buyer turns abusive or it converts into review-extortion -> handle as OBJ-rude-aggressive / bargaining bully.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-is-it-available",
+      "objection_key": "is-it-available",
+      "buyer_says": [
+        "is this still available?",
+        "still got this?",
+        "do you still have this in stock?"
+      ],
+      "what_they_really_mean": "A low-signal buying cue — mild interest that needs a gentle nudge to become a real conversation.",
+      "recommended_approach": "Answer warmly, name yourself, and add one forward-motion step (a small-yes or one true scarcity note) instead of a dead 'yes'. Don't over-negotiate.",
+      "principles_used": ["PRIN-039", "PRIN-032", "PRIN-031", "PRIN-011"],
+      "sample_replies": {
+        "warm": "Yes it is! I'm Sam — were you looking to grab it now or did you have a question about it first?",
+        "firm": "Yes, still available. Want me to send you an offer so you can lock it in?",
+        "data_backed": "Yes it's here! It's the last one in this size though and a few people have it saved — want me to hold it for you for a bit?"
+      },
+      "escalate_or_disengage_if": "No escalation path; if it turns into an off-platform request, switch to OBJ-off-platform-request.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-lowball",
+      "objection_key": "lowball",
+      "buyer_says": [
+        "I'll give you $20 (listed $45)",
+        "$25? (listed $60)",
+        "what's the lowest, I'm on a budget",
+        "$20 take it or leave it"
+      ],
+      "what_they_really_mean": "A budget cap, a habitual opening move for bragging rights, or a probe of your floor — decode the interest before reacting to the number.",
+      "recommended_approach": "Don't react to the number. Probe the interest/theory with a calibrated question, justify your price on comps, then either hold (strong BATNA) or make ONE labeled concession on a shrinking ladder near your list — never reflex-split.",
+      "principles_used": ["PRIN-002", "PRIN-004", "PRIN-003", "PRIN-009", "PRIN-007", "PRIN-008", "PRIN-010"],
+      "sample_replies": {
+        "warm": "I appreciate the offer! What were you hoping to spend, and is this for something specific? Helps me see what I can do beyond the number.",
+        "firm": "I appreciate it, but at $20 I'd genuinely rather hold and relist — these sell around $30-35. $28 and I ship today, otherwise no worries.",
+        "data_backed": "I can't do $20 — recent solds are $48-$55, so I'd be way under market. How'd you get to $20? If it's budget, I might be able to bundle something."
+      },
+      "escalate_or_disengage_if": "Buyer repeats the same lowball with hostility or insults after two exchanges -> disengage politely, leave the standing offer, relist.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "OBJ-competitor-cheaper",
+      "objection_key": "competitor-cheaper",
+      "buyer_says": [
+        "I've seen these for $25",
+        "another seller has it cheaper",
+        "I can get this cheaper on another account"
+      ],
+      "what_they_really_mean": "Wants reassurance they're not overpaying; may be over-estimating their alternative or bluffing — the cheaper one is often worse condition, unauthenticated, or slow.",
+      "recommended_approach": "Don't disparage; probe the claim ('what condition? send the link'), differentiate on the real alternative (condition, authenticity, ship speed, returns), and shape their no-deal option honestly.",
+      "principles_used": ["PRIN-003", "PRIN-011", "PRIN-036", "PRIN-002", "PRIN-031"],
+      "sample_replies": {
+        "warm": "Totally fair to compare! Mine ships tracked, condition's verified in the photos, and I've 180+ 5-star sales — happy to talk it through.",
+        "firm": "You might find a lower sticker — worth checking it's the same condition, authenticated, and ships fast. Mine is. If the cheaper one matches all that, grab it; if not, $45 here is solid.",
+        "data_backed": "Send me the link and I'll take a real look — if it's the same item and condition I'll factor it in; the recent solds in this shape are $48-55, so they're often not actually the same."
+      },
+      "escalate_or_disengage_if": "Buyer refuses to share the comp and keeps demanding a match below your floor -> hold, leave the standing offer.",
+      "source_books": ["GTY", "GPN", "BFA", "3DN", "INF", "DC", "NSD"]
+    },
+    {
+      "id": "OBJ-condition-doubt",
+      "objection_key": "condition-doubt",
+      "buyer_says": [
+        "what condition is it really in?",
+        "the photos are dark, I can't tell",
+        "is there any damage?",
+        "this isn't what I expected (post-sale)"
+      ],
+      "what_they_really_mean": "A value-doubt and fear of being disappointed — needs proof and confidence, not a discount.",
+      "recommended_approach": "Treat as a value-doubt interest: get curious, supply proof (extra photos, measurements, grade) and contingent terms (returns), disclose real flaws honestly. Pre-sale: don't drop price. Post-sale: acknowledge feeling, own any real miss, offer options.",
+      "principles_used": ["PRIN-013", "PRIN-004", "PRIN-030", "PRIN-036", "PRIN-042", "PRIN-043"],
+      "sample_replies": {
+        "warm": "Totally fair to want to be sure — I'll send extra close-ups and the measurements so you can judge before you commit. Anything specific you want a photo of?",
+        "firm": "I disclose every flaw in the photos — there's one tiny mark on the hem, shown in pic 4. I grade it 8/10 and I accept returns if it's not as described, so there's no risk on your side.",
+        "data_backed": "Here are close-ups of the seams and sole; last two buyers rated condition 5/5. I'd grade it 8/10 — want any other angle?"
+      },
+      "escalate_or_disengage_if": "Post-sale 'not as described' that the buyer escalates -> move to OBJ-trust-authenticity / two-option resolution; involve platform if no agreement.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-shipping-cost",
+      "objection_key": "shipping-cost",
+      "buyer_says": [
+        "shipping is too expensive",
+        "$8 shipping on top? no thanks",
+        "can you do free shipping?"
+      ],
+      "what_they_really_mean": "The total feels high or there's a surprise at checkout; often cheaper to absorb shipping than to cut the item price.",
+      "recommended_approach": "Acknowledge ('yes, shipping adds up'), then dovetail: absorb shipping or fold it into one flat number, or use a second item to spread the one shipping fee — a low-cost-to-you, high-value-to-them trade.",
+      "principles_used": ["PRIN-005", "PRIN-006", "PRIN-002", "PRIN-028"],
+      "sample_replies": {
+        "warm": "Yes, shipping does add up — what if I cover it? That effectively knocks a few dollars off for you. That's on me.",
+        "firm": "How about I build shipping into one flat $48 so there are no surprises at checkout? Often works out better than a price drop plus postage.",
+        "data_backed": "Grab a second item and I'll ship both for the one shipping fee — so the per-item postage basically halves."
+      },
+      "escalate_or_disengage_if": "n/a — not an escalation-prone objection.",
+      "source_books": ["NSD", "GTY", "GPN", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-wants-bundle-deal",
+      "objection_key": "wants-bundle-deal",
+      "buyer_says": [
+        "any deal if I take two/three?",
+        "can you do a bundle?",
+        "would you take less on the green tee?"
+      ],
+      "what_they_really_mean": "Wants overall value and a fair package; the highest-value integrative opportunity — they'll grow the deal if it benefits both.",
+      "recommended_approach": "Embrace it — move northeast: pair the wanted item with related stock at a small blended discount plus combined shipping, framed as a cooperative win and (for a stuck haggle) as a face-saving bridge. Use a labeled If/then so you never give for free.",
+      "principles_used": ["PRIN-006", "PRIN-005", "PRIN-022", "PRIN-031", "PRIN-028"],
+      "sample_replies": {
+        "warm": "Love that — let's build a bundle that works for both of us. Pick three and I'll knock 15% off the total and combine shipping. Sound good?",
+        "firm": "If you add the grey tee you liked, then I'll do both for $60 shipped — better value than either alone. Want me to set that up?",
+        "data_backed": "Take both for $32 instead of $40 (singles) and I'll cover shipping — that's a 20% saving and one package for me."
+      },
+      "escalate_or_disengage_if": "Buyer keeps adding items and re-cutting the total (nibble) -> name it gently, settle the whole bundle at once.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-stalling-ghosting",
+      "objection_key": "stalling-ghosting",
+      "buyer_says": [
+        "(silence after a question or offer)",
+        "thinking about it",
+        "maybe next payday",
+        "(committed verbally then went quiet before paying)"
+      ],
+      "what_they_really_mean": "An unmet blocker (price, fit, trust, timing) or simple inertia; may be an avoider who flees pressure.",
+      "recommended_approach": "Find the blocker with a 'why not?'; revive with a single 'No'-oriented question; keep the standing offer visible with a neutral warning + true scarcity; restore freedom; then close for commitment with a written confirmation and an immediate offer/invoice.",
+      "principles_used": ["PRIN-015", "PRIN-004", "PRIN-023", "PRIN-011", "PRIN-033", "PRIN-025"],
+      "sample_replies": {
+        "warm": "No rush at all! What's the one thing holding you back? If it's fit I'll send pics, if it's price tell me your ballpark. Happy to make it easy either way.",
+        "firm": "Have you given up on this one? Totally fine if it's no longer right — just want to know whether to keep holding it for you.",
+        "data_backed": "Just circling back — $38 with free shipping still stands. A couple people have it saved and it's the last in this size, so it may sell soon. No pressure!"
+      },
+      "escalate_or_disengage_if": "Buyer who clearly declined -> stop nudging (one nudge max), relist; a committed-then-ghosted unpaid item -> open from the Third Story once, then let the offer lapse / platform unpaid-item process.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-off-platform-request",
+      "objection_key": "off-platform-request",
+      "buyer_says": [
+        "let's do this on WhatsApp / Venmo F&F",
+        "I'll pay you outside the app, trust me",
+        "send it first and I'll pay after",
+        "here's a payment link / I've sent the payment (screenshot)"
+      ],
+      "what_they_really_mean": "Either convenience-seeking or, more often, an attempt to remove buyer/seller protection so they can take the item or money (overpayment, fake-screenshot, chargeback, ship-before-pay scams).",
+      "recommended_approach": "SAFETY STOP — not a negotiation. Decline warmly on principle (mutual protection, not suspicion) using an 'I feel safer on the app' frame; never ship before confirmed on-platform payment; if pressed, disengage and report.",
+      "principles_used": ["PRIN-044"],
+      "sample_replies": {
+        "warm": "I appreciate you wanting to make it easy! I feel more comfortable keeping it on the app though — it protects us both if anything goes sideways. Happy to go ahead at the agreed price right here whenever you're ready.",
+        "firm": "I keep all sales on-platform for both our protection — happy to finish the deal right here, but I can't take payment or ship outside the app.",
+        "data_backed": "On-platform payment means we're both covered by buyer/seller protection if anything goes wrong — that's why I never go off-app. I'll send the offer here and ship the moment it clears."
+      },
+      "escalate_or_disengage_if": "Any pressure to ship before confirmed payment, an overpayment/refund ask, or a 'payment sent' screenshot you can't verify in-app -> hard stop, do not ship, report and block.",
+      "source_books": ["GTY", "GPN", "BFA", "3DN", "INF", "DC", "NSD"]
+    },
+    {
+      "id": "OBJ-trust-authenticity",
+      "objection_key": "trust-authenticity",
+      "buyer_says": [
+        "how do I know it's real?",
+        "is this legit? don't want to get scammed",
+        "are you a real seller?",
+        "you KNEW this was fake (post-sale accusation)"
+      ],
+      "what_they_really_mean": "Security fear — of buying a fake or being defrauded; wants proof and a safety net. Aggression here usually springs from fear.",
+      "recommended_approach": "Provide genuine proof/authority (receipts, serials, detail photos, sales history, on-platform protection), decouple from personal trust, and lean on platform authentication as a contingent term. If accused post-sale, disentangle intent from impact: acknowledge the feeling first, then invite evidence.",
+      "principles_used": ["PRIN-030", "PRIN-029", "PRIN-036", "PRIN-041", "PRIN-021"],
+      "sample_replies": {
+        "warm": "100% fair to ask! I've got 180+ sales with a 4.9 rating, all items shipped tracked, and I disclose every flaw in the photos. Anything specific you'd like to see to feel comfortable?",
+        "firm": "It's honestly not a trust thing — I keep everything through the app so we're both covered, and I stand behind every item. Here's what I can show you to verify.",
+        "data_backed": "Photos of the date code (inside the side pocket) and the original receipt are added — hardware's engraved not stamped, a real-vs-fake tell. At $400+ it also ships through eBay's Authenticity Guarantee, so it's inspected before it reaches you."
+      },
+      "escalate_or_disengage_if": "Post-sale fraud accusation that escalates despite evidence -> offer two-option resolution (PRIN-043), document, and let the platform's dispute process decide.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "3DN", "INF", "DC"]
+    },
+    {
+      "id": "OBJ-rude-aggressive",
+      "objection_key": "rude-aggressive",
+      "buyer_says": [
+        "are you serious with this price? total ripoff",
+        "this is overpriced garbage, $10 take it or leave it",
+        "this is a joke, you're price gouging",
+        "give me 40% off or I'll leave a one-star"
+      ],
+      "what_they_really_mean": "Often fear (of being ripped off) or a tactic to rattle you into a concession; sometimes a blunt competer. Review-extortion is a bully move, not a real objection.",
+      "recommended_approach": "Go to the balcony (don't react), step to their side and acknowledge, deflect the attack onto the problem with a calibrated question and a poised 'I' boundary. Don't counter-punch, don't cave. If it's a bully/extortion pattern, respond on leverage and route threats to a documented decline + report.",
+      "principles_used": ["PRIN-019", "PRIN-020", "PRIN-002", "PRIN-021", "PRIN-040", "PRIN-033"],
+      "sample_replies": {
+        "warm": "Sounds like the price feels way off to you — I don't want it to feel unfair. What would feel right, and what's it based on? Happy to talk it through.",
+        "firm": "I get that's your budget, and I can tell you're a serious buyer — and at the same time I've priced this at $28 for [reason]. I can do $25 if that helps. No pressure either way.",
+        "data_backed": "I price fairly against recent solds ($48-55) and can't do 40% off. Reviews should reflect the actual item and service. If you'd like it at the listed price I'm glad to help — otherwise no worries. (Documenting the thread in case the platform needs it.)"
+      },
+      "escalate_or_disengage_if": "Persistent threats, harassment, or feedback-extortion after a fair offer -> name the dynamic once, hold the fair offer, document, report to the platform, disengage.",
+      "source_books": ["NSD", "GTY", "GPN", "BFA", "INF", "DC"]
+    }
+  ]
+}

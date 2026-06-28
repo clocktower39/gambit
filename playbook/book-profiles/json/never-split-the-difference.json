@@ -1,0 +1,452 @@
+{
+  "book": {
+    "slug": "never-split-the-difference",
+    "title": "Never Split the Difference: Negotiating As If Your Life Depended On It",
+    "author": "Chris Voss (with Tahl Raz)",
+    "category": "tactical-negotiation",
+    "domain_fit_note": "Highest-value book for actual message copy. Voss's method is short, emotional, turn-based verbal exchange where you can't see the other person — exactly P2P marketplace chat. Mirroring, labeling, calibrated How/What questions, and the Ackerman concession ladder map almost 1:1 onto the Offer/Best-Offer button, lowballers, 'is this still available?', ghosting, and bundle haggling. Crisis/hostage framing is irrelevant; the conversational mechanics are directly usable.",
+    "applicability_score": 5
+  },
+  "core_thesis": "Negotiation is emotional and System-1 driven, irrational in predictable patterns, not rational problem-solving. The winning move is tactical empathy — recognizing and vocalizing the other side's emotions to make them feel understood, safe, and in control, which lowers defenses and lets you steer them. Use active-listening tools (mirroring, labeling, silence), seek 'No' and 'That's right' instead of chasing 'Yes', ask calibrated How/What questions that make the counterpart solve your problem, and anchor + concede on a disciplined ladder (Ackerman). Mantra: 'No deal is better than a bad deal' and 'never split the difference.'",
+  "plays": [
+    {
+      "id": "nsd-play-01",
+      "principle": "Mirroring (repeat their last 1-3 words)",
+      "what_it_means": "Repeat the critical last one-to-three words of what the buyer said, with an upward 'help me understand' inflection, then go silent.",
+      "why_it_matters": "Triggers the bonding/isopraxism instinct ('we're alike'), makes the buyer re-word and elaborate, buys time, and surfaces their real strategy without disagreeing.",
+      "when_to_use": "Vague or probing buyer messages; when you want them to reveal budget or motive before committing to a number.",
+      "when_NOT_to_use": "When the buyer has made a clean firm offer you want to accept; overuse in one thread reads robotic.",
+      "marketplace_mapping": "First reply in DMs before any number is named; reacting to a lowball comment under a listing; in eBay/Posh offer messages to get the buyer to justify their number.",
+      "example_buyer_message": "Would you take a lot less for this? It's been listed a while.",
+      "recommended_agent_reply": "A lot less?",
+      "source_quote_or_locator": "Ch. 2 'Mirroring' — 'repeat the last three words (or the critical one to three words).'",
+      "product_stage_tags": ["intent-detection", "reply-gen", "objection", "pricing"]
+    },
+    {
+      "id": "nsd-play-02",
+      "principle": "Labeling emotions ('It seems like...')",
+      "what_it_means": "Name the buyer's likely emotion or hesitation aloud as a neutral statement, never starting with 'I', then stay silent.",
+      "why_it_matters": "Labeling a feeling moves brain activity from the amygdala to rational areas, defusing negatives and reinforcing positives; a shortcut to feeling understood.",
+      "when_to_use": "Buyer is hesitant, frustrated, suspicious, or stalling; clearing emotional barriers before talking price.",
+      "when_NOT_to_use": "Don't use 'I'm hearing that' ('I' raises guard); don't stack a question right after — let it sit.",
+      "marketplace_mapping": "Responding to a hesitant 'hmm not sure' DM; defusing a buyer annoyed about shipping cost or slow reply.",
+      "example_buyer_message": "Idk, $40 feels like a lot for something secondhand.",
+      "recommended_agent_reply": "It sounds like you want to be sure you're getting real value before you commit.",
+      "source_quote_or_locator": "Ch. 3 'Labeling' — 'It seems like / It sounds like / It looks like'; Lieberman amygdala study.",
+      "product_stage_tags": ["objection", "reply-gen", "trust"]
+    },
+    {
+      "id": "nsd-play-03",
+      "principle": "Accusation Audit (pre-empt the negatives)",
+      "what_it_means": "List the worst things the buyer could think/say about your offer, then say them first to take the sting out.",
+      "why_it_matters": "Denying a negative gives it credence; voicing it first disarms it and triggers the buyer to insist the opposite is true.",
+      "when_to_use": "When you must deliver something the buyer won't love — firm price, no further discount, declining a bundle, a flaw disclosure.",
+      "when_NOT_to_use": "When there's no real objection to pre-empt (manufacturing fake negatives reads weird).",
+      "marketplace_mapping": "Opening a 'sorry, firm price' message; declining a lowball; disclosing a small defect before they find it in photos.",
+      "example_buyer_message": "Can you do $15 instead of $30?",
+      "recommended_agent_reply": "You're probably going to think I'm being stubborn or that I don't want to make a deal — I get it. The truth is I've already priced this below what similar ones sell for, so I can't go to $15. But I'd love to find a number that works.",
+      "source_quote_or_locator": "Ch. 3 'Do an Accusation Audit' — Anna's case; 'list every terrible thing your counterpart could say about you.'",
+      "product_stage_tags": ["objection", "pricing", "reply-gen"]
+    },
+    {
+      "id": "nsd-play-04",
+      "principle": "Calibrated 'How am I supposed to do that?'",
+      "what_it_means": "Respond to a lowball or demand with a deferential open question that forces the buyer to confront your constraints and solve your problem.",
+      "why_it_matters": "Creates 'forced empathy' and the illusion of control; the buyer often talks themselves up or withdraws the demand without you saying 'No.'",
+      "when_to_use": "Direct lowball offers; demands for free shipping / extra discount; 'knock off $X.'",
+      "when_NOT_to_use": "When said with an aggressive tone (becomes an accusation); against analyst buyers who want data — pair with a fact.",
+      "marketplace_mapping": "The #1 default reply to a lowball Offer on eBay/Poshmark/Depop; counter to 'free shipping or no deal.'",
+      "example_buyer_message": "I'll give you $20.",
+      "recommended_agent_reply": "I appreciate the offer — but how am I supposed to do $20 when I paid more than that for it myself? What were you hoping to spend?",
+      "source_quote_or_locator": "Ch. 7 'Calibrate Your Questions' & Ch. 5 — 'How am I supposed to do that?'; 'forced empathy.'",
+      "product_stage_tags": ["objection", "pricing", "reply-gen"]
+    },
+    {
+      "id": "nsd-play-05",
+      "principle": "Trigger 'No' to start the negotiation",
+      "what_it_means": "Ask questions designed to get a 'No' — it makes people feel safe and in control and opens the conversation.",
+      "why_it_matters": "'Yes' early is a defensive counterfeit; 'No' reaffirms autonomy, lowers guard, and gets them engaged.",
+      "when_to_use": "Cold or guarded buyers; re-opening a stalled thread; instead of pushy 'can you buy today?' asks.",
+      "when_NOT_to_use": "When you need a binding commitment now — pair with a follow-up that converts.",
+      "marketplace_mapping": "Replacing 'Do you want to buy it?' with 'Is this no longer something you're interested in?'; reviving a buyer who saved the item.",
+      "example_buyer_message": "(buyer asked a question then went quiet)",
+      "recommended_agent_reply": "Have you given up on this one?",
+      "source_quote_or_locator": "Ch. 4 ''No' Starts the Negotiation'; 'Is now a bad time?' vs 'Do you have a few minutes?'",
+      "product_stage_tags": ["intent-detection", "reply-gen", "learning-loop"]
+    },
+    {
+      "id": "nsd-play-06",
+      "principle": "The 'No'-oriented re-engagement DM",
+      "what_it_means": "To revive a ghosting buyer, send one short 'No'-oriented question that implies you'll move on.",
+      "why_it_matters": "Plays on loss aversion + autonomy; the buyer replies to correct you and reclaim control rather than be abandoned.",
+      "when_to_use": "Buyer who made an offer or asked about availability then went silent 24h+.",
+      "when_NOT_to_use": "More than once per buyer (becomes nagging); on a buyer who already clearly declined.",
+      "marketplace_mapping": "The anti-ghosting nudge; also for a buyer sitting on a sent counteroffer about to expire.",
+      "example_buyer_message": "(silence after 'is this still available?')",
+      "recommended_agent_reply": "Have you given up on this jacket? Totally fine if it's no longer right — just want to know whether to keep holding it for you.",
+      "source_quote_or_locator": "Ch. 4 'Email Magic: How Never to Be Ignored Again' — 'Have you given up on this project?'",
+      "product_stage_tags": ["intent-detection", "reply-gen", "objection"]
+    },
+    {
+      "id": "nsd-play-07",
+      "principle": "Drive to 'That's right' with a summary",
+      "what_it_means": "Paraphrase the buyer's situation + label their underlying emotion so the only response is 'That's right' (NOT 'you're right').",
+      "why_it_matters": "'That's right' is genuine buy-in; 'you're right' means they want you to stop talking and nothing will change.",
+      "when_to_use": "Stuck negotiations, repeat hagglers, or before asking for the close — to confirm true alignment.",
+      "when_NOT_to_use": "As a manipulation to fake agreement on something you haven't actually understood.",
+      "marketplace_mapping": "Before sending a final counter; converting a chatty browser who keeps asking but not buying.",
+      "example_buyer_message": "I love it but I'm trying not to overspend this month and I've been burned by sizing online before.",
+      "recommended_agent_reply": "So it sounds like you really want the piece, you just need to feel confident the fit is right and that you're not blowing your budget on a guess.",
+      "source_quote_or_locator": "Ch. 5 'Trigger a 'That's Right' With a Summary' (Sabaya); ''That's Right' vs 'You're Right'' (Brandon).",
+      "product_stage_tags": ["objection", "trust", "reply-gen"]
+    },
+    {
+      "id": "nsd-play-08",
+      "principle": "Anchor emotions before the number (loss aversion)",
+      "what_it_means": "Before naming a price/concession, set low expectations and make inaction feel like a loss.",
+      "why_it_matters": "People take bigger risks to avoid a loss than to get a gain; 'you might lose this' beats 'you could gain this.'",
+      "when_to_use": "When introducing a firm price, a small discount you won't exceed, or a genuine 'last one' situation.",
+      "when_NOT_to_use": "Fake scarcity (guardrail) — only claim a genuine loss (real last item, real other interest).",
+      "marketplace_mapping": "'A couple others have it saved' (only if true); framing your counter as the deal that's about to disappear; end-of-listing relist warning.",
+      "example_buyer_message": "Let me think about it.",
+      "recommended_agent_reply": "Totally — no rush from me. Just a heads up, two other people have this saved and I'm relisting Sunday, so I didn't want you to miss it if it's the one you wanted.",
+      "source_quote_or_locator": "Ch. 6 'Anchor Their Emotions' (UAE $500/day contractors); 'persuade them they have something concrete to lose.'",
+      "product_stage_tags": ["pricing", "objection", "reply-gen", "safety"]
+    },
+    {
+      "id": "nsd-play-09",
+      "principle": "Let the buyer anchor first (price)",
+      "what_it_means": "Don't volunteer a discount number; get the buyer to name their price first so you see their hand.",
+      "why_it_matters": "Their first offer is often higher than your floor; going first risks winner's curse / underselling.",
+      "when_to_use": "Any 'what's your lowest?' / 'best price?' message.",
+      "when_NOT_to_use": "When you want a fast sale at a set number and the buyer is an informed pro.",
+      "marketplace_mapping": "The classic 'what's your best price?' DM — bounce it back; eBay Best-Offer where you can wait for their offer.",
+      "example_buyer_message": "What's the lowest you'll go?",
+      "recommended_agent_reply": "I'm open to a fair offer — what did you have in mind?",
+      "source_quote_or_locator": "Ch. 6 'Let the Other Guy Go First... Most of the Time' (Chandler/Jerry).",
+      "product_stage_tags": ["pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "nsd-play-10",
+      "principle": "Establish a range (bolstering range)",
+      "what_it_means": "When forced to give a number, cite a range anchored to comparable sales, with the low end being what you actually want.",
+      "why_it_matters": "Ranges seem less aggressive yet pull the counterpart toward the higher end / their limit; named comps add authority.",
+      "when_to_use": "Justifying your asking price; responding when you can't dodge naming a figure.",
+      "when_NOT_to_use": "When you have no real comps to cite (don't fabricate).",
+      "marketplace_mapping": "'Similar ones on Depop/eBay sold for $X-$Y' to defend price; countering 'it's too expensive.'",
+      "example_buyer_message": "$45 is way too much for this.",
+      "recommended_agent_reply": "I hear you — though sold listings for this exact style are running $42-$58 right now, so $45 is already at the low end of that.",
+      "source_quote_or_locator": "Ch. 6 'Establish a Range' — Jerry/'$130,000-$170,000'; Columbia bolstering-range study.",
+      "product_stage_tags": ["pricing", "objection", "trust"]
+    },
+    {
+      "id": "nsd-play-11",
+      "principle": "Pivot to non-monetary terms",
+      "what_it_means": "When stuck on 'how much?', trade things cheap to you but valuable to them (or ask for things valuable to you).",
+      "why_it_matters": "Breaks the rigid price-only frame; expands the pie and lets both sides feel they won.",
+      "when_to_use": "Gap between your floor and their ceiling; bundle requests; buyers who want 'a deal.'",
+      "when_NOT_to_use": "When the buyer only cares about absolute price and you have no flexible terms.",
+      "marketplace_mapping": "'I can't drop the price but I'll cover shipping / add a matching accessory / bundle a second item'; ask buyer to take 2 items for a small bump.",
+      "example_buyer_message": "Can you do $25 instead of $30?",
+      "recommended_agent_reply": "I can't do $25 on its own — but if you grab the tee you also liked, I'll do both for $38 shipped. How does that sound?",
+      "source_quote_or_locator": "Ch. 6 'Pivot to Nonmonetary Terms' (Memphis Bar magazine cover).",
+      "product_stage_tags": ["pricing", "objection", "reply-gen", "listing"]
+    },
+    {
+      "id": "nsd-play-12",
+      "principle": "Use odd, precise numbers",
+      "what_it_means": "Make offers/counters end in non-round numbers; round numbers read as placeholders, odd ones as calculated and final.",
+      "why_it_matters": "A precise figure signals you've reached your real limit and is psychologically harder to negotiate off of.",
+      "when_to_use": "Final counteroffer; 'firm' price you won't move from.",
+      "when_NOT_to_use": "Tiny-dollar items where precision looks silly.",
+      "marketplace_mapping": "Counter at $37 not $35; 'best I can do is $42.50 shipped.'",
+      "example_buyer_message": "Meet me at $40?",
+      "recommended_agent_reply": "I can come down to $43 — that's genuinely the lowest the numbers work for me.",
+      "source_quote_or_locator": "Ch. 6 'When You Do Talk Numbers, Use Odd Ones' & Ch. 9 ('$4,751').",
+      "product_stage_tags": ["pricing", "reply-gen"]
+    },
+    {
+      "id": "nsd-play-13",
+      "principle": "Ackerman concession ladder (decreasing increments)",
+      "what_it_means": "Set your target floor, then concede on a shrinking ladder so each drop is smaller, ending on an odd number + a tiny non-monetary add-on. (Seller-side inversion of the 65/85/95/100 buyer model.)",
+      "why_it_matters": "Decreasing increments make the buyer feel they squeezed your last drop; reciprocity makes them counter; you land on your real number.",
+      "when_to_use": "Multi-message haggles with a committed buyer; high-value items worth the back-and-forth.",
+      "when_NOT_to_use": "Low-value quick flips; buyers who want one firm price.",
+      "marketplace_mapping": "Listed $50, floor $42. Counter $48, then $44, then $43, then $42.50 + 'free tracked shipping.' Each concession smaller than the last.",
+      "example_buyer_message": "$35... $40?... $42?",
+      "recommended_agent_reply": "(round 1) I can do $48. (round 2) Okay, $44. (round 3) $43 is really pushing it, but $42.50 and I'll cover shipping — that's my limit.",
+      "source_quote_or_locator": "Ch. 9 'Ackerman Bargaining' — 65% anchor, raises to 85/95/100%, decreasing increments, nonround final + nonmonetary item.",
+      "product_stage_tags": ["pricing", "objection", "reply-gen", "coaching"]
+    },
+    {
+      "id": "nsd-play-14",
+      "principle": "Don't compromise / no deal beats a bad deal",
+      "what_it_means": "Refuse the reflexive 'split the difference'; be ready to walk (relist) rather than take a loss.",
+      "why_it_matters": "Compromise is driven by fear, not goals ('one black and one brown shoe'); the ready-to-walk mindset removes neediness, which is leverage.",
+      "when_to_use": "Buyer pushes 'just meet me halfway'; thin-margin items; serial discounters.",
+      "when_NOT_to_use": "When the item is aging, you need cash/space, and 'halfway' still clears your floor — know your floor first.",
+      "marketplace_mapping": "Coach the seller: relisting / cross-listing is your BATNA; declining a bad offer is fine. Counter 'split it?' with terms or a small odd concession, not the midpoint.",
+      "example_buyer_message": "You're at $40, I'm at $30, let's just do $35.",
+      "recommended_agent_reply": "I get the instinct to split it, but $35 doesn't quite work for me. I can do $38 today, otherwise no worries — I'm happy to hold out.",
+      "source_quote_or_locator": "Ch. 6 'Don't Compromise' (mismatched shoes) & Ch. 9 'No Neediness: the ready-to-walk mindset.'",
+      "product_stage_tags": ["pricing", "objection", "coaching", "metrics"]
+    },
+    {
+      "id": "nsd-play-15",
+      "principle": "Use your own name ('the Chris discount')",
+      "what_it_means": "Introduce yourself by name to humanize yourself and create forced empathy before/while negotiating.",
+      "why_it_matters": "Makes you a real person rather than a faceless seller, so the buyer is less comfortable lowballing or ghosting you.",
+      "when_to_use": "Opening a DM thread; warming up a haggler; any time the interaction feels cold/transactional.",
+      "when_NOT_to_use": "When it would feel forced in a one-line offer exchange.",
+      "marketplace_mapping": "'Hey, I'm Sam — thanks for checking out the listing!' as the opener; signing messages with your name.",
+      "example_buyer_message": "best price?",
+      "recommended_agent_reply": "Hey! I'm Sam, thanks for the interest. What were you thinking budget-wise and I'll see what I can do?",
+      "source_quote_or_locator": "Ch. 9 'Use your own name... the Chris discount' & 'forced empathy.'",
+      "product_stage_tags": ["trust", "reply-gen", "intent-detection"]
+    },
+    {
+      "id": "nsd-play-16",
+      "principle": "Rule of Three (lock in commitment)",
+      "what_it_means": "Get the buyer to confirm the agreement three times in different ways before closing, to surface flakiness/lies.",
+      "why_it_matters": "It's hard to fake conviction three times; uncovers a counterfeit 'yes' before you ship or hold an item.",
+      "when_to_use": "Before marking sold, holding an item, or accepting an offer from a wishy-washy buyer.",
+      "when_NOT_to_use": "With a fast, clearly committed buyer (over-confirming kills momentum).",
+      "marketplace_mapping": "Confirm offer (1), summarize to a 'that's right' (2), ask a 'how' implementation question about payment/shipping (3) — flushes out no-shows.",
+      "example_buyer_message": "Yeah ok I'll take it.",
+      "recommended_agent_reply": "Great — so we're set at $42 shipped? [1] Sounds like you want it in time for the weekend? [2] How would you like to handle checkout so I can get it out today? [3]",
+      "source_quote_or_locator": "Ch. 8 'The Rule of Three' — agree to the same thing three times.",
+      "product_stage_tags": ["trust", "safety", "reply-gen", "learning-loop"]
+    },
+    {
+      "id": "nsd-play-17",
+      "principle": "Calibrated questions to handle the verbal attack (no counter-punch)",
+      "what_it_means": "When a buyer is rude/aggressive, don't counterattack — disarm with a calibrated 'What/How' question and an 'I'-statement boundary.",
+      "why_it_matters": "Lowers the buyer's 'hostage mentality'; keeps you rational; refocuses on the issue not the person.",
+      "when_to_use": "Rude, entitled, or hostile messages.",
+      "when_NOT_to_use": "Harassment/threats/scam attempts — escalate to safety/block flow instead of negotiating.",
+      "marketplace_mapping": "Reply to 'this is overpriced garbage, $10 take it or leave it'; aggressive shipping-dispute messages.",
+      "example_buyer_message": "Are you serious with this price? Total ripoff.",
+      "recommended_agent_reply": "Sounds like the price feels off to you — what would feel fair from your side? (I'm sorry if it came across high; happy to talk it through.)",
+      "source_quote_or_locator": "Ch. 7 'How Not to Get Paid' & 'bite your tongue'; Ch. 9 ''I' Messages.'",
+      "product_stage_tags": ["objection", "safety", "reply-gen", "coaching"]
+    },
+    {
+      "id": "nsd-play-18",
+      "principle": "Positive/playful voice (default) + late-night DJ voice (for the firm line)",
+      "what_it_means": "Default to a warm, smiling, easygoing tone; switch to a slow, calm, downward-inflected 'DJ' tone only for the one line that's non-negotiable.",
+      "why_it_matters": "Positive mood makes buyers collaborate not fight; the calm declarative tone conveys 'not up for discussion' without triggering pushback.",
+      "when_to_use": "Whole thread = playful; the firm-price / final-offer line = DJ voice.",
+      "when_NOT_to_use": "Don't default to the assertive/direct voice — it triggers defensiveness.",
+      "marketplace_mapping": "[INFERRED] Copilot sets message warmth high by default and flattens/shortens the one sentence stating the firm price.",
+      "example_buyer_message": "Come on, just knock off another $10.",
+      "recommended_agent_reply": "Haha I wish I could! But $43 is my firm number on this one.",
+      "source_quote_or_locator": "Ch. 2 'The Voice' — three tones; positive/playful default, late-night FM DJ voice for points not up for discussion.",
+      "product_stage_tags": ["reply-gen", "coaching", "trust"]
+    }
+  ],
+  "communication_tactics": [
+    {
+      "name": "Mirror",
+      "purpose": "Get the buyer to elaborate and reveal strategy/budget.",
+      "phrase_patterns": ["'___?' (their last 1-3 words, upward inflection)"],
+      "overuse_risk": "Sounds robotic or mocking if repeated every turn.",
+      "good_example": "Buyer: 'It's overpriced.' -> 'Overpriced?'",
+      "bad_example": "Mirroring every single sentence in a row.",
+      "source_locator": "Ch. 2 'Mirroring'"
+    },
+    {
+      "name": "Label",
+      "purpose": "Name and defuse the buyer's emotion.",
+      "phrase_patterns": ["It seems like ___", "It sounds like ___", "It looks like ___"],
+      "overuse_risk": "Stacking labels with no pause; using 'I' which raises guard.",
+      "good_example": "It seems like you've been burned by sizing before.",
+      "bad_example": "I'm hearing that you're cheap.",
+      "source_locator": "Ch. 3 'Labeling'"
+    },
+    {
+      "name": "Accusation audit",
+      "purpose": "Pre-empt the buyer's objections to take their sting out.",
+      "phrase_patterns": ["You're going to think ___", "You may feel like I'm ___"],
+      "overuse_risk": "Inventing fake negatives; over-apologizing into weakness.",
+      "good_example": "You'll probably think I'm being firm here...",
+      "bad_example": "Listing every flaw until you talk yourself out of the sale.",
+      "source_locator": "Ch. 3 'Accusation Audit'"
+    },
+    {
+      "name": "Calibrated How/What question",
+      "purpose": "Make the buyer solve your problem; remove aggression.",
+      "phrase_patterns": ["How am I supposed to ___?", "What about this works for you?", "What did you have in mind?"],
+      "overuse_risk": "Aggressive tone turns it into an accusation.",
+      "good_example": "How am I supposed to do $20?",
+      "bad_example": "Why would you offer that? (accusatory 'why')",
+      "source_locator": "Ch. 7 'Calibrate Your Questions'"
+    },
+    {
+      "name": "'No'-oriented question",
+      "purpose": "Create safety/autonomy and re-engage a silent buyer.",
+      "phrase_patterns": ["Have you given up on ___?", "Is it ridiculous to ___?", "Is now a bad time?"],
+      "overuse_risk": "Using the ghost-nudge repeatedly becomes nagging.",
+      "good_example": "Have you given up on this jacket?",
+      "bad_example": "Do you want to buy it or not?",
+      "source_locator": "Ch. 4 'No'; 'Email Magic'"
+    },
+    {
+      "name": "Summary to 'That's right'",
+      "purpose": "Achieve true buy-in before the close.",
+      "phrase_patterns": ["So it sounds like ___, and ___, is that right?"],
+      "overuse_risk": "Faking a summary you don't believe.",
+      "good_example": "Full paraphrase plus emotion label.",
+      "bad_example": "Fishing for a quick 'yes'.",
+      "source_locator": "Ch. 5 'Summary'"
+    },
+    {
+      "name": "Emotional anchor / loss frame",
+      "purpose": "Inflate loss aversion to prompt action.",
+      "phrase_patterns": ["I didn't want you to miss it", "before I offer it to someone else"],
+      "overuse_risk": "Fake scarcity damages trust (guardrail).",
+      "good_example": "Used only when genuinely true.",
+      "bad_example": "100 people are about to buy this! (false)",
+      "source_locator": "Ch. 6 'Anchor Their Emotions'"
+    },
+    {
+      "name": "Range with comps",
+      "purpose": "Defend price with authority.",
+      "phrase_patterns": ["Sold ones are going for $X-$Y"],
+      "overuse_risk": "Fabricated comps.",
+      "good_example": "Real sold-listing range.",
+      "bad_example": "Invented numbers.",
+      "source_locator": "Ch. 6 'Establish a Range'"
+    },
+    {
+      "name": "Odd-number close",
+      "purpose": "Signal a final, calculated limit.",
+      "phrase_patterns": ["$42.50 is my limit"],
+      "overuse_risk": "Silly precision on tiny items.",
+      "good_example": "$43 vs $45.",
+      "bad_example": "$43.27 on a $5 item.",
+      "source_locator": "Ch. 6 'Use Odd Ones'"
+    },
+    {
+      "name": "Strategic umbrage / poised no",
+      "purpose": "Reject an offer without anger.",
+      "phrase_patterns": ["I'm sorry, that just doesn't work for me", "I don't see how that would ever work"],
+      "overuse_risk": "Sounding genuinely angry backfires.",
+      "good_example": "Calm, item-focused refusal.",
+      "bad_example": "Personal attack on the buyer.",
+      "source_locator": "Ch. 9 'Threats Without Anger'"
+    },
+    {
+      "name": "Use your name",
+      "purpose": "Humanize yourself for forced empathy.",
+      "phrase_patterns": ["Hey, I'm ___"],
+      "overuse_risk": "None significant.",
+      "good_example": "I'm Sam, thanks for the interest!",
+      "bad_example": "n/a",
+      "source_locator": "Ch. 9 'Chris discount'"
+    }
+  ],
+  "objection_material": [
+    {
+      "objection_key": "lowball",
+      "handling": "Don't counter the number; deflect with 'How am I supposed to do that?' + accusation audit, let them re-anchor up.",
+      "sample_reply": "I appreciate the offer, but how am I supposed to do $20 when these sell for $45? What were you really hoping to spend?",
+      "source_locator": "Ch. 7; Ch. 3"
+    },
+    {
+      "objection_key": "price-too-high",
+      "handling": "Label the concern, defend with a comp range, pivot to terms; never split the difference.",
+      "sample_reply": "It sounds like you want to be sure it's worth it — sold ones are running $42-$58, so $45 is already low. If price is the sticker, I could bundle something to add value.",
+      "source_locator": "Ch. 6"
+    },
+    {
+      "objection_key": "is-it-available",
+      "handling": "Treat as buying signal; warm + name yourself, then a calibrated question to move to commitment (avoid dead 'yes it's available').",
+      "sample_reply": "Yes it is! I'm Sam — were you looking to grab it now or did you have a question about it first?",
+      "source_locator": "Ch. 5; Ch. 9"
+    },
+    {
+      "objection_key": "competitor-cheaper",
+      "handling": "Normative/range leverage: acknowledge, then differentiate with facts (condition, authenticity, shipping).",
+      "sample_reply": "Totally fair to compare — what's making theirs cheaper? Mine's the authenticated, better-condition one and ships next day, which is why it's priced where it is.",
+      "source_locator": "Ch. 6; Ch. 10"
+    },
+    {
+      "objection_key": "condition-doubt",
+      "handling": "Accusation audit + label the fear, then proof (extra photos, receipts). Forced empathy via your name.",
+      "sample_reply": "You might be worried it's not as described — totally reasonable online. I'm Sam; happy to send extra close-ups or the receipt so you can buy with confidence.",
+      "source_locator": "Ch. 3; Ch. 10"
+    },
+    {
+      "objection_key": "trust-authenticity",
+      "handling": "Label the suspicion without defensiveness; provide authentication proof; humanize with your name.",
+      "sample_reply": "Sounds like you want to be sure it's genuine before committing — smart. Here's the receipt and tag close-ups; I'm Sam and I stand behind every item.",
+      "source_locator": "Ch. 3; Ch. 10"
+    },
+    {
+      "objection_key": "shipping-cost",
+      "handling": "Calibrated question + pivot to terms (absorb shipping instead of cutting price).",
+      "sample_reply": "How would it work better for you — should I build shipping into the price so it's one flat number?",
+      "source_locator": "Ch. 6; Ch. 7"
+    },
+    {
+      "objection_key": "wants-bundle-deal",
+      "handling": "Pivot to non-monetary / expand the pie; use Ackerman on the bundle total.",
+      "sample_reply": "Love a bundle — grab both and I'll do $38 shipped instead of $44. That's my best on the two.",
+      "source_locator": "Ch. 6; Ch. 9"
+    },
+    {
+      "objection_key": "stalling-ghosting",
+      "handling": "The 'No'-oriented re-engagement question that implies you'll move on (loss aversion + autonomy).",
+      "sample_reply": "Have you given up on this one? No worries either way — just want to know if I should keep holding it.",
+      "source_locator": "Ch. 4"
+    },
+    {
+      "objection_key": "rude-aggressive",
+      "handling": "Don't counter-punch; bite your tongue, disarm with a calibrated question + poised 'I' boundary; de-escalate.",
+      "sample_reply": "Sounds like the price feels way off to you — what would feel fair? I'm happy to talk it through, but I can't do $10.",
+      "source_locator": "Ch. 7; Ch. 9"
+    },
+    {
+      "objection_key": "off-platform-request",
+      "handling": "[INFERRED — not in book] Treat as safety, not negotiation; politely decline and keep it on-platform.",
+      "sample_reply": "I'd rather keep everything through the app so we're both protected — happy to finalize here!",
+      "source_locator": "INFERRED (safety overlay; book does not cover)"
+    }
+  ],
+  "buyer_psychology": [
+    "Buyers decide emotionally (System 1) then rationalize (System 2); framing/delivery shapes the rationalization more than facts. (Ch. 1)",
+    "'Yes' is often counterfeit — an escape hatch to end the conversation; 'Maybe' is worse. Real signals are 'No' (engagement) and 'That's right' (buy-in). (Ch. 4-5)",
+    "People crave autonomy and control; giving them the right to say 'No' calms them and makes them collaborate. (Ch. 4)",
+    "Loss aversion: a buyer acts harder to avoid losing the item than to gain it — 'you might miss this' beats 'you could have this.' (Ch. 6)",
+    "Fairness is an emotional trigger; buyers reject good-for-them deals that feel unfair and weaponize 'that's not fair' to extract concessions. (Ch. 6)",
+    "Buyers anchor on the first number and adjust insufficiently; extreme/odd numbers move their expectations. (Ch. 6)",
+    "Pronoun tells: overusing 'they/my partner/the budget' may mean an off-screen decision-maker or distancing from a lie. (Ch. 8)",
+    "Three buyer styles — Analyst (data, slow, hates surprises), Accommodator (relationship, chatty, may over-promise), Assertive (wants to be heard, time=money); treat them how they need. (Ch. 9)"
+  ],
+  "seller_psychology": [
+    "Chasing 'Yes' / being 'nice': sellers push for quick agreement and over-accommodate, producing counterfeit yeses and ghosting. Counter: seek 'No'/'That's right', set boundaries. (Ch. 4)",
+    "Splitting the difference reflexively out of fear, not goals. Counter: enforce a known floor; offer odd concessions or terms, not the midpoint. (Ch. 6)",
+    "Neediness for a sale loses leverage. Counter: surface the seller's BATNA (relist, cross-list, hold) so they can walk. (Ch. 9)",
+    "Going first / naming their lowest price when asked 'best price?' gives away leverage. Counter: bounce it back. (Ch. 6)",
+    "Counter-punching rude buyers tanks the deal. Counter: bite-your-tongue + calibrated question. (Ch. 7)",
+    "Talking too much / making it about themselves (the Daryl call) prevents the buyer from owning the decision. Counter: ask, summarize, go silent. (Ch. 4)",
+    "Treating deadlines as enemies (rushing to relist or accept before end-of-listing). Counter: deadlines cut both ways; patience is leverage. (Ch. 6)",
+    "Round-number anchoring invites further haggling. Counter: use odd, precise numbers. (Ch. 6)"
+  ],
+  "ignore_list": [
+    "Hostage/crisis/kidnapping operational specifics (proof-of-life questions, SWAT, surrender rituals) — used only as source for the underlying conversational mechanic.",
+    "Enterprise/B2B, M&A, salary-raise, and career-mentor negotiations — wrong stakes/relationship model for casual P2P resale.",
+    "In-person / body-language reading (7-38-55, Pinocchio nose, steepled fingers) — limited use in text-only chat; pronoun/word-count tells partially portable.",
+    "Negative leverage via real threats ('destroy your reputation') — too toxic/risky for marketplace chat; Voss himself warns against it.",
+    "Deep 'religion'/worldview Black-Swan excavation — too high-effort for a $30 transaction; lightweight version (similarity, named comps) retained.",
+    "Multi-party 'team behind the table' dynamics — rarely applicable to a single casual buyer."
+  ],
+  "guardrail_flags": [
+    "Fake scarcity / fake urgency: the loss-aversion anchor (play 08) must use only TRUE losses; do not fabricate 'others are buying' / 'relisting tomorrow.' Flag urgency/scarcity copy for truthfulness check.",
+    "Manipulative 'Fair': weaponizing 'we just want what's fair' or guilt is flagged; prefer the positive use ('tell me if you ever feel I'm being unfair'). (Ch. 6)",
+    "Strategic umbrage / feigned anger: only real, controlled emotion works and faking backfires; do not coach performative anger toward buyers. (Ch. 9)",
+    "Negative leverage / threats: do not generate threats (reputation, reviews, reporting) as a bargaining tactic — safety/abuse risk. (Ch. 10)",
+    "Disingenuous niceness: scripted plastic warmth reads as a manipulative salesman; keep tone authentic. (Ch. 4)",
+    "Over-engineering low-value chats: gate Ackerman/Rule-of-Three by item value/effort — applying them to a $6 item annoys buyers."
+  ]
+}

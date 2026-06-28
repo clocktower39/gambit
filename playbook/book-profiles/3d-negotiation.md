@@ -1,0 +1,265 @@
+# 3-D Negotiation — Book Profile
+
+## 1. Metadata
+- **title:** 3-D Negotiation: Powerful Tools to Change the Game in Your Most Important Deals
+- **author:** David A. Lax & James K. Sebenius
+- **category:** deal-design / negotiation-architecture (strategic, not tactical)
+- **domain_fit_note:** This book is the *product-architecture* lens for the copilot, not the chat-reply lens. Its core message — most of the game is won *away from the table*, by getting the right parties, interests, no-deal options, sequence, and deal structure in place *before* anyone haggles — maps directly to how a seller should *build the listing and choose terms* so buyers offer fairly without a fight. Tactics-at-the-table (1D) are the least useful part here; deal design (2D: bundles, shipping, returns, payment, contingencies) and setup (3D: photos/proof/comps/timing/buyer-screening/anchoring) are the gold. Best used to drive listing-quality, pricing, and system-design features rather than per-message replies.
+- **applicability_score:** 4 (5 for listing/pricing/system-design features; 2 for live chat copy — most plays change the *setup*, so they fire at listing time, not mid-conversation)
+
+## 2. Core thesis
+Most negotiators are "1-D" — they think negotiation is only what happens at the table (tactics). Lax & Sebenius argue you must play in three dimensions concurrently: (1) **tactics** at the table, (2) **deal design** on the drawing board — structuring the offer to create real value via differences (trades, bundles, contingencies, risk/time allocation), and (3) **setup** away from the table — ensuring the right parties, with the right interests and no-deal options (BATNAs), are engaged in the right sequence under the right process *before* the haggling starts. The governing objective is to *create and claim value for the long term*, and the governing move is to "let them have your way": shape the other side's deal/no-deal balance so the "yes" they choose for *their* reasons is the deal *you* want. A barrier hit in one dimension often has its solution in another — a stuck price haggle (1D) is frequently really a setup problem (3D) of negotiating with the wrong buyer or a weak listing.
+
+## 3. Plays
+
+```
+- id: 3d-negotiation-play-01
+  principle: Run a 3-D barriers audit before relisting
+  what_it_means: Before re-haggling or dropping price, diagnose WHICH dimension is actually blocking the sale — wrong setup (bad photos/wrong buyers/no comps), bad deal design (price-only, no bundle/shipping flex), or just table tactics.
+  why_it_matters: A problem in one dimension usually has its fix in another; pushing harder on price (tactics) when the real barrier is a weak listing (setup) wastes effort and leaves money on the table.
+  when_to_use: A listing has stalled, gotten only lowballs, or had repeated no-sales. Before any price drop or relist.
+  when_NOT_to_use: First few days of a fresh, well-built listing — give the setup time to work before auditing.
+  mechanic: 1) Setup check — are photos/proof/comps/description strong? right buyer pool? 2) Deal-design check — is it price-only when a bundle/shipping/returns lever exists? 3) Tactics check — are replies slow, defensive, or anchoring badly? Fix the highest dimension that's broken FIRST (setup > design > tactics).
+  marketplace_mapping: Copilot's "why isn't this selling?" diagnostic. Maps to a relist checklist on Depop/Vinted/Posh/eBay that scores photo count, comp-anchored price, bundle eligibility, and reply latency before recommending a price cut.
+  example_buyer_message: "(no buyer message — internal trigger: 'this item has 40 likes but 0 offers in 3 weeks')"
+  recommended_agent_reply: "Before you drop the price: your photos and price look strong, but this item has no bundle offer set and shipping is buyer-paid at $8 — two things buyers hesitate on. Want to add a 'bundle 2+ and save' and free shipping baked into price instead of cutting the price itself?"
+  source_quote_or_locator: "Ch. 2 'Do a 3-D Audit of Barriers to Agreement' — 'Are setup flaws blocking your desired agreement? Deal-design issues? People problems?'; Ch. 3 'a barrier encountered in one dimension can often push you into other dimensions for a solution.'"
+  product_stage_tags: [listing, pricing, coaching, learning-loop, metrics]
+
+- id: 3d-negotiation-play-02
+  principle: Map all the parties — find the highest-value buyer
+  what_it_means: Don't assume the obvious browsers are your best buyers. Ask 'who would value THIS item most?' and list/route/cross-list toward that audience instead of accepting the current low-bidders as fixed.
+  why_it_matters: LockStore failed selling a great product to the wrong customers; Staples won by bringing in high-value parties. The single biggest setup lever is negotiating with the party who values the item most — they offer fairly without haggling.
+  when_to_use: At listing time (choosing platform, tags, framing) and when current offers are all lowballs from bargain-hunters.
+  when_NOT_to_use: Pure commodity items with one obvious mass market — the 'highest-value player' search has low payoff.
+  marketplace_mapping: Cross-listing strategy. A Y2K top gets lowballed on Vinted but a styled flat-lay + 'y2k coquette' tags on Depop reaches collectors who pay full price. eBay: list a niche part under the exact compatibility model collectors search. The copilot recommends platform/tag/audience, not just price.
+  example_buyer_message: "Two lowballs at 40% of list within an hour of posting."
+  recommended_agent_reply: "These lowballs suggest you're reaching bargain-hunters, not the people who'd pay full price. This brand has a collector following — let's re-tag with the specific line name and post a styled photo. That audience usually offers fairly without haggling."
+  source_quote_or_locator: "Ch. 4 'Get All the Parties Right' — Q1 'Does your all-party map include the highest-value players?'; niche packaging company case; 'Who might value this deal the most, and is that player part of the negotiation?'"
+  product_stage_tags: [listing, pricing, system-design, coaching]
+
+- id: 3d-negotiation-play-03
+  principle: Probe behind the position to the interest
+  what_it_means: A buyer's stated demand (a lower price) often hides a different real interest — speed, a gift deadline, a bundle, condition reassurance, or budget cap. Find the interest and you can satisfy it cheaply.
+  why_it_matters: The 'Fluffy' holdout didn't want more money, she wanted a resting place for her dog. Positions look incompatible; interests are often dovetailable. Most price fights aren't really about price.
+  when_to_use: Any time a buyer pushes on price or stalls — before conceding on the number itself.
+  when_NOT_to_use: Buyer who has clearly stated a firm budget and confirmed price is the only issue (genuine pure-price deal).
+  marketplace_mapping: One clarifying question in DMs before any counter. 'Is it the price, or the timing/shipping?' On Posh/eBay, a buyer asking for a discount may actually want bundle shipping or arrival-by-a-date.
+  example_buyer_message: "Can you do $25 instead of $35?"
+  recommended_agent_reply: "Happy to find something that works — is it the total budget, or is it the $8 shipping that's the sticking point? If you grab two items I can ship both for the one shipping fee."
+  source_quote_or_locator: "Ch. 1 & Ch. 5 'Get All the Interests Right' — Mrs. Jones / 'Fluffy' case; 'probing behind apparently incompatible bargaining positions to understand the full set of real interests.'"
+  product_stage_tags: [intent-detection, objection, reply-gen, pricing]
+
+- id: 3d-negotiation-play-04
+  principle: Dovetail differences — trade what's cheap for you, valuable to them
+  what_it_means: Look for high-benefit/low-cost moves: things easy for you to give and valuable for the buyer to get (and vice versa). Build the offer around the difference, not a price split.
+  why_it_matters: WORN/WESI traded ad time for engineering — both better off at zero cost to either. The most overlooked value comes from differences, not common ground. A bundle or shipping concession can be near-free to you but high-value to the buyer.
+  when_to_use: When a straight price compromise leaves both sides unhappy but you each value different things (shipping, speed, extras, bundle).
+  when_NOT_to_use: Truly identical interests / single-item pure-price sale with no leverage to trade.
+  mechanic: 1) Inventory what's cheap for YOU to give (free local pickup, a freebie add-on you can't sell, bundle shipping, faster ship). 2) Inventory what the BUYER values (lower total, arrival date, extras). 3) Offer the cheapest-for-you item that's highest-value-for-them INSTEAD of a price cut.
+  marketplace_mapping: 'Hold price, add value' engine. Depop/Posh: keep price firm, throw in a small matching accessory you've struggled to sell. eBay: keep price, offer free expedited shipping. The copilot proposes the trade rather than a discount.
+  example_buyer_message: "$35 is a bit much, any wiggle room?"
+  recommended_agent_reply: "I'd rather keep it at $35 since it's priced fairly vs comps — but I'll include the matching belt (normally $10) and ship it priority at no extra cost. Deal?"
+  source_quote_or_locator: "Ch. 8 'Move Northeast' & Ch. 9 'Dovetail Differences' — 'relentlessly probe for different interests that are relatively easy for them to give, and relatively valuable for the other side to get... high-benefit, low-cost moves.'"
+  product_stage_tags: [pricing, objection, reply-gen, system-design]
+
+- id: 3d-negotiation-play-05
+  principle: Move northeast — grow the pie via bundles
+  what_it_means: Instead of fighting over one item's price (a Battle Line), expand the deal so total value grows: bundle multiple items so the buyer gets more and you move more inventory at a better blended margin.
+  why_it_matters: Stone/Baxter found ~200 value-creating deals once they stopped fighting over one price. A bigger pie means each side's share can be bigger; bundling converts a single haggle into a larger, happier sale.
+  when_to_use: Buyer is interested in one item, or haggling one item, and you have related stock. Closet-clear-out sellers.
+  when_NOT_to_use: Buyer wants exactly one specific item and has no use for anything else you list.
+  marketplace_mapping: Core to Depop/Poshmark/Vinted bundle mechanics. Copilot detects a buyer's likes/cart across your closet and proposes a bundle with a small blended discount + single shipping — a true northeast move (more for them, more total for you).
+  example_buyer_message: "Would you take $18 on the green tee?"
+  recommended_agent_reply: "I can do better than that on the tee alone — you've also liked the blue one. Take both for $32 (instead of $40) and I'll cover shipping. More for you, and it saves us both a second package."
+  source_quote_or_locator: "Ch. 8 'Move Northeast' — Stone/Baxter round-trip-trucking case; 'with a bigger pie overall, each party's ultimate share can be larger.'"
+  product_stage_tags: [pricing, listing, system-design, reply-gen]
+
+- id: 3d-negotiation-play-06
+  principle: Anchor with comps and a justified price
+  what_it_means: Set the listing price as a deliberate anchor backed by comparable sales, and always attach a 'because' (comps, condition, retail, rarity) so the number reads as fair, not arbitrary.
+  why_it_matters: Anchors shift the buyer's perceived ZOPA toward the anchor even for experts (real-estate-agent study). A justified price ('because…') wins far more compliance than a bare number (Langer copier study); buyers need a reason to tell themselves the price is fair.
+  when_to_use: Setting every list price; responding to 'why so much?'; defending a firm price.
+  when_NOT_to_use: An absurd anchor that fails the 'giggle test' — too-high prices lose credibility and the buyer walks or ignores the listing.
+  mechanic: 1) Pull 3+ recent comp sales. 2) Price at the upper-credible end of comps as the anchor. 3) Put the justification IN the description ('comparable sold listings $45–60; this one is unworn'). 4) Repeat the 'because' whenever challenged.
+  marketplace_mapping: Listing-builder feature: auto-pull eBay/Posh sold comps, suggest an anchored price, and inject a one-line justification into the description. Pre-empts haggling because the price already looks evidenced.
+  example_buyer_message: "Why is this $50? Seems high."
+  recommended_agent_reply: "Totally fair question — recent sold ones are running $48–62 and most are used; this one's unworn with tags, so $50 is actually at the lower end for the condition."
+  source_quote_or_locator: "Ch. 12 'Shape Perceptions to Claim Value' — anchoring experiments (headlamp $12/$32; real-estate agents); 'Justify Your Proposal' — Langer copier 'because' study; Kissinger on extreme-but-justified openings."
+  product_stage_tags: [listing, pricing, objection, trust]
+
+- id: 3d-negotiation-play-07
+  principle: Improve your no-deal option (don't sell into weakness)
+  what_it_means: Your willingness to walk — backed by a real alternative (relist, cross-list, hold, another interested buyer) — is your power. Build and protect that alternative instead of caving.
+  why_it_matters: 'Power' is less about pressure than about having a good walk-away; a credible alternative lets you hold price. Roger Fisher: better to have a great job offer in your pocket than a gun. The Canadian exec who granted 9-month exclusivity destroyed his own no-deal option and got squeezed.
+  when_to_use: Facing a take-it-or-leave-it lowball; deciding whether to accept a mediocre offer.
+  when_NOT_to_use: Item is deteriorating/seasonal/space-constrained and holding genuinely costs more than the discount (then your real BATNA is weak — be honest about it).
+  mechanic: 1) Name your real no-deal value (relist + likely future offer, or another buyer in DMs). 2) If the current offer beats it, take it; if not, calmly signal you're fine waiting/relisting. 3) Never grant 'hold it for me' exclusivity without a deposit — it springs a leak in your BATNA.
+  marketplace_mapping: Copilot's 'should I accept?' logic compares offer vs. comp-based expected resale value + time-to-sell. Counsels against open-ended 'holds' (off-platform risk + lost other buyers). On eBay, keep Best-Offer auto-decline below your floor.
+  example_buyer_message: "$20 is my final, take it or leave it."
+  recommended_agent_reply: "I appreciate it, but at $20 I'd genuinely rather hold and relist — these sell around $30–35 here. If $28 works for you I can ship today; otherwise no worries and good luck with the search."
+  source_quote_or_locator: "Ch. 6 'Get the No-Deal Options Right' — 'your ability to walk away to an apparently good alternative'; Fisher's gun-vs-job-offer; Australian exclusivity case; 'Protect Your No-Deal Options.'"
+  product_stage_tags: [pricing, objection, coaching, safety]
+
+- id: 3d-negotiation-play-08
+  principle: Worsen the buyer's no-deal option (scarcity, honestly)
+  what_it_means: Make the buyer aware — truthfully — that their alternative to buying now is worse: limited stock, other interested buyers, last one, price about to rise.
+  why_it_matters: Outcomes improve when the counterpart sees their walk-away as bad and getting worse (Staples 'this thing's filling up fast'; Swiss banks coalition). Genuine scarcity sharpens the buyer's deal/no-deal balance toward yes.
+  when_to_use: When there IS real scarcity/interest — multiple likes, low stock, a planned price increase, seasonal cutoff.
+  when_NOT_to_use: When it's false. Fabricated 'other buyers' / fake urgency is manipulative and erodes trust (see Guardrail flags).
+  marketplace_mapping: Surface TRUE signals: 'last one,' '12 people have this liked,' 'price goes up after the sale ends.' Copilot only generates this line when the data backs it (real like-count, real single-quantity, scheduled price change).
+  example_buyer_message: "I'll think about it and maybe come back next week."
+  recommended_agent_reply: "Sounds good! Just a heads up so you're not disappointed: it's the only one I have and 9 people have it saved, so I can't promise it'll still be here next week."
+  source_quote_or_locator: "Ch. 1 Staples — 'This thing's filling up fast. Do you guys want to play or not?'; Ch. 6 — 'getting them to see their best no-deal alternative as bad (and getting worse)'; Swiss banks coalition case."
+  product_stage_tags: [objection, pricing, reply-gen, safety]
+
+- id: 3d-negotiation-play-09
+  principle: Run buyers in parallel, not in series
+  what_it_means: When multiple buyers show interest, keep them all warm simultaneously so each is your no-deal option against the others — don't negotiate one to exhaustion then move on.
+  why_it_matters: The Mexican-JV case: serial talks made each failure worsen the next BATNA; parallel talks created competition and pulled the best partner back. The $7M division sold for $45M because two rivals were kept warm at once. Serial dealing destroys leverage.
+  when_to_use: An item has several interested buyers / multiple offers; a hot listing.
+  when_NOT_to_use: Single interested buyer; or where stringing buyers along would breach platform etiquette / be deceptive (keep it honest — first firm offer can win).
+  mechanic: 1) Don't commit/hold for buyer A while ignoring B and C. 2) Let interested parties know (truthfully) there's other interest. 3) Sell to the first to commit at/above your floor; keep others as backup until paid.
+  marketplace_mapping: Multi-offer handling on eBay Best-Offer and Posh. Copilot advises: don't 'hold' for one buyer while others are live; respond to all, accept first firm commitment. Use auction format when interest is genuinely competitive.
+  example_buyer_message: "Can you hold this for me till Friday? I get paid then."
+  recommended_agent_reply: "I'd love to but I have a couple other people interested, so I can't hold it unpaid — first to check out gets it. If you can swing a small deposit I'm happy to set it aside, otherwise it stays available to everyone."
+  source_quote_or_locator: "Ch. 7 'Get the Sequence and Basic Process Choices Right' — Mexican auto-parts JV (parallel vs serial); Ch. 6 — consumer-products division auction $7M→$45M; 'a parallel process in which the other side comes to you generally trumps a serial process.'"
+  product_stage_tags: [pricing, objection, system-design, safety]
+
+- id: 3d-negotiation-play-10
+  principle: Use contingent terms to bridge a forecast/trust gap
+  what_it_means: When buyer and seller disagree about value or risk (will it fit? is it authentic? what condition really?), structure the deal so the doubt is handled by terms — returns, verified-authentication, partial/staged — rather than a price cut.
+  why_it_matters: Earn-outs and contingent deals let optimists and skeptics both say yes by betting on their own forecast. The 'truth serum' effect: offering a returns/authentication term flushes out whether the doubt is real. Differences in belief become bridges, not blockers.
+  when_to_use: 'Is it really authentic?', 'will it fit?', condition skepticism, high-ticket hesitation.
+  when_NOT_to_use: Low-value items where return shipping exceeds the item value; platforms where you can't control return terms.
+  marketplace_mapping: Lean on eBay Authenticity Guarantee / Posh's authenticate-over-$500, offer-returns settings, and clear measurements. Copilot suggests 'use the platform's authentication / accept returns' as the answer to doubt — not 'lower the price.'
+  example_buyer_message: "How do I know it's not a fake for $400?"
+  recommended_agent_reply: "Great question — at $400+ it ships through eBay's Authenticity Guarantee, so an expert inspects it before it reaches you and you're fully refunded if it's not genuine. That way neither of us is taking a risk."
+  source_quote_or_locator: "Ch. 1 & Ch. 9 'Dovetail Differences' — earn-out / contingent-agreement examples; 'Contingent agreements can be structured to serve as a truth serum'; differences in forecasts/risk dovetailed."
+  product_stage_tags: [trust, objection, pricing, safety, system-design]
+
+- id: 3d-negotiation-play-11
+  principle: Allocate risk to whoever bears/assesses it best
+  what_it_means: Design terms so the side better able to handle a given risk takes it, compensated accordingly — e.g. seller absorbs shipping/condition risk via guarantees because it's cheaper for them, buyer pays slightly more for that certainty.
+  why_it_matters: The restaurant/arbitration and waste-permit cases: shifting risk to the party who can bear or assess it best creates value both sides share. Buyers pay a premium for certainty; sellers who can cheaply provide it (tracking, insurance, returns) capture that premium.
+  when_to_use: High-ticket or fragile items; nervous first-time buyers; condition/shipping anxiety.
+  when_NOT_to_use: Cheap items where guarantees cost more than they're worth.
+  marketplace_mapping: Offer tracked + insured shipping, accept returns, photograph flaws thoroughly — then price slightly above no-guarantee sellers. Copilot frames the guarantee as the reason the price holds.
+  example_buyer_message: "What if it breaks in the mail?"
+  recommended_agent_reply: "I pack fragile items double-boxed and ship insured with tracking, so if anything happens in transit you're covered for a full refund. That's why I price a touch above the bare-bones listings — you're not carrying the shipping risk."
+  source_quote_or_locator: "Ch. 9 'Dovetail Differences' — restaurant/arbitration risk case; public-private real-estate ('party with greatest influence over a risk bears it'); waste-permit ability-to-assess case."
+  product_stage_tags: [trust, pricing, objection, system-design]
+
+- id: 3d-negotiation-play-12
+  principle: Time-based dovetailing — relist/drop on a cadence
+  what_it_means: Exploit differences in patience and timing: list when buyers are flush (paydays, season, end-of-month), and sequence price drops/relists deliberately rather than reacting emotionally.
+  why_it_matters: Differences in time-preference create gains (impatient party pays for speed). Sellers leave money on the table by dropping price too fast; buyers offer more at the right moment. Timing is a setup lever, not a tactic.
+  when_to_use: Deciding when to list, when to relist/refresh, and how fast to lower price.
+  when_NOT_to_use: Genuinely time-sensitive inventory (perishable trend, dated event item) where holding for timing loses more than it gains.
+  mechanic: 1) List/refresh at high-traffic times (evenings, weekends, paydays, season-start). 2) Hold price through an initial window. 3) Step price down in small scheduled increments (e.g. -10% every 7–10 days) instead of a panic cut. 4) Relist to reset feed position before cutting price.
+  marketplace_mapping: Scheduling + repricing engine. Depop/Vinted feed rewards fresh listings — copilot recommends relist timing and a measured markdown ladder tied to season/payday rather than reactive cuts.
+  example_buyer_message: "(internal trigger: item unsold 10 days, seller wants to slash price 30%)"
+  recommended_agent_reply: "Hold off on a 30% cut — it's coming up on payday weekend and winter coats peak now. Let's relist to refresh your feed position and, if it's still here next week, step down 10% rather than 30%."
+  source_quote_or_locator: "Ch. 9 'Dovetailing Differences in Attitudes Toward Time' — impatient-vs-patient returns; 'better prices and terms at the end of a quarter'; grant/fiscal-cycle timing examples."
+  product_stage_tags: [listing, pricing, system-design, learning-loop]
+
+- id: 3d-negotiation-play-13
+  principle: Negotiate the spirit of the deal (set expectations to prevent disputes)
+  what_it_means: Beyond price (the 'economic contract'), align the buyer's expectations about condition, timing, communication, and what 'done' looks like (the 'social contract') — in writing in the listing — so post-sale reality matches.
+  why_it_matters: Deals unravel when parties hold divergent unspoken expectations (NCR Japan, Komatsu-Dresser). Mismatched expectations cause INRs, returns, and bad reviews. Embedding expectations in the listing dovetails the social and economic contracts and pre-empts conflict.
+  when_to_use: Every listing; especially flawed/used items, slow-shipping situations, made-to-order.
+  when_NOT_to_use: n/a — always worth setting expectations; just keep it concise so it doesn't read as defensive.
+  marketplace_mapping: Listing-description generator that proactively states condition honestly (with flaw photos), ship time, and return policy. Reduces 'item not as described' cases and protects seller rating across all platforms.
+  example_buyer_message: "(pre-sale — no message; trigger: drafting a listing for a worn item)"
+  recommended_agent_reply: "Let's add to the description: 'Pre-loved — small mark on left cuff shown in photo 4. Ships within 2 business days from a smoke-free home. Bundle to save on shipping.' Setting this up front prevents surprises and bad reviews later."
+  source_quote_or_locator: "Ch. 10/11 'Make Lasting Deals' / 'Negotiate the Spirit of the Deal' — underlying vs ongoing social contract; NCR Japan & Komatsu-Dresser failures; 'dovetail the social and economic contracts.'"
+  product_stage_tags: [listing, trust, safety, objection]
+
+- id: 3d-negotiation-play-14
+  principle: Meta-anchor the frame (sell the value, not the spec)
+  what_it_means: Shape how the buyer conceptualizes the whole listing — frame it as a styled outfit / collectible / investment / complete-with-extras, not a bare commodity — because the frame sets the price ceiling before any number is discussed.
+  why_it_matters: R&DCo meta-anchored 'synergy' vs 'stand-alone' to lift price; 'data as commodity vs free speech' reframed entire treaties. The frame moves the perceived ZOPA at a higher level than any number. A 'vintage Levi's, styled' frame anchors higher than 'used jeans.'
+  when_to_use: Writing the title, first photo, and description; whenever you want the buyer thinking 'value/rarity' not 'cheap secondhand.'
+  when_NOT_to_use: When an honest, plain framing is required (don't inflate condition or invent provenance — that crosses into misrepresentation).
+  mechanic: 1) Choose the highest honest frame (collectible / designer / styled set / like-new). 2) Lead the title + first photo with that frame. 3) Keep all copy consistent with it so the buyer adopts it 'without objection' early.
+  marketplace_mapping: Title + cover-photo + tag strategy. Depop styled flat-lays, Posh 'NWT designer', eBay exact-model collector framing. Copilot drafts the framing, not just the price — the frame does the anchoring work.
+  example_buyer_message: "(pre-sale — trigger: titling a listing 'black dress')"
+  recommended_agent_reply: "Let's reframe the title from 'black dress' to 'Reformation Linen Midi Dress — Worn Once, Sold Out Online.' Same item, but now the buyer anchors on brand + scarcity + near-new, which supports a higher price before anyone talks numbers."
+  source_quote_or_locator: "Ch. 12 'Meta-Anchoring: Framing the Whole Negotiation' — R&DCo 'synergy vs stand-alone'; 'data as commodity'; 'meta-anchoring can dramatically influence the other side's perceptions of the ZOPA.'"
+  product_stage_tags: [listing, pricing, system-design]
+
+- id: 3d-negotiation-play-15
+  principle: Converging-concession ladder (signal your floor)
+  what_it_means: When you must concede on price, make decreasing concessions so the shrinking steps signal you're near your limit — never split the difference reflexively, and never make one big jump.
+  why_it_matters: The $20→$28→$32→$34 legal-settlement pattern used halving concessions to imply the floor and landed at $36M. Reciprocity pulls outcomes to the midpoint, so symmetric/large concessions give value away; diminishing ones hold the line.
+  when_to_use: A real back-and-forth where some movement is warranted (not a lowball to reject outright).
+  when_NOT_to_use: First lowball (rule it out instead — play 03/07); when you have a strong BATNA and shouldn't move at all.
+  mechanic: 1) Start at your anchor. 2) First concession is the largest; each subsequent one is roughly half. 3) Pair the final small move with a supported reason ('I'd be below my cost'). 4) Don't volunteer 'let's split it' — that hands them the midpoint.
+  marketplace_mapping: eBay/Posh counter-offer sequencing. Copilot generates the concession steps (e.g. list $50 → counter $44 → $41 → $40 firm) rather than one reflexive 'meet in the middle,' and stops at the seller's preset floor.
+  example_buyer_message: "You said $44, I said $30. Let's just split it at $37?"
+  recommended_agent_reply: "I hear you, but I've already come down from $50, and these sell for more — I can do $41, and that's about as low as I can go without going under what I paid. Want me to send that offer?"
+  source_quote_or_locator: "Ch. 12 'Use Converging Concessions Creatively' — $20/$28/$32/$34 settlement; 'midpoint rule'; 'Avoid Unsupported Commitments; Consider Making Supported Commitments' (MFN-clause example)."
+  product_stage_tags: [pricing, objection, reply-gen, coaching]
+```
+
+## 4. Communication tactics (phrase-level)
+
+| name | purpose | phrase_patterns | overuse_risk | good_example | bad_example | source_locator |
+|---|---|---|---|---|---|---|
+| The justified "because" | Make any price/term read as fair, not arbitrary | "$X **because** ___ [comps / condition / retail / rarity]" | Sounds defensive if over-explained; one reason is enough | "$50 because recent sold ones run $48–62 and this is unworn." | "$50. That's my price." (no reason) | Ch. 12 'Justify Your Proposal' (Langer copier study) |
+| Non-offer offer (soft anchor) | Anchor high without a commitment that risks credibility | "Similar ones tend to go for around ___, which is how I'm thinking about it." | Reads evasive if you never name a real number later | "Comparable vintage ones tend to sell around $60." | "Give me $60 right now." (extreme hard offer) | Ch. 12 'Use Flexible but Extreme Offers and Non-Offer Offers' |
+| Interest-probe question | Surface the real issue behind a discount request | "Is it the price, or the ___ [shipping / timing / fit]?" | Asking when buyer already said price-only feels evasive | "Is it the total, or is the $8 shipping the issue?" | "No." (to any discount, no probe) | Ch. 5 'Get All the Interests Right' |
+| Hold-price-add-value | Keep price firm while satisfying the buyer | "I'll keep it at $X, but I'll include ___ / cover shipping." | Giving away margin you didn't need to | "Price holds at $35, but I'll add the matching belt free." | "Fine, $25 then." (straight cave) | Ch. 8/9 dovetailing / high-benefit-low-cost |
+| Truthful scarcity heads-up | Worsen buyer's no-deal option honestly | "Just so you're not disappointed — it's the only one and ___ people have it saved." | Becomes manipulative the instant it's false | "9 people have this saved, so I can't promise it'll last." | "Tons of people want this, buy now!!" (fabricated) | Ch. 6 / Staples 'filling up fast' |
+| Graceful climb-down | Let a buyer abandon a hard demand without losing face | "I understand why you'd want ___ — what specifically concerns you?" | Can stall if you never re-assert your terms | "I get why you'd want a return option — what's the worry, fit?" | "No returns, end of story." | Ch. 12 'Responding to Commitments' |
+
+## 5. Objection material
+
+- **price-too-high:** Anchor with comps and justify (play 06). State the 'because' with sold-comp evidence; reframe to value/rarity (play 14). *"Recent sold ones are $48–62 and most are used — this is unworn, so $50 is at the lower end for the condition."*
+- **lowball:** Probe the interest first (play 03), don't reflex-split. If you move, use a diminishing-concession ladder (play 15) and protect your BATNA (play 07). *"At $20 I'd genuinely rather hold and relist — these sell around $30–35. $28 and I ship today?"*
+- **wants-bundle-deal:** Embrace it — move northeast (play 05). Bundle related stock at a blended discount + single shipping. *"Take both for $32 instead of $40 and I'll cover shipping — more for you, one package for me."*
+- **shipping-cost:** Dovetail (play 04) — keep item price, fold shipping into a bundle or bake it in. *"Grab a second item and I ship both for the one shipping fee."*
+- **competitor-cheaper:** Allocate-risk framing (play 11) + spirit-of-deal (play 13). *"The cheaper ones are bare-bones; mine ships insured with tracking and returns accepted — you're not carrying the risk."*
+- **condition-doubt / trust-authenticity:** Use contingent terms (play 10) — platform authentication, returns, thorough flaw photos. *"At $400+ it ships through eBay's Authenticity Guarantee — inspected before it reaches you, full refund if not genuine."*
+- **stalling-ghosting:** Truthful scarcity (play 08) to sharpen their deal/no-deal balance. *"No rush! Heads up it's the only one and several people have it saved, so I can't promise it'll be here next week."*
+- **is-it-available:** Treat as a buying signal; answer + soft scarcity + invite an offer. *"Yes it's available! It's the last one though — want me to send you an offer?"*
+- **off-platform-request:** Protect your no-deal option / safety (play 07). Decline; keep it on-platform where protections and BATNA hold. *"I keep everything on-platform so we're both covered by buyer/seller protection — happy to do the deal right here."*
+
+## 6. Buyer psychology insights
+- Buyers are **anchored** even when they have expertise and even by numbers they're told are meaningless — the first number/frame they see drags their sense of fair price (headlamp & real-estate studies).
+- Buyers decide relative to their **no-deal option** ("compared to what?"), not absolute value — make the alternative (search elsewhere, miss out) look worse and the deal looks better.
+- Buyers need a **reason to feel the price is fair** to themselves and others — a "because" wins compliance far beyond the bare number (Langer).
+- A stated **position (lower price) usually masks a different real interest** — speed, budget cap, bundle, condition reassurance.
+- **Reciprocity** is near-automatic: a concession (or a free tea / small add-on) triggers an urge to give back — but it also pulls outcomes toward the midpoint, so it cuts both ways.
+- The **contrast principle**: a price looks small next to a bigger one just seen — bundles and add-ons exploit this.
+- Buyers adopt the **frame** offered early without objecting ("synergy vs stand-alone"; "vintage styled" vs "used") — whoever frames first often wins.
+
+## 7. Seller psychology insights
+- Sellers are **1-D**: they over-focus on table haggling (tactics) and neglect the setup (photos, comps, right audience, timing) where most of the outcome is decided.
+- Sellers **accept the current parties as fixed** — they haggle with bargain-hunters instead of finding the buyer who'd value the item most (LockStore error).
+- Sellers **mistake a setup/design problem for a price problem** and slash price when the real fix is a better listing or a bundle.
+- Sellers **destroy their own no-deal option** — granting open-ended "holds," selling under deadline pressure, dropping price in a panic (the 9-month-exclusivity blunder).
+- Sellers **negotiate in series** (one buyer to exhaustion) when **parallel** keeps competition alive.
+- Sellers **reflexively split the difference** and make symmetric/large concessions, giving away margin (midpoint pull).
+- Sellers **focus on the downside** ('what I want to avoid') rather than an **ambitious, opportunity-focused target** — and set their reference point at their floor, not their goal.
+- Sellers **leave the social contract unspoken** — vague condition/shipping expectations cause disputes, returns, and bad reviews.
+
+## 8. Ignore-list
+Deliberately dropped as out-of-scope for a casual P2P resale copilot: high-diplomacy/statecraft cases (Egypt-Israel Sinai, Gulf War coalition sequencing, Swiss-bank Holocaust restitution) used only as illustrative analogies; large M&A and VC financing mechanics (earn-outs as legal instruments, Staples cap-table); enterprise multi-party coalition-building and internal corporate governance (codetermination, blocking coalitions, board restructuring); labor-union/management strikes (PMA-ILWU); DAD vs Full-Consensus large-project process design; formal mediation/arbitration/ADR machinery and "Texas shootouts"; structured legal settlements; wrong-agent/principal-agent problems (relevant to brokers, not casual sellers); cross-cultural diplomatic protocol. The *principles* behind several (no-deal options, dovetailing, anchoring, sequencing) are kept; the institutional apparatus is dropped.
+
+## 9. Guardrail flags
+- **Fake scarcity / fabricated competing buyers** (play 08): only ever surface TRUE like-counts, real single-quantity, genuinely scheduled price changes. Inventing "other buyers" or fake "selling fast" is manipulative and platform-risky — hard-block in generation.
+- **Misrepresenting condition or provenance** when framing/meta-anchoring (play 14): the higher frame must be honest. Never inflate condition, invent rarity, or imply authentication that isn't real.
+- **Aggressive anchors that fail the giggle test** (play 06): wildly high prices erode trust and can read as bait; cap suggested anchors at the credible top of comps.
+- **Pressuring vulnerable buyers**: the deal/no-deal-balance moves are for shaping fair perception, not coercion; keep tone calm and honest ("calmly signaling willingness," per Ch. 6).
+- **Off-platform deals** (objection handling): never coach moving to cash/external payment — removes buyer/seller protections; flag as safety risk.
+
+## 10. Classifiers & personas
+*(3-D Negotiation does not offer a buyer-typing model the way Voss or Shell do — its 'types' are about the deal SETUP, not personalities. These are the book's relevant typings, kept out of plays.)*
+
+| name | signals | recommended_approach | source_locator |
+|---|---|---|---|
+| **High-value buyer vs bargain-hunter** | High-value: asks about specifics/authenticity/rarity, full-price offers, collector vocabulary. Bargain-hunter: instant lowballs, "lowest price?", no item-specific questions. | Route the listing (tags/platform/framing) toward high-value buyers (play 02); with bargain-hunters hold BATNA and don't chase (play 07). | Ch. 4 'highest-value players'; niche-packaging & Staples cases |
+| **Value-claimer ("Igor") vs value-creator** | Claimer: pure price pressure, "won't pay a cent more," no interest in bundles/terms. Creator: open to bundles, asks about other items, flexible on terms. | With claimers, treat as pure-price: anchor, justify, diminishing concessions, strong BATNA. With creators, move northeast — dovetail and bundle (plays 04/05). | Ch. 8 'Some Words for the Skeptics' (Igor); Negotiator's Dilemma |
+| **Position vs interest** (not a person-type but a read) | Buyer states a hard number/demand (position) but volunteers context — a deadline, "for a gift," budget mention (interest leaking). | Probe the interest, then satisfy it cheaply (play 03) instead of conceding the position. | Ch. 5 'Get All the Interests Right' |
+| **Strong-BATNA vs weak-BATNA buyer** | Strong: "plenty of others like this," casual, willing to walk. Weak: wants THIS specific item, urgency, repeated messaging. | Against weak-BATNA buyers, hold price and use truthful scarcity (play 08); against strong-BATNA buyers, offer value (bundle/terms) to differentiate. | Ch. 6 'Get the No-Deal Options Right' |

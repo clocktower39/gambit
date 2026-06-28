@@ -1,0 +1,136 @@
+{
+  "asset": "concession-table",
+  "id_scheme": "CONC-NNN",
+  "description": "Practical concession policy for casual P2P sellers, synthesizing Voss's Ackerman ladder, Shell's shrinking ladder + If/then, 3-D's converging-concession ladder, Getting-to-Yes's BATNA/reservation/trip-wire, and Ury's golden-bridge face-saving. Each scenario gives the recommended response, the step-by-step concession mechanic, hold-firm conditions, non-monetary alternatives, max-discount guidance, and source books. Max-discount figures are synthesized defaults for casual resale (the books give logic, not percentages) — they assume a comp-supported list price and should be overridden by the seller's real floor/BATNA.",
+  "source_books_key": {
+    "NSD": "Never Split the Difference (Voss)",
+    "GTY": "Getting to Yes (Fisher/Ury/Patton)",
+    "GPN": "Getting Past No (Ury)",
+    "BFA": "Bargaining for Advantage (Shell)",
+    "3DN": "3-D Negotiation (Lax & Sebenius)",
+    "INF": "Influence (Cialdini)",
+    "DC": "Difficult Conversations (Stone/Patton/Heen)"
+  },
+  "concessions": [
+    {
+      "id": "CONC-001",
+      "scenario": "Lowball ~40%+ below ask (first offer)",
+      "recommended_response": "Don't reflex-counter or split. Probe the interest with a calibrated question, justify on comps, then either hold to your BATNA (relist) or make ONE labeled move near list — never jump to the midpoint.",
+      "concession_mechanic": "1) Calibrated question + comp ('how'd you get to $20? solds are $48-55'). 2) If you move at all, counter near list, not the middle (e.g. list $50, offer $45). 3) Attach a condition ('if you grab it today'). 4) Do not make a second move until they reciprocate up.",
+      "hold_firm_conditions": ["item has active saves/watchers or other live offers", "fresh listing with strong comps", "buyer gives no reason and just repeats the number"],
+      "non_monetary_alternatives": ["offer a cheaper alternative item that fits their budget", "bundle to add value rather than cut price", "absorb shipping"],
+      "max_discount_guidance": "0-10% off list on a first lowball; usually decline-with-reason and re-anchor. Going straight to 30%+ teaches the buyer there's lots of room.",
+      "source_books": ["NSD", "GTY", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "CONC-002",
+      "scenario": "Reasonable offer ~10% below ask",
+      "recommended_response": "This is usually a fair-range offer worth closing. Make a small labeled concession to land it, or accept if it clears your goal — be generous at the end to lock the sale.",
+      "concession_mechanic": "1) Acknowledge it as fair. 2) Either accept, or split the small gap inside the comp range with one move (e.g. they offer $45 on $50 -> counter $47-$48). 3) Land on an odd/precise number to signal it's the real limit. 4) Confirm and send the offer immediately.",
+      "hold_firm_conditions": ["the 10% would drop you below your comp-supported goal and you have leverage", "very fresh listing with strong demand"],
+      "non_monetary_alternatives": ["accept their number but ask them to grab a second item", "hold price and add free shipping as the 'meet'"],
+      "max_discount_guidance": "Accept up to ~10-12% off list when it clears your floor; a split that lands inside the comp range is fine (this is the legitimate GTY-style split, not a Voss-banned arbitrary midpoint).",
+      "source_books": ["GTY", "BFA", "INF", "GPN"]
+    },
+    {
+      "id": "CONC-003",
+      "scenario": "Multi-round haggle on a higher-value item",
+      "recommended_response": "Run a shrinking-increment ladder from your anchor to your floor; each step smaller than the last, conditional, ending on an odd number with a tiny non-monetary add-on.",
+      "concession_mechanic": "Example list $50, floor $42: counter $48 -> $44 -> $43 -> $42.50 + free tracked shipping. Each drop smaller than the last; slow visibly near the floor; attach 'if we close now' to each move; then hold.",
+      "hold_firm_conditions": ["you've reached your floor", "buyer stops reciprocating (only you keep moving)", "buyer is nibbling new asks after each move"],
+      "non_monetary_alternatives": ["free/expedited shipping as the final small move", "a low-value throw-in you've struggled to sell", "hold the item until a stated payday (on-platform)"],
+      "max_discount_guidance": "Down to your pre-set floor (typically the bottom of the comp range), never below; the last increment should be the smallest, often <5% of the prior step.",
+      "source_books": ["NSD", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "CONC-004",
+      "scenario": "Buyer demands 'just split the difference'",
+      "recommended_response": "Don't auto-accept the midpoint of two arbitrary numbers. Counter with a small odd move or a term anchored to your floor; only accept a split that lands inside the comp-supported fair range.",
+      "concession_mechanic": "1) Name your floor mentally. 2) If the midpoint is below your goal but above floor and inside comps, you may take it framed as final. 3) Otherwise counter above the midpoint with a reason ('$38 today vs the $35 midpoint, because solds support it'). 4) Be ready to relist.",
+      "hold_firm_conditions": ["the proposed midpoint is below your floor/BATNA", "their starting number was an absurd anchor (splitting rewards the bad anchor)"],
+      "non_monetary_alternatives": ["offer the midpoint only if they add shipping coverage or a bundle item", "hold price, give a freebie instead of meeting halfway"],
+      "max_discount_guidance": "Accept a split ONLY when it lands inside the comp range and above your floor; reject splits of arbitrary numbers (this is the reconciliation of Voss vs Getting-to-Yes).",
+      "source_books": ["NSD", "GTY", "3DN", "BFA"]
+    },
+    {
+      "id": "CONC-005",
+      "scenario": "Buyer asks for free shipping",
+      "recommended_response": "Often cheaper than a price cut and high-value to the buyer — absorb shipping or fold it into one flat number rather than dropping the item price.",
+      "concession_mechanic": "1) Acknowledge ('shipping does add up'). 2) Offer to cover it OR bake it into a single flat price. 3) Frame it as a genuine gift ('that's on me') or as the final closing move. 4) Don't also drop the item price.",
+      "hold_firm_conditions": ["margin is already thin and shipping is genuinely costly (heavy/large item)", "buyer wants free shipping AND a price cut (give one, not both)"],
+      "non_monetary_alternatives": ["combine shipping across a bundle", "offer cheaper shipping tier rather than fully free"],
+      "max_discount_guidance": "Absorb shipping when it's < ~15% of item value and it closes the deal; pick free shipping OR a price drop, not both.",
+      "source_books": ["NSD", "GTY", "GPN", "3DN", "INF"]
+    },
+    {
+      "id": "CONC-006",
+      "scenario": "Bundle of 2+ items",
+      "recommended_response": "Move northeast — grow the deal. Offer a small blended discount plus combined shipping; use a labeled If/then so the discount is conditional on the bundle.",
+      "concession_mechanic": "1) Detect liked/related items. 2) Propose the bundle total against the sum of singles ('both for $32 vs $40'). 3) Combine shipping into one fee. 4) Conditional framing: 'if you take both, then $X'. 5) Settle the whole bundle at once (no nibbles).",
+      "hold_firm_conditions": ["buyer keeps adding items then re-cutting the total", "the bundle would push individual items below their floors"],
+      "non_monetary_alternatives": ["combined/free shipping is itself the main 'discount'", "throw in a low-value slow-mover instead of cutting price"],
+      "max_discount_guidance": "~10-20% off the singles total for a 2-3 item bundle, plus shipping savings; deeper for clearing genuine dead stock.",
+      "source_books": ["GTY", "BFA", "3DN", "INF"]
+    },
+    {
+      "id": "CONC-007",
+      "scenario": "Stuck buyer who made a public/committed low stand",
+      "recommended_response": "Build a golden bridge: give a face-saving cover (a real bundle deal, a just-launched sale, a multi-item discount) so their move up looks like a win, not a climb-down.",
+      "concession_mechanic": "1) Don't push the number. 2) Offer a genuine cover ('I'm running a bundle deal this week'). 3) Frame their retreat as taking advantage of the deal. 4) Keep your best offer on the table; warn with BATNA neutrally if they still stall.",
+      "hold_firm_conditions": ["no real interest of theirs exists to meet and a bridge would just lose money", "the only honest cover would be fabricated (guardrail) — then just hold"],
+      "non_monetary_alternatives": ["bundle as the cover", "free shipping framed as a 'new buyer' courtesy", "a freebie add-on as the reason for the lower effective price"],
+      "max_discount_guidance": "Same as the underlying scenario's floor; the bridge changes the framing, not how low you go.",
+      "source_books": ["GPN", "INF", "BFA"]
+    },
+    {
+      "id": "CONC-008",
+      "scenario": "Aging listing, lone buyer, weak BATNA",
+      "recommended_response": "Be honest about a weak walk-away: a 60-day listing with no other interest means more flexibility is rational. Flex toward the buyer but still extract a small reciprocal move or a bundle.",
+      "concession_mechanic": "1) Recompute BATNA (low demand = weaker floor). 2) Make a more generous but still labeled concession. 3) Try a relist/refresh first if it hasn't been done. 4) Accept a fair offer rather than holding out for a buyer who isn't coming.",
+      "hold_firm_conditions": ["item is genuinely scarce/collectible and will find a buyer", "you'd net more by relisting at a better time (payday/season)"],
+      "non_monetary_alternatives": ["bundle with another slow-mover", "relist/refresh to reset feed position before cutting price"],
+      "max_discount_guidance": "Can go below the comp midpoint toward your true floor; let the markdown ladder (e.g. -10% per 7-10 days) guide it rather than a panic cut.",
+      "source_books": ["GTY", "3DN", "BFA"]
+    },
+    {
+      "id": "CONC-009",
+      "scenario": "Repeat / loyal / local buyer",
+      "recommended_response": "Accommodate to protect the relationship — a small genuine concession buys big goodwill and repeat business; open near fair and be gracious.",
+      "concession_mechanic": "1) Recognize the relationship signal (prior purchase/follower/local). 2) Offer a small upfront 'loyalty' courtesy. 3) Keep tone warm and collaborative. 4) Close generously.",
+      "hold_firm_conditions": ["the buyer is exploiting the relationship to extract repeated deep discounts"],
+      "non_monetary_alternatives": ["free shipping or a freebie as the loyalty gesture", "first dibs / holding new stock for them"],
+      "max_discount_guidance": "A modest courtesy (~5-15%) is worth it for repeat lifetime value; don't let goodwill become a standing expectation of deep discounts.",
+      "source_books": ["BFA", "INF", "GPN"]
+    },
+    {
+      "id": "CONC-010",
+      "scenario": "Aggressive buyer / review-extortion / bully nibble",
+      "recommended_response": "Do NOT concede to pressure. Hold on leverage, offer at most one fair move, and route threats to a documented decline + platform report. A concession here reads as weakness and invites more.",
+      "concession_mechanic": "1) Balcony — don't react. 2) State a fair, on-the-record offer once. 3) Refuse the demand calmly ('I can't do 40% off'). 4) Name the dynamic if it persists. 5) Document and report threats; let no-deal stand.",
+      "hold_firm_conditions": ["any concession is being extracted by threat/abuse rather than a fair argument", "serial nibbling after agreement"],
+      "non_monetary_alternatives": ["none — do not reward; the only 'offer' is the fair original terms or no deal"],
+      "max_discount_guidance": "0% to pressure/threats. Offer only the same fair terms you'd give anyone; be comfortable with no-deal and relist.",
+      "source_books": ["BFA", "DC", "NSD", "INF", "GPN"]
+    },
+    {
+      "id": "CONC-011",
+      "scenario": "Post-sale dispute / refund or return request",
+      "recommended_response": "Acknowledge the feeling first, own any real contribution, then resolve with two concrete options anchored to a fair standard (platform policy) — not a willpower contest or a panic refund.",
+      "concession_mechanic": "1) Acknowledge + (if you erred) own it specifically. 2) Offer two options: full refund on return OR keep-it partial refund. 3) Cite the platform's not-as-described norm as the neutral standard. 4) If no agreement, state calmly you'll let the platform process decide. 5) Document everything.",
+      "hold_firm_conditions": ["buyer demands more than fair (e.g. 'refund double')", "claim is contradicted by tracking/photos and buyer is extorting"],
+      "non_monetary_alternatives": ["partial refund to keep the item", "prepaid return label + full refund", "replacement if you have another"],
+      "max_discount_guidance": "Partial refunds in line with platform norms for minor not-as-described (~15-30%); full refund on return for major issues; never refund beyond the sale value to a threat.",
+      "source_books": ["DC", "GTY", "BFA", "GPN"]
+    },
+    {
+      "id": "CONC-012",
+      "scenario": "Off-platform payment / scam-pattern request",
+      "recommended_response": "No concession of any kind — this is a safety stop, not a price negotiation. Decline on principle, keep it on-platform, never ship before confirmed on-platform payment.",
+      "concession_mechanic": "1) Decline warmly with the 'protects us both' frame. 2) Offer to proceed on-platform at the agreed price. 3) If pressed (ship-first, overpayment, fake screenshot), hard-stop, do not ship, report and block.",
+      "hold_firm_conditions": ["always — never flex on off-platform payment regardless of the price offered"],
+      "non_monetary_alternatives": ["the only path is on-platform checkout; no alternative concession exists"],
+      "max_discount_guidance": "N/A — do not negotiate price to keep a buyer who insists on going off-platform; that insistence is itself a red flag.",
+      "source_books": ["GTY", "GPN", "BFA", "3DN", "INF", "DC", "NSD"]
+    }
+  ]
+}

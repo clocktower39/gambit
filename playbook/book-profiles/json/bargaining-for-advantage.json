@@ -1,0 +1,478 @@
+{
+  "book": {
+    "slug": "bargaining-for-advantage",
+    "title": "Bargaining for Advantage: Negotiation Strategies for Reasonable People (3rd ed.)",
+    "author": "G. Richard Shell",
+    "category": "principled-negotiation / information-based-bargaining",
+    "domain_fit_note": "Shell's Information-Based Bargaining is the copilot's reasoning engine, not its phrasebook. Its most product-critical asset is the five bargaining styles (competing/collaborating/compromising/accommodating/avoiding) plus the cooperative-vs-competitive axis, which convert directly into a buyer-style classifier driven by observable chat cues and into seller-coaching. Goals-into-expectations and the anchor effect justify a high-but-defensible listing price; leverage = balance of needs and fears ('the party with the least to lose has the most leverage') maps onto relisting, likes, watchers, and time-on-market; the four-stage process and start-high-concede-slowly give a turn-by-turn concession ladder; the Situational Matrix tells the copilot when to compete vs. accommodate. Weaknesses: most examples are billion-dollar M&A/hostage/labor cases and there is little ready-to-send copy (that comes from Voss).",
+    "applicability_score": 4
+  },
+  "core_thesis": "There is no single all-purpose negotiation strategy; effective negotiators start from self-knowledge (their bargaining style) and read each situation against Six Foundations: bargaining styles, goals/expectations, authoritative standards and norms, relationships, the other party's interests, and leverage. They then move through a four-stage process: preparation, information exchange, opening & concession-making, and closing & commitment. Two findings dominate: people who set specific, optimistic, justifiable goals and turn them into expectations systematically get more; and leverage is psychological, flowing to whoever has the least to lose from no-deal, and is dynamic, perceptual, and time-sensitive. The skilled negotiator probes before disclosing, frames demands inside standards the other side already accepts (consistency principle / normative leverage), opens aggressively-but-defensibly to exploit the anchor effect, concedes in shrinking increments by the norm of reciprocity, and closes by giving the other side something to lose. Personal integrity is the master asset because one ethical slip destroys credibility across many deals.",
+  "plays": [
+    {
+      "id": "bargaining-for-advantage-play-01",
+      "principle": "Detect the buyer's bargaining style before you choose your move",
+      "what_it_means": "Classify each buyer along Shell's five styles (competing, collaborating, compromising, accommodating, avoiding) from how they open and talk, then match your approach to their style and the situation.",
+      "why_it_matters": "Shell's method rejects one-size-fits-all; the right move against a competitive flipper (firm, leverage-based) is wrong against an accommodating sentimental buyer (relationship, generosity). Reading style first prevents mis-firing.",
+      "when_to_use": "Every thread, at first contact — the opening message is the richest style signal.",
+      "when_NOT_to_use": "Don't over-classify on one ambiguous line; hold the label loosely and update as more cues arrive (skeptical, treat each person as unique).",
+      "mechanic": "1) Read opener for cues (Section 10 table). 2) Provisionally tag a style. 3) Pick matched approach: competing->leverage+firm standard; compromising->fair split fast; collaborating->questions+expand pie/bundle; accommodating->protect relationship, be generous; avoiding->lower friction, easy yes. 4) Re-tag as buyer reveals more.",
+      "marketplace_mapping": "Drives which reply template surfaces on a Depop/Vinted/Posh DM or eBay Best-Offer; an 'is this your lowest?' opener (compromiser) gets a quick fair-split path, an 'overpriced, I'll give $20' opener (competer) gets standard + leverage.",
+      "example_buyer_message": "Love this! Would you maybe consider a small discount? Totally fine if not :)",
+      "recommended_agent_reply": "Thank you, that's so kind! I can do a little something since you clearly love it — $X works and I'll pack it really carefully for you.",
+      "source_quote_or_locator": "Ch. 1 'The First Foundation: Your Bargaining Styles' — five generic strategies; Appendix A style profiles.",
+      "product_stage_tags": ["intent-detection", "reply-gen", "coaching", "learning-loop"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-02",
+      "principle": "Set a high-but-justifiable anchor (goal, not bottom line)",
+      "what_it_means": "Price the listing (and any counter) at the top of the defensible fair range — the highest number you can support with a presentable standard — and hold that as your reference point, never your walkaway floor.",
+      "why_it_matters": "People who expect more generally get more. Anchoring on your goal makes every below-goal offer feel like a loss to resist; anchoring on your bottom line makes you relax and stop striving the moment an offer clears it, and alert buyers sense that relaxation.",
+      "when_to_use": "Setting list price; making the first counter; any time you have leverage and a comp to cite.",
+      "when_NOT_to_use": "When you lack leverage and the buyer knows it; when an item has sat unsold a long time; when the relationship outweighs the stakes (open closer to fair).",
+      "mechanic": "1) Research fair range (sold comps). 2) Set goal at high, defensible end. 3) List/counter there, reasoning first then number. 4) Keep bottom line in mind but out of focus. 5) If you feel relief at an offer, you anchored on the floor — re-anchor on the goal.",
+      "marketplace_mapping": "Listing price and Best-Offer counters; recommend a list price near the top of the eBay Sold range rather than the average, and warn when a user's mental floor leaks into their counters.",
+      "example_buyer_message": "What's the lowest you'll go?",
+      "recommended_agent_reply": "Based on what these have sold for recently ($48-$55), $50 is already a good deal — that's where I'm at. Happy to bundle if you want more value.",
+      "source_quote_or_locator": "Ch. 2 'Goals versus Bottom Lines' — '$100 bottom line / $130 goal' device; 'people who expect more generally get more.'",
+      "product_stage_tags": ["listing", "pricing", "coaching"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-03",
+      "principle": "Open aggressively-but-defensibly (the anchor effect + contrast)",
+      "what_it_means": "When you open, name the highest number for which you have a presentable (not necessarily best) argument — reach for the 'straight face' line but never past it into outrageous.",
+      "why_it_matters": "The party who names the first number sets the zone; the other side anchors and adjusts. An aggressive-but-justified opener sets up the contrast principle (your real number looks reasonable) and the reciprocity sequence (open high -> reject -> concede -> they feel obliged to move).",
+      "when_to_use": "Competitive Transactions where you have leverage and good comps; haggling contexts; when well-informed about value.",
+      "when_NOT_to_use": "When you lack leverage and they know it; one-round-of-bidding situations; when the relationship matters more (open within 5-10% of target).",
+      "mechanic": "1) Confirm a defensible standard. 2) Open at the top of it. 3) Reject their counter politely. 4) Concede in shrinking steps. 5) Let contrast make your real number land soft.",
+      "marketplace_mapping": "The list price is the anchor; on eBay Best-Offer, decline a lowball and counter near list rather than meeting in the middle; warn against an outrageous no-comp list price that drives watchers away.",
+      "example_buyer_message": "I'll give you $20. (listed $50)",
+      "recommended_agent_reply": "I can't do $20 — recent sold ones are $48-$55, so I'd be way under market. I'll come down to $45 though if you can grab it today.",
+      "source_quote_or_locator": "Ch. 9 'The Anchor Effect' and 'Should I Open Optimistically or Reasonably?' — aggressive = highest number with a supporting standard; Brian Epstein's 7.5% mistake.",
+      "product_stage_tags": ["listing", "pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-04",
+      "principle": "Map leverage to who has more to lose (relist / likes / time-on-market)",
+      "what_it_means": "Before holding firm or caving, judge the balance of needs and fears: how much does the buyer want THIS item vs. how easily can you resell it? The side with the least to lose from no-deal has the leverage.",
+      "why_it_matters": "'The party that thinks they have the most to lose from a no-deal outcome has the least leverage.' With leverage even an average negotiator does well; without it you should soften. Leverage, not stubbornness, tells the copilot when firmness is justified.",
+      "when_to_use": "Deciding accept/counter/decline; choosing how firm to be; any final-offer moment.",
+      "when_NOT_to_use": "As a fixed fact — leverage is dynamic; re-score it as watchers/likes/days-listed change.",
+      "mechanic": "1) Estimate buyer's need (specific/urgent: saved it, asked twice, 'need by Friday'). 2) Estimate your alternatives (likes, watchers, other messages, ease of relist). 3) Whoever has the worse no-deal bends more. 4) High demand + eager buyer -> hold firm; stale + lone buyer -> flex.",
+      "marketplace_mapping": "Copilot reads likes/watchers/days-listed/other-chats as your leverage and buyer urgency cues as theirs; a 60-day-old listing with one buyer = weak leverage = accept/flex.",
+      "example_buyer_message": "It's been up a while — would you take less?",
+      "recommended_agent_reply": "It's actually had a lot of interest lately, so I'm holding at $45 — but I'd rather it go to someone who'll use it, so that's a fair price for you today.",
+      "source_quote_or_locator": "Ch. 6 'Leverage: The Balance of Needs and Fears' — 'the party with the least to lose has the most leverage'; 'this is a psychological test, not an objective one.'",
+      "product_stage_tags": ["pricing", "intent-detection", "objection", "metrics", "coaching"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-05",
+      "principle": "Improve your leverage by making your alternatives real (or theirs worse)",
+      "what_it_means": "Leverage isn't only your BATNA; you can also raise the buyer's fear of loss. Create or surface real alternatives (other interested buyers, relist value) and let the buyer know they could miss out.",
+      "why_it_matters": "Janie Mitcham built her own railroad to shift the balance of needs; Khaalis got attention by making opponents' alternatives worse. Better alternatives lower your fear of no-deal and raise theirs.",
+      "when_to_use": "When demand is real and you want to firm up; closing a hesitant buyer who keeps stalling.",
+      "when_NOT_to_use": "When the 'other offer' is fabricated — that's a guardrail violation; only signal competition that genuinely exists.",
+      "mechanic": "1) Note genuine alternatives (other DMs, watchers, willingness to relist/keep). 2) Signal them truthfully and lightly ('a couple of people are interested'). 3) Pair with a real deadline only if one exists. 4) Never invent a phantom bidder.",
+      "marketplace_mapping": "Truthfully mentioning other active offers/watchers; reminding a buyer you're comfortable relisting; on eBay, letting a Best-Offer expire rather than caving when other watchers exist.",
+      "example_buyer_message": "Let me think about it for a few days...",
+      "recommended_agent_reply": "Of course! Just a heads up, I've had a couple of other people ask about it this week, so I can't promise it'll still be here — but no pressure.",
+      "source_quote_or_locator": "Ch. 6 'When There Are No Alternatives, Create One' (Janie Rail); Misconception 4 — 'a common way to increase your leverage is to improve your alternatives.'",
+      "product_stage_tags": ["pricing", "objection", "trust", "safety"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-06",
+      "principle": "Frame your price inside the standard the buyer already accepts (normative leverage)",
+      "what_it_means": "Justify your number with an authoritative external standard — sold comps, condition/grade norms, retail-minus-depreciation — ideally one the buyer has themselves invoked, so refusing it makes them look inconsistent.",
+      "why_it_matters": "People have a deep need to appear consistent and rational (the consistency principle). A demand framed inside a legitimate, mutually-accepted standard is far harder to reject than bare will; 'the best arguments are the ones the other party accepts as legitimate.'",
+      "when_to_use": "Any price challenge, lowball, or competitor's-cheaper; defending a firm price.",
+      "when_NOT_to_use": "When no real standard exists (never fabricate comps); when attacking their standard head-on (last resort) would just harden them.",
+      "mechanic": "1) Research applicable standards. 2) Identify the one the buyer would accept. 3) Frame your price as the logical result. 4) If they cite a standard, use THEIR standard against the gap. 5) Attack their standard only as last resort, via third-party data.",
+      "marketplace_mapping": "Screenshotting the eBay Sold range or comparable Depop/Posh sold listings; pricing against condition norms; 'you said you saw it cheaper — send the link and let's compare like-for-like.'",
+      "example_buyer_message": "That's too expensive, this brand isn't worth that much.",
+      "recommended_agent_reply": "Totally fair to check — recent sold ones in this condition went for $48-$55 (happy to screenshot). I'm at $50, right in that range. If you've seen a genuine cheaper one, show me and I'll take it seriously.",
+      "source_quote_or_locator": "Ch. 3 'The Consistency Principle and Normative Leverage' — 'research the other side's preferred standards, then frame your proposal within them'; J.P. Morgan 'a good reason and the real one.'",
+      "product_stage_tags": ["pricing", "objection", "trust", "reply-gen"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-07",
+      "principle": "Probe first, disclose second (don't be a blabbermouth)",
+      "what_it_means": "Ask open-ended questions and learn the buyer's needs, budget, and urgency before revealing your own flexibility, floor, or eagerness.",
+      "why_it_matters": "Skilled negotiators ask ~2x as many questions and focus on receiving information; 'every reason the other side wants a deal is my leverage — provided I know it.' Disclosing first hands away leverage.",
+      "when_to_use": "The opening of every thread; before naming a number; whenever tempted to over-explain.",
+      "when_NOT_to_use": "On a clean firm offer you'd accept; when interrogation would annoy on a trivial item; when you must deliver a clear deal-breaker (do that early and plainly).",
+      "mechanic": "1) Open with rapport + open question ('what were you hoping to spend / is this for something specific?'). 2) Test understanding by rephrasing. 3) Summarize where you are. 4) Only then disclose. 5) On a process impasse ('you first') name it and propose a way forward.",
+      "marketplace_mapping": "Replacing an instant counter on eBay/Posh with one interest-probing question first; using budget/urgency answers to choose price-vs-bundle-vs-ship-fast.",
+      "example_buyer_message": "Can you do better on the price?",
+      "recommended_agent_reply": "I might be able to — what were you hoping to pay, and is there anything else of mine you've had your eye on? That helps me see what I can do.",
+      "source_quote_or_locator": "Ch. 8 'Don't Be a Blabbermouth Negotiator' / 'Probe First, Disclose Second' — Rackham & Carlisle: skilled negotiators ask twice as many questions; Bob Woolf leverage quote.",
+      "product_stage_tags": ["intent-detection", "objection", "reply-gen", "pricing"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-08",
+      "principle": "Concede on a shrinking ladder, never for free",
+      "what_it_means": "After opening, make your first concession, then make each subsequent one smaller, slowing as you near your floor — and never give anything without signaling it cost you and (ideally) getting a move back.",
+      "why_it_matters": "Concessions are 'the language of cooperation'; shrinking increments signal you're nearing your limit, and combined with an aggressive open they earn more than a single fair offer. Free or escalating concessions teach the buyer to keep pushing.",
+      "when_to_use": "Multi-turn haggles with room to move; competitive transactions.",
+      "when_NOT_to_use": "When you have no room (say so once, clearly); when a quick fair split better fits the relationship; one-round quotes.",
+      "mechanic": "1) Open high (defensible). 2) Concede a moderate first step. 3) Halve each next step (50->45->43->42). 4) Slow visibly near the floor, then hold. 5) Attach a reason/condition to each move ('if you grab it today').",
+      "marketplace_mapping": "A counter sequence on eBay Best-Offer; copilot proposes the next rung and warns when the user is about to make a too-big or unconditional drop ('you went 50->35, that signals lots more room').",
+      "example_buyer_message": "Still too high, meet me lower?",
+      "recommended_agent_reply": "I came down to $45 already — I can do $43 if we close now, but that's really as far as I can go on this one.",
+      "source_quote_or_locator": "Ch. 9 'After Opening, What Concession Strategy Works Best?' — 'make your first concession, gradually reduce their size... then hold fast'; 'never give up anything without a demonstration that the concession is meaningful.'",
+      "product_stage_tags": ["pricing", "objection", "reply-gen", "coaching"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-09",
+      "principle": "Trade across issues, not just on price (integrative / If... then)",
+      "what_it_means": "When more than one thing is on the table (price, shipping, bundle items, timing), make big moves on issues that matter little to you and small moves on what matters most — and link every concession with 'If you do X, then I'll do Y.'",
+      "why_it_matters": "Pure price-haggling leaves money on the table when issues are valued differently; logrolling ('big moves on little issues, little moves on big issues') grows the pie, and If... then ensures you never concede without reciprocity.",
+      "when_to_use": "Buyer wants a deal but you can't move much on headline price; multi-item interest; shipping/timing flexibility exists.",
+      "when_NOT_to_use": "Single cheap item where complexity annoys; buyer explicitly wants only the one item cheaper.",
+      "mechanic": "1) List issues and rank by importance to you. 2) Identify what's cheap-to-you/valuable-to-them (free shipping, holding it, adding a slow-mover). 3) Propose as a conditional package. 4) Keep 'nothing settled till everything settled.'",
+      "marketplace_mapping": "'If you take the bundle I'll cover shipping'; trading a firm price for a faster ship or a held item; clearing dead stock by pairing it with a hot item.",
+      "example_buyer_message": "$50 is a lot for just the one top.",
+      "recommended_agent_reply": "If you add the grey tee you liked, then I'll do both for $60 shipped — better value than either alone. Want me to set that up?",
+      "source_quote_or_locator": "Ch. 9 'Trading Across Issues: Integrative vs. Distributive' and 'If... Then' — 'make big moves on your little issues and little moves on your big issues'; conditional concession making.",
+      "product_stage_tags": ["pricing", "objection", "reply-gen"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-10",
+      "principle": "Use the norm of reciprocity to move the buyer (take turns)",
+      "what_it_means": "Negotiation runs on tit-for-tat: after you give a little (info, a small concession, a favor), pause and let the buyer reciprocate before giving again — and when you want a yes, give a small genuine concession to trigger their obligation to respond.",
+      "why_it_matters": "'Negotiation is a dance and reciprocity is its rhythm.' People feel obliged to return concessions and disclosures; a well-placed small give creates pressure toward a reasonable response or a yes.",
+      "when_to_use": "Stalled threads; after you've moved and they've gone quiet; to break a disclosure deadlock.",
+      "when_NOT_to_use": "When the buyer is exploiting it (small gives for big asks) — that's a reciprocity trap to resist; don't reward a one-sided pattern.",
+      "mechanic": "1) Make one clear, small concession or disclosure. 2) Name it lightly ('I moved on price, your turn'). 3) Wait for reciprocity before moving again. 4) If they don't reciprocate, hold.",
+      "marketplace_mapping": "'I came down $5, can you come up $5 so we land in the middle?'; offering a small first concession to a quiet buyer to restart the dance.",
+      "example_buyer_message": "Hmm, can you do a bit better?",
+      "recommended_agent_reply": "I'll meet you partway — I'll do $46 if you can come up to that. Fair trade?",
+      "source_quote_or_locator": "Ch. 4 'The Norm of Reciprocity' / 'Always take turns'; Ch. 9 reciprocity in aggressive openings — 'high opening, rejection, then moderation.'",
+      "product_stage_tags": ["objection", "pricing", "reply-gen", "learning-loop"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-11",
+      "principle": "Find the buyer's real interest behind the objection",
+      "what_it_means": "Ask why the buyer is really hesitating — budget cap, value-doubt, occasion/timing, comparison-shopping, status — because the cheapest fix is often non-price and addresses a completely separate need.",
+      "why_it_matters": "Negotiators miss shared/complementary interests ~50% of the time (fixed-pie + confirmation bias). 'A surprising number of deals hinge on some completely separate need you can address at low cost' (CoreStates $100M foundation; Kelly Sarber's sand).",
+      "when_to_use": "Every lowball or stall; before assuming 'they just want it cheaper.'",
+      "when_NOT_to_use": "When the interest is obvious and met; when probing reads as stalling on a fast clean sale.",
+      "mechanic": "1) Don't react to the number. 2) Ask 'what's holding you back / what's this for?' 3) Classify: budget cap -> bundle/terms; value-doubt -> comps/proof/extra pics; timing -> ship-fast/hold; comparison -> ask for their link. 4) Solve the interest, not the position.",
+      "marketplace_mapping": "For a buyer who liked an item days ago, surface the real blocker (price vs fit vs shipping vs trust) and address that one; send extra photos for a value-doubter rather than dropping price.",
+      "example_buyer_message": "I dunno, $50's a lot...",
+      "recommended_agent_reply": "Is it the price specifically, or are you not 100% sure on fit/condition? If it's fit I'll send measurements and more pics; if it's budget, tell me your ballpark and let's see.",
+      "source_quote_or_locator": "Ch. 5 'The Other Party's Interests' — 'Why is the other person sitting there?'; fixed-pie bias; CoreStates $100M foundation; Kelly Sarber sand-for-trash.",
+      "product_stage_tags": ["intent-detection", "objection", "pricing", "reply-gen"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-12",
+      "principle": "Match strategy to the situation (relationship vs. stakes)",
+      "what_it_means": "Decide how hard to bargain using Shell's Situational Matrix — weigh how much the ongoing relationship matters against how high the outcome stakes are — and pick competing, accommodating, compromising, or collaborating accordingly.",
+      "why_it_matters": "Different quadrants reward different styles: a one-off sale to a stranger (Competitive Transaction) rewards firmness + leverage; a repeat buyer you want to keep (Cooperative Relationship) rewards accommodation; most resale sits in low-stakes Tacit Coordination where smoothness wins.",
+      "when_to_use": "Choosing tone/firmness at the start of a thread; when a repeat or local buyer appears.",
+      "when_NOT_to_use": "Don't over-invest relationship effort in a one-off cheap sale to a stranger (Tacit Coordination -> be smooth and quick).",
+      "mechanic": "1) Will I deal with this buyer again (follower, local, repeat)? 2) Are stakes high (expensive/sentimental) or low? 3) High + one-off -> compete/anchor firm. 4) Relationship-heavy -> accommodate, open near fair. 5) Both high -> collaborate (expand pie). 6) Both low -> minimal-friction coordination.",
+      "marketplace_mapping": "Copilot detects repeat buyers, followers, and locals (relationship signal) vs. one-time strangers, and item value/sentiment (stakes), then dials firmness; a loyal repeat customer gets a generous accommodate-and-close path.",
+      "example_buyer_message": "Hey, I bought from you before — any chance of a deal on this one too?",
+      "recommended_agent_reply": "Of course, repeat buyers are my favourite! I'll knock a bit off for you — $X and I'll get it shipped today. Thanks for coming back.",
+      "source_quote_or_locator": "Ch. 7 'Assess the Situation' — Situational Matrix (Tacit Coordination, Competitive Transactions, Cooperative Relationships, Balanced Concerns) and 'Match Situation, Strategy, and Style.'",
+      "product_stage_tags": ["intent-detection", "coaching", "pricing", "trust"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-13",
+      "principle": "Use scarcity and deadlines to close — only when real",
+      "what_it_means": "At the closing stage, gently raise the fear of missing out (genuine other interest, a real deadline, an item that won't last) to trigger the buyer's Act-Now impulse.",
+      "why_it_matters": "The scarcity effect makes people want things more when supply seems to be running out; concession rates spike under a credible deadline combined with competition. It only works long-term if true.",
+      "when_to_use": "A hesitating buyer at the end of a thread; when genuine competing interest or a real time constraint exists.",
+      "when_NOT_to_use": "When there is no real scarcity — fake urgency/phantom bidders are a guardrail violation; probe others' 'other offers' too ('can you show me?').",
+      "mechanic": "1) Confirm scarcity is real (other watchers/messages, real ship cutoff, last one). 2) State it plainly and lightly. 3) Pair with an easy yes ('grab it now and it's yours at $X'). 4) Never manufacture a deadline or rival buyer.",
+      "marketplace_mapping": "'Last one in this size'; 'a couple of others are watching'; a genuine 'shipping before the weekend' cutoff; letting a Best-Offer naturally expire to add real time pressure.",
+      "example_buyer_message": "Maybe I'll grab it next week.",
+      "recommended_agent_reply": "Just so you know it's the last one in this size and a few people are watching — if you want it I can lock it in at $X today and ship tomorrow.",
+      "source_quote_or_locator": "Ch. 10 'Injecting Urgency by Using the Scarcity Effect' — competition, deadlines, exploding offers, walkouts; 'always wise to probe... Can you show me your other offer?'",
+      "product_stage_tags": ["pricing", "objection", "reply-gen", "safety"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-14",
+      "principle": "Close for commitment, not just agreement (give them something to lose)",
+      "what_it_means": "A 'yes' isn't a deal until the buyer has acted in a way that makes backing out costly — paid, committed publicly, or exchanged simultaneously. Drive to a concrete next step, not a vague promise.",
+      "why_it_matters": "'The goal of all negotiations is to secure a commitment, not merely an agreement.' Test: does the buyer have anything to lose if they renege? If nothing, you have no deal — exactly the ghosting problem.",
+      "when_to_use": "The moment a buyer agrees to a price; converting 'I'll take it' into an actual sale.",
+      "when_NOT_to_use": "Don't demand heavy commitment devices on a tiny, trusted, low-risk sale (a quick checkout is enough).",
+      "mechanic": "1) On agreement, move immediately to action ('I'll send the offer/invoice now — accept and it's yours'). 2) Prefer mechanisms with something-to-lose: platform checkout, accepted Best-Offer, paid. 3) Memorialize terms in chat. 4) Keep it on-platform (commitment + safety).",
+      "marketplace_mapping": "Sending the eBay Best-Offer/invoice or Depop/Posh make-offer link right after agreement; 'accept the offer and I'll ship today'; restating agreed price+shipping in the thread.",
+      "example_buyer_message": "Ok yeah let's do $45.",
+      "recommended_agent_reply": "Perfect — I've just sent the offer at $45. Accept it whenever you're ready and I'll get it packed and shipped today.",
+      "source_quote_or_locator": "Ch. 10 'Don't Be Satisfied with an Agreement — Get a Commitment to Performance' — 'does the other side have anything to lose if it reneges?'; Theresa's hamburger-meat story.",
+      "product_stage_tags": ["reply-gen", "trust", "safety", "metrics"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-15",
+      "principle": "Tell the truth slowly — never lie, deflect instead",
+      "what_it_means": "Protect your position by declining to disclose, focusing on what you CAN truthfully say, and using transparent blocking ('I'm not free to share my floor'), rather than inventing fake offers, floors, or authority.",
+      "why_it_matters": "One ethical slip destroys credibility 'not just for one but for many deals.' You can keep leverage without lying: 'tell the truth slowly... turn your cards over one by one.' This is the honesty guardrail made operational.",
+      "when_to_use": "When the buyer probes your floor, alternatives, or costs; whenever tempted to bluff.",
+      "when_NOT_to_use": "Never as a license to mislead about the item itself — flaws/condition must be disclosed (legal + ethical line).",
+      "mechanic": "1) Don't lie about anything. 2) When tempted, find a true thing to say instead (truth about goal/needs/uncertainty). 3) Block bottom-line questions transparently. 4) Make only promises you'll keep. 5) Express opinion, don't misstate fact.",
+      "marketplace_mapping": "Instead of 'I have another buyer at $48' (false), say 'I'm comfortable holding at $45 — recent solds support it.' Instead of 'my partner won't let me go lower,' say 'that's genuinely my limit on this one.' Always disclose real flaws.",
+      "example_buyer_message": "What's the absolute lowest you'd ever take?",
+      "recommended_agent_reply": "I'd rather not name a rock-bottom — but I'll be straight with you: $45 is a fair price given recent sold ones, and I'm happy to do that today.",
+      "source_quote_or_locator": "Ch. 12 'Tell the Truth—Slowly' and 'Alternatives to Lying' (fig. 12.1); 'never lie... find something else to tell the truth about.'",
+      "product_stage_tags": ["safety", "trust", "objection", "reply-gen", "coaching"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-16",
+      "principle": "Stand up to bargaining bullies with leverage, not accommodation",
+      "what_it_means": "When a buyer is aggressive, makes everything a matter of principle, uses rudeness/threats as tactics, or tries to grind you down, drop the usual relationship moves and respond purely on leverage — hold firm, don't reward, be ready to walk.",
+      "why_it_matters": "'Bargaining bullies respect only one currency: strength.' Your one-small-step looks like weakness to them; accommodation invites more. The answer is to raise their cost of persisting and be comfortable with no-deal.",
+      "when_to_use": "Rude/aggressive buyers; serial nibblers; threats of bad reviews to extort a discount.",
+      "when_NOT_to_use": "On a merely blunt-but-reasonable buyer (that's a competer, not a bully — use standards/leverage normally); don't escalate where a safety report is the right channel.",
+      "mechanic": "1) Recognize the bully pattern (principle-everything, threats, no reciprocity). 2) Refuse to be drawn off your game. 3) Anchor on leverage: ability to relist/decline. 4) Hold firm; let no-deal stand. 5) For threats/harassment, disengage and report rather than appease.",
+      "marketplace_mapping": "Declining a 'discount or I leave a bad review' threat; not caving to a serial nibbler; copilot routes harassment/threats to a calm decline + platform report path rather than concession.",
+      "example_buyer_message": "Give me 40% off or I'll leave you a one-star review.",
+      "recommended_agent_reply": "I'm sorry you feel that way, but I price fairly and reviews should reflect the actual item and service. I can't do 40% off. If you'd still like it at the listed price I'm happy to help — otherwise no worries.",
+      "source_quote_or_locator": "Ch. 11 'The other party is a bargaining bully — Stand up to them, create and use leverage'; Vera Coking vs. Trump; 'bullies respect only one currency: strength.'",
+      "product_stage_tags": ["objection", "safety", "trust", "coaching"]
+    },
+    {
+      "id": "bargaining-for-advantage-play-17",
+      "principle": "Coach the seller around their own style's blind spot",
+      "what_it_means": "The copilot should counter the user's personal bargaining-style weaknesses: nudge accommodators/compromisers to ask for more and not cave early; remind competers to listen and protect the relationship; prompt avoiders to actually make the ask.",
+      "why_it_matters": "Shell's premise is self-knowledge: each style has a failure mode (accommodators get exploited; high compromisers concede too fast and stop asking questions; competers damage relationships and miss non-price value; avoiders never ask). Coaching to the gap is where the copilot adds the most seller-side value.",
+      "when_to_use": "Continuously, as a coaching layer; especially when the user is about to under-ask or over-cave.",
+      "when_NOT_to_use": "Don't override a deliberate, situation-appropriate choice (an accommodator generously gifting a regular is fine).",
+      "mechanic": "1) Infer the user's style from drafts/history. 2) Detect the matching failure mode. 3) Nudge gently: accommodator/compromiser -> 'you're dropping fast — hold one round and ask what they're after?'; competer -> 'they're a repeat buyer, a warmer tone keeps them'; avoider -> 'you can just ask — worst case is a no.'",
+      "marketplace_mapping": "A draft-reply check that flags 'this concession is bigger than needed,' 'you haven't asked a single question,' or 'you're about to accept below your goal,' tailored to the user's pattern over time.",
+      "example_buyer_message": "(user about to reply) 'ok fine $25 is fine' (listed $40, first offer was $20)",
+      "recommended_agent_reply": "Before you send that — you're going from $40 to $25 on their first lowball, which signals lots of room. Try: 'I can do $35 if you grab it today.' You can always come down again.",
+      "source_quote_or_locator": "Appendix A 'Characteristics of Negotiators Exhibiting the Five Bargaining Styles' (style strengths/weaknesses); Conclusion on compensating for each style's weaknesses.",
+      "product_stage_tags": ["coaching", "learning-loop", "pricing", "reply-gen"]
+    }
+  ],
+  "communication_tactics": [
+    {
+      "name": "Open-ended probe (How/What/Why)",
+      "purpose": "Surface budget, urgency, and the real interest before disclosing.",
+      "phrase_patterns": ["What were you hoping to spend?", "Is this for something specific?", "How did you get to that number?"],
+      "overuse_risk": "Feels like an interrogation if stacked; can read as stalling on a fast sale.",
+      "good_example": "Happy to work with you — what's your ballpark?",
+      "bad_example": "Why would you even offer that?",
+      "source_locator": "Ch. 8 'Probe First, Disclose Second'; Rackham & Carlisle question data."
+    },
+    {
+      "name": "Reasoning-first standard cite",
+      "purpose": "Depersonalize the price by leading with the comp, then the number.",
+      "phrase_patterns": ["Recent sold ones went for $X-$Y, so I'm at $Z."],
+      "overuse_risk": "Loses force if the standard is vague or fabricated.",
+      "good_example": "Based on what these actually sell for, $50 is fair.",
+      "bad_example": "It's $50 because that's my price.",
+      "source_locator": "Ch. 3 'From Pigs to Price Lists' / normative leverage."
+    },
+    {
+      "name": "Conditional concession (If... then)",
+      "purpose": "Never give without getting; link issues.",
+      "phrase_patterns": ["If you can do $X, then I'll cover shipping."],
+      "overuse_risk": "Sounds transactional if every line is conditional.",
+      "good_example": "If you grab it today, I'll do $43.",
+      "bad_example": "Fine, $43, and I'll ship free, and I'll hold it... (stacking free gives)",
+      "source_locator": "Ch. 9 'If... Then' / conditional concession making."
+    },
+    {
+      "name": "Truthful-uncertainty / tell-the-truth-slowly",
+      "purpose": "Keep leverage without lying when probed for your floor.",
+      "phrase_patterns": ["I'd rather not name a rock-bottom, but $45 is fair and I can do that today.", "That's genuinely my limit on this one."],
+      "overuse_risk": "Overused blocking can feel evasive — pair with a real number.",
+      "good_example": "I'm not free to share my floor, but here's the best I can do: $45.",
+      "bad_example": "My boss won't let me go lower. (fake authority)",
+      "source_locator": "Ch. 12 'Tell the Truth—Slowly' / fig. 12.1."
+    },
+    {
+      "name": "Light scarcity signal (true only)",
+      "purpose": "Trigger Act-Now at close.",
+      "phrase_patterns": ["Last one in this size.", "A couple of others are watching."],
+      "overuse_risk": "Destroys trust if false; becomes nagging if repeated.",
+      "good_example": "It's had a lot of interest this week, so I'm holding at $45.",
+      "bad_example": "Someone else just offered $48! (when nobody did)",
+      "source_locator": "Ch. 10 'Scarcity and Competition / Deadlines.'"
+    },
+    {
+      "name": "Name-the-tactic",
+      "purpose": "Neutralize good-cop/bad-cop, nibbles, consistency traps.",
+      "phrase_patterns": ["I'd like to keep this straightforward — who has authority to close?", "I'd rather agree the whole thing at once than add bits at the end."],
+      "overuse_risk": "Sounds combative if mis-toned.",
+      "good_example": "Let's settle everything in one go so there are no surprises.",
+      "bad_example": "Stop playing games with me.",
+      "source_locator": "Ch. 9 'Good Cop/Bad Cop'; Ch. 10 'the nibble'; Ch. 3 'consistency traps.'"
+    },
+    {
+      "name": "Positioning theme",
+      "purpose": "A crisp recurring frame that holds your stance together.",
+      "phrase_patterns": ["I price everything fairly against recent solds — that's just how I sell."],
+      "overuse_risk": "Empty if not backed by behavior.",
+      "good_example": "I keep my prices fair and consistent for everyone.",
+      "bad_example": "Take it or leave it.",
+      "source_locator": "Ch. 3 'Positioning Themes — Part-Time America Won't Work.'"
+    }
+  ],
+  "objection_material": [
+    {
+      "objection_key": "price-too-high",
+      "handling": "Reframe inside an authoritative standard (normative leverage) and lead with the comp before the number; hold your goal-anchor.",
+      "sample_reply": "Recent sold ones in this condition went $48-$55 — I'm at $50, already inside that range. I can do $47 if you close today.",
+      "source_locator": "Ch. 3 normative leverage; Ch. 2 goals/anchor."
+    },
+    {
+      "objection_key": "lowball",
+      "handling": "Don't react to the number; probe the interest, then decline-with-reason and counter near list (anchor + reciprocity).",
+      "sample_reply": "I can't do $20 — solds are $48-$55. What were you hoping to spend? If it's budget, I might be able to bundle something.",
+      "source_locator": "Ch. 9 anchor/aggressive opening; Ch. 5 interests."
+    },
+    {
+      "objection_key": "competitor-cheaper",
+      "handling": "Probe the claim ('can you show me the link?'), compare like-for-like condition, hold if not genuinely comparable.",
+      "sample_reply": "Send me the link and I'll take a real look — if it's the same item and condition I'll factor it in; sometimes they're not actually the same.",
+      "source_locator": "Ch. 10 'probe other offers'; Ch. 3 standards."
+    },
+    {
+      "objection_key": "wants-bundle-deal",
+      "handling": "Integrative trade: big move on the low-value item, conditional If... then, clear slow stock.",
+      "sample_reply": "If you add the grey tee, I'll do both for $60 shipped — better value than either alone.",
+      "source_locator": "Ch. 9 integrative/logrolling."
+    },
+    {
+      "objection_key": "stalling-ghosting",
+      "handling": "Light, true scarcity + an easy yes; close for commitment (something to lose).",
+      "sample_reply": "No rush, but a couple of others are watching and it's the last in this size — want me to lock it in at $X and ship tomorrow?",
+      "source_locator": "Ch. 10 scarcity; commitment."
+    },
+    {
+      "objection_key": "condition-doubt",
+      "handling": "Treat as a value-doubt interest, not a price issue: supply proof (extra photos, measurements, receipts) rather than dropping price; disclose real flaws honestly.",
+      "sample_reply": "Totally fair to want to be sure — I'll send extra close-ups and the measurements so you can judge before you commit.",
+      "source_locator": "Ch. 5 interests; Ch. 12 honesty."
+    },
+    {
+      "objection_key": "trust-authenticity",
+      "handling": "Same value-doubt logic: provide proof of authenticity (receipts, tags, detailed photos) and honest disclosure rather than discounting.",
+      "sample_reply": "Happy to back it up — I'll send photos of the tags and the receipt so you can buy with confidence.",
+      "source_locator": "Ch. 5 interests; Ch. 12 honesty."
+    },
+    {
+      "objection_key": "rude-aggressive",
+      "handling": "Bully protocol: don't accommodate, respond on leverage, be willing to walk, route threats to a report.",
+      "sample_reply": "I price fairly and can't do that. If you'd like it at the listed price I'm glad to help — otherwise no worries.",
+      "source_locator": "Ch. 11 bargaining bullies."
+    },
+    {
+      "objection_key": "off-platform-request",
+      "handling": "[INFERRED] Decline on safety + commitment grounds (keeping it on-platform gives both sides 'something to lose'); leverage/commitment logic applied, not stated in the book.",
+      "sample_reply": "I keep everything through the app so we're both protected — happy to finish the sale right here.",
+      "source_locator": "Ch. 10 commitment logic, applied (inferred)."
+    }
+  ],
+  "buyer_psychology": [
+    "Buyers anchor on the first number they see and adjust insufficiently from it — your list price quietly sets their expectations (Ch. 9 anchor effect).",
+    "Buyers feel the contrast: a real number looks reasonable next to a higher opener, unreasonable next to a low one (Ch. 9 contrast principle).",
+    "Buyers are driven by fear of loss more than equivalent gain — scarcity, deadlines, and 'others are interested' push the Act-Now button (Ch. 6, Ch. 10).",
+    "Buyers want to feel they earned a concession and got a good deal — only ~15% genuinely prefer no-haggle; many enjoy the back-and-forth and bragging rights (Ch. 9 no-haggle dealership story).",
+    "Buyers obey the reciprocity norm: a small genuine concession or disclosure creates real pressure to respond in kind (Ch. 4).",
+    "Buyers feel the consistency principle: once they accept a standard, contradicting it is uncomfortable — frame your price in their accepted standard (Ch. 3).",
+    "A buyer's stated position usually hides a different interest (budget cap, value-doubt, timing, comparison) — and ~50% of the time there's shared ground both sides miss (Ch. 5).",
+    "Buyers commonly bluff about 'other offers' and bottom lines; these are the most common lies, so probe before believing them (Ch. 12 rogues' gallery)."
+  ],
+  "seller_psychology": [
+    "Sellers set modest goals to protect self-esteem and then relax the instant an offer clears their bottom line, costing money; keep the goal, not the floor, in focus (Ch. 2).",
+    "Sellers fall for escalation of commitment / winner's curse / overcommitment — the longer they've haggled, the more they cave to avoid 'wasting' the effort; re-test the deal against the real interest (Ch. 2, Ch. 10).",
+    "Fixed-pie + confirmation bias make sellers assume the buyer only wants a lower price, blinding them to bundle/shipping/timing trades and non-price interests (Ch. 5).",
+    "Sellers under-leverage likes/watchers/demand because they treat leverage as fixed or tied to 'power' — it's actually dynamic and psychological (Ch. 6 misconceptions).",
+    "Style-specific failure modes (Appendix A): accommodators/compromisers concede too fast and stop asking questions; competers bruise relationships and miss non-price value; avoiders never make the ask.",
+    "Sellers conflate winning the price with the real goal (profit / clearing inventory / a smooth sale); price is a means, not the end (Ch. 2)."
+  ],
+  "ignore_list": [
+    "Hostage/crisis negotiation mechanics (Hanafi Muslim case) — used only as a leverage teaching device; life-and-death tactics out of scope.",
+    "Enterprise M&A / JV / trade-deal machinery (HBJ/General Cinema, Sony/Bulova, US-China WTO, RJR Nabisco) — multi-party, multi-month, advisor-heavy.",
+    "Labor/union strikes and coalition-building (UPS Teamsters, Northern Plains Beef) — group dynamics irrelevant to 1:1 chat.",
+    "Cross-cultural / gender-stereotype guidance (Persian Gulf map, guanxi, meishi, Babcock salary research) — relationship-culture pacing noted, specific rituals dropped.",
+    "In-person and channel-choice tactics (face-to-face vs phone vs email/video bandwidth, using an agent/lawyer) — marketplace chat is text-only single-channel.",
+    "Intra-organizational leverage / 'The Art of Woo' persuasion-within-firms — no internal-org analog in resale.",
+    "Full impasse taxonomy beyond bullies (conflict spirals/GRIT, apology, deep-values for matters of principle) — useful for de-escalation but lower priority than the style classifier.",
+    "Detailed law-of-fraud appendix (Appendix B) — legal baseline noted, jurisdiction-specific law out of scope."
+  ],
+  "guardrail_flags": [
+    "Phantom competition / fake 'other offers' (Ch. 6, Ch. 10): scarcity and competing-interest signals must be TRUE. Never invent a rival buyer, fake watchers, or a fake deadline.",
+    "Fake authority ('my partner won't let me') (Ch. 12 rogues' gallery): don't fabricate a higher authority to block a price; use truthful 'that's my limit.'",
+    "Lowballing/bait (hidden costs) and the nibble (Ch. 9-10): don't teach sellers to spring hidden fees or last-minute add-ons; help users resist buyer nibbles, not deploy them.",
+    "Consistency traps & good-cop/bad-cop (Ch. 3, Ch. 9): listed as manipulative tactics to defend against, not to use. Name and neutralize, don't coach their use.",
+    "Aggressive-vs-outrageous anchor line (Ch. 9): an anchor must have a presentable supporting standard; an anchor with no justification is a credibility risk and edges toward manipulation — flag list prices with no comp support.",
+    "Fake-urgency at close (Ch. 10 scarcity): the Act-Now lever is high-power and easy to abuse; gate it behind 'is this scarcity real?'",
+    "Honesty about the item (Ch. 12 self-awareness): truthful-uncertainty applies to your position, never to the item — flaws, defects, and condition must be disclosed (silence about a known defect can be fraud).",
+    "Default ethical posture: Shell endorses the Idealist/Pragmatist blend ('tell the truth slowly; what goes around comes around'). Default to truthful, reputation-protecting moves, not Poker-School bluffing — one ethical slip costs credibility across many deals."
+  ],
+  "classifiers_personas": [
+    {
+      "name": "The Competer (competitive buyer)",
+      "signals": ["aggressive lowball opener", "'this is overpriced / you're ripping people off'", "flat demands ('knock off $X or no deal')", "irritators/insults", "frames it as winning", "bluffs about other offers", "pushes hard and fast"],
+      "recommended_approach": "Lead with leverage + an authoritative standard; hold your goal-anchor; decline-with-reason and counter near list; match firmness tit-for-tat without taking the bait; be ready to walk. Don't accommodate — they read warmth as weakness.",
+      "source_locator": "Ch. 1; Appendix A 'Competing'; Ch. 6 leverage."
+    },
+    {
+      "name": "The Collaborator (problem-solver buyer)",
+      "signals": ["asks lots of questions", "interested in multiple items", "'is there a way we can make this work?'", "engaged, exploratory, open about needs", "receptive to bundles"],
+      "recommended_approach": "Probe interests and expand the pie — bundles, shipping, timing trades (If... then); collaborate to a package both like. Highest-value persona for integrative deals.",
+      "source_locator": "Ch. 1; Appendix A 'Collaborating'; Ch. 9 integrative."
+    },
+    {
+      "name": "The Compromiser (fair-split buyer)",
+      "signals": ["'what's your lowest?'", "quick to suggest splitting the difference", "reasonable, relationship-friendly tone", "wants closure fast", "'can we just meet halfway?'"],
+      "recommended_approach": "They'll close on a fair split — be careful the midpoint actually favors you (don't let a reasonable open get split against an aggressive one). Offer a fair-but-goal-protecting split; they value speed and fairness.",
+      "source_locator": "Ch. 1; Appendix A 'Compromising'; Ch. 10 splitting the difference."
+    },
+    {
+      "name": "The Accommodator (relationship-first buyer)",
+      "signals": ["warm, polite, complimentary ('I love this!')", "'totally fine if not'", "defers to you", "repeat buyer/follower/local", "cares about the item's story or your service"],
+      "recommended_approach": "Protect the relationship; a small genuine concession buys big goodwill and repeat business; be generous and gracious. Watch they don't over-defer into a regretted sale.",
+      "source_locator": "Ch. 1; Appendix A 'Accommodating'; Ch. 4 relationships; Ch. 7 Cooperative Relationships quadrant."
+    },
+    {
+      "name": "The Avoider (conflict-averse buyer)",
+      "signals": ["hesitant, indirect", "'hmm, not sure'", "long silences", "saves/likes but won't message or commit", "uneasy about the back-and-forth", "may ghost rather than counter"],
+      "recommended_approach": "Lower friction and make saying-yes easy; minimal haggling, clear simple offer, gentle nudge with a true scarcity cue; don't pressure into confrontation (they'll flee). Convert with ease, not force.",
+      "source_locator": "Ch. 1; Appendix A 'Avoiding'; Ch. 7 Tacit Coordination."
+    },
+    {
+      "name": "Cooperative vs. Competitive orientation (underlying axis)",
+      "signals": ["cooperative = polite, reciprocates concessions/disclosures, few irritators, seeks fairness", "competitive = irritators, defend/attack spirals, one-sided concession demands, bluffing, 'winning' framing"],
+      "recommended_approach": "Cooperative -> relationship + standards + reciprocity dance; Competitive -> leverage + firm standards + willingness to walk. Research shows cooperative buyers are common and skilled cooperators close many deals — don't assume aggression is the norm.",
+      "source_locator": "Ch. 1 'Cooperative versus Competitive Styles'; Rackham & Carlisle irritator data."
+    },
+    {
+      "name": "Competitive-Transaction buyer (situational overlay)",
+      "signals": ["no prior relationship", "won't buy again", "purely price-focused", "one-off stranger"],
+      "recommended_approach": "Firmness + leverage + high-but-defensible anchor; civility is enough, don't over-invest in rapport.",
+      "source_locator": "Ch. 7 Quadrant III (Situational Matrix)."
+    },
+    {
+      "name": "Cooperative-Relationship buyer (situational overlay)",
+      "signals": ["bought before", "follows you", "local pickup", "friendly ongoing contact"],
+      "recommended_approach": "Accommodate; open near fair; small generosity for long-term value.",
+      "source_locator": "Ch. 7 Quadrant II (Situational Matrix)."
+    },
+    {
+      "name": "Tacit-Coordination buyer (situational overlay)",
+      "signals": ["small cheap item", "stranger", "just wants a smooth quick transaction"],
+      "recommended_approach": "Minimal friction, quick smooth close; don't haggle hard over pennies or manufacture a relationship.",
+      "source_locator": "Ch. 7 Quadrant IV (Situational Matrix)."
+    },
+    {
+      "name": "The Bargaining Bully (adversarial persona, not a style)",
+      "signals": ["everything is 'a matter of principle'", "threats (bad reviews, disputes)", "rudeness used as a tactic", "never reciprocates", "serial nibbling", "tries to wear you down"],
+      "recommended_approach": "Drop relationship moves; respond purely on leverage; hold firm, don't reward; be comfortable with no-deal; route threats/harassment to a calm decline + platform report.",
+      "source_locator": "Ch. 11 'bargaining bullies'; Vera Coking."
+    },
+    {
+      "name": "The user's own bargaining style (seller-side coaching persona)",
+      "signals": ["accommodator = caves fast, over-gives", "compromiser = jumps to split, stops asking questions", "competer = blunt, relationship-bruising, price-only", "avoider = won't make the ask, lets items sit"],
+      "recommended_approach": "Coach to the gap (Play 17) — nudge under-askers to hold a round and ask a question, remind competers to warm up with repeat buyers, prompt avoiders to make the ask.",
+      "source_locator": "Appendix A style strengths/weaknesses; Conclusion."
+    }
+  ]
+}
