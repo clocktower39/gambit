@@ -484,6 +484,16 @@ transcript, enforces turn order, and scores the terminal outcome. **What is on t
 the table is a swappable implementation, not a fork in the loop.** This is the single decision
 that lets one engine serve self-play, a human, and a live marketplace unchanged.
 
+**Orchestration pattern (named explicitly).** The referee + `improve_loop` are Pydantic AI
+*programmatic hand-off*: our plain-Python code calls independent agents in sequence and the
+deterministic reward decides between turns and generations. We deliberately **do not** use Pydantic AI
+*agent delegation* (one agent calling another mid-run would breach the walled-off-context invariant —
+`opponent.infer` is pure Python, read as typed data, never a sub-agent) or *pydantic-graph* (a linear
+turn-loop + generational for-loop is clearer and keeps the LLM out of the control/selection path).
+**Cost control:** thread a shared `pydantic_ai.usage.RunUsage` through every `agent.run(..., usage=…)`
+and set a per-generation `UsageLimits(request_limit=…, total_tokens_limit=…)` — free per-generation
+cost/latency accounting plus a hard circuit-breaker so a runaway self-play generation can't burn the budget.
+
 ```python
 from typing import Protocol
 

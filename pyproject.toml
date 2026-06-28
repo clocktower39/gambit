@@ -34,3 +34,4 @@ exclude-newer = "1 week"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["."]
