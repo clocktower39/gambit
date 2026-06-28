@@ -96,14 +96,21 @@ def main() -> None:
     if not settings.gemini_api_key:
         print("\nGEMINI_API_KEY is empty — add it to .env to run the Gemini lesson step.")
         return
+    from collections import defaultdict
+
     from gambit.optimizer_gemini import AntigravityOptimizer
 
-    weakest = min(recs, key=lambda r: r["reward"])
-    bucket = weakest["bucket"]
-    transcripts = [r["ep"].transcript() for r in recs if r["bucket"] == bucket]
-    perf = {"mean_reward": sum(r["reward"] for r in recs if r["bucket"] == bucket) / max(1, len(transcripts)),
-            "viol": sum(r["viol"] for r in recs if r["bucket"] == bucket)}
-    print(f"\n=== Gemini lesson generation on weakest bucket '{bucket}' (reward {weakest['reward']:+.3f}) ===")
+    # weakest bucket by MEAN reward (not the single worst episode) — consistent with how perf and the
+    # before/after delta are computed below, so we target and measure the same thing.
+    by_bucket: dict[str, list[dict]] = defaultdict(list)
+    for r in recs:
+        by_bucket[r["bucket"]].append(r)
+    bucket = min(by_bucket, key=lambda b: sum(x["reward"] for x in by_bucket[b]) / len(by_bucket[b]))
+    rows = by_bucket[bucket]
+    transcripts = [r["ep"].transcript() for r in rows]
+    perf = {"mean_reward": sum(r["reward"] for r in rows) / len(rows),
+            "viol": sum(r["viol"] for r in rows)}
+    print(f"\n=== Gemini lesson generation on weakest bucket '{bucket}' (mean reward {perf['mean_reward']:+.3f}) ===")
     new_store = AntigravityOptimizer().propose(PolicyStore(), bucket, transcripts, perf)
     lesson = new_store.buckets[bucket].lessons[-1].text
     print(f"proposed lesson:\n  {lesson}\n")

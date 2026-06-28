@@ -41,11 +41,15 @@ How the engine calls this (once per generation, scoped to one weak bucket):
 from __future__ import annotations
 
 import json
+import logging
 
 from pydantic import BaseModel, Field
 
 from .negotiation.policy import BucketPolicy, Lesson, PolicyStore
 from .settings import settings
+
+_LOG = logging.getLogger("gambit.optimizer_gemini")
+_WARNED_FALLBACK = False   # warn once (not per-generation) when the managed-agent path is unavailable
 
 # The hosted managed agent (a valid google-genai 2.9.0 AgentOption literal). Runs an ephemeral
 # Linux sandbox per call — hence once-per-generation, never per move.
@@ -112,11 +116,16 @@ class AntigravityOptimizer:
         """
         client = self._ensure_client()
         current = store.promoted_lessons(target_bucket)
-        prompt = _render_prompt(target_bucket, current, performance)
+        prompt = _render_prompt(target_bucket, current, performance, transcripts)  # transcripts INLINED
 
         try:
             lesson_text = self._propose_via_interactions(client, store, target_bucket, transcripts, performance, prompt)
         except Exception as exc:  # hosted-agent path unavailable → keep the channel live via the model API
+            global _WARNED_FALLBACK
+            if not _WARNED_FALLBACK:
+                _LOG.warning("Antigravity managed-agent path unavailable (%r) — using the transcript-grounded "
+                             "generate_content fallback (no stateful sandbox). Lessons still see the transcripts.", exc)
+                _WARNED_FALLBACK = True
             lesson_text = self._propose_via_generate_content(client, prompt, exc)
 
         return _apply_proposal(store, target_bucket, lesson_text)
@@ -171,7 +180,10 @@ class AntigravityOptimizer:
         if self.prev_interaction_id is not None:
             body["previous_interaction_id"] = self.prev_interaction_id
 
-        interaction = client.interactions.create(body=body)
+        # google-genai 2.10.0: create(*, request=None, **body); the wire shape nests the payload
+        # under a `body` key, i.e. request={"body": {...}}. (body=body and request=body both fail
+        # client-side validation and silently route every generation to the fallback.)
+        interaction = client.interactions.create(request={"body": body})
 
         # Persist state for the next generation (the chaining + the env we can diff against).
         self.environment_id = getattr(interaction, "environment_id", None) or self.environment_id
@@ -228,21 +240,30 @@ class AntigravityOptimizer:
         return self._client
 
 
-def _render_prompt(target_bucket: str, current_lessons: list[str], performance: dict) -> str:
-    """Assemble the once-per-generation instruction: sharpen ONE lesson for this bucket, anti-bloat."""
+def _render_prompt(target_bucket: str, current_lessons: list[str], performance: dict,
+                   transcripts: list[str]) -> str:
+    """Assemble the once-per-generation instruction: sharpen ONE lesson for this bucket, anti-bloat.
+
+    The transcripts are INLINED into the prompt (not just referenced as mounted files) so the
+    proposal is grounded in the actual negotiations on EVERY path — the managed-agent sandbox and
+    the plain `generate_content` fallback alike. (A prior version only named the mounted file paths,
+    so the fallback path proposed lessons blind to the transcripts.)"""
     current = "\n".join(f"- {t}" for t in current_lessons) if current_lessons else "(none yet)"
+    tx = "\n\n".join(f"--- transcript {i + 1} ---\n{t}" for i, t in enumerate(transcripts)) \
+        if transcripts else "(no transcripts provided)"
     return (
         f"You are improving the seller's tactics for ONE situation bucket: `{target_bucket}`.\n\n"
         f"Current promoted lesson(s) for this bucket:\n{current}\n\n"
         f"Current measured performance for this bucket (higher reward/skill is better, lower viol is "
         f"better):\n{json.dumps(performance, indent=2)}\n\n"
-        f"Read the mounted negotiation transcripts ({_FRESH_TRANSCRIPTS}) and performance "
-        f"({_FRESH_PERFORMANCE}) for this bucket. Then propose ONE improved, generalized tactical "
-        f"lesson (a few sentences) that should raise verifiable surplus for THIS bucket without "
-        f"tripping any integrity/audit flag.\n\n"
+        f"Recent negotiation transcripts for this bucket — study them to find what actually cost the "
+        f"seller surplus (over-conceding, caving to pressure, weak anchoring, leaking the floor):\n\n"
+        f"{tx}\n\n"
+        f"Then propose ONE improved, generalized tactical lesson (a few sentences) that should raise "
+        f"verifiable surplus for THIS bucket without tripping any integrity/audit flag.\n\n"
         f"Anti-bloat rules: do NOT restate or lightly reword an existing lesson — sharpen or replace "
         f"it. Prefer one durable, transferable principle over situational trivia. Output a single "
-        f"strongest lesson.\n\n"
+        f"strongest lesson grounded in the transcripts above.\n\n"
         f"Return JSON only: {{\"target_bucket\": \"{target_bucket}\", \"lesson\": \"...\"}}."
     )
 
