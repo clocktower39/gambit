@@ -49,7 +49,6 @@ from scripts.play import (
     _money,
     _pick_item,
     _print_catalog,
-    _record_episode,
     _render,
     _safe_run,
     buyer_agent,
@@ -139,7 +138,15 @@ class SharedMarket:
             self.sold_event.set()
             return True
 
-    def market_line_for_human(self) -> str | None:
+    def market_line_for_human(self) -> str:
+        state, _, _, _ = self.snapshot()
+        active = max(0, len(state.active_threads_for(LISTING_ID)) - 1)
+        best = state.best_offer_for(LISTING_ID, exclude_thread_id=HUMAN_THREAD_ID)
+        if best is None:
+            return f"{active} other active buyer{'s' if active != 1 else ''}; no competing offers yet."
+        return f"{active} other active buyer{'s' if active != 1 else ''}; competing offer exists."
+
+    def market_line_for_seller(self) -> str:
         state, ask, _, _ = self.snapshot()
         active = max(0, len(state.active_threads_for(LISTING_ID)) - 1)
         best = state.best_offer_for(LISTING_ID, exclude_thread_id=HUMAN_THREAD_ID)
@@ -200,7 +207,7 @@ class MarketplaceSeller:
     def opening(self, item: Item) -> Move:
         with logfire.span("marketplace seller opening") as span:
             deps = self._deps(item, item.list_price, None, 0)
-            market_line = self.market.market_line_for_human()
+            market_line = self.market.market_line_for_seller()
             task = (
                 "Open the negotiation with your asking price as an 'offer'. "
                 f"Seller-visible market context: {market_line}"
@@ -214,13 +221,20 @@ class MarketplaceSeller:
 
     def respond(self, item: Item, current_ask: float, buyer_offer: float | None, round_idx: int) -> Move:
         with logfire.span("marketplace seller turn {round}", round=round_idx) as span:
-            state, _, _, _ = self.market.snapshot()
-            features = state.features_for_thread(
-                HUMAN_THREAD_ID,
-                current_ask=current_ask,
-                round_idx=round_idx,
-                max_turns=self.max_turns,
-            )
+            try:
+                state, _, sold_to, _ = self.market.snapshot()
+                if sold_to is not None:
+                    return Move(role="seller", action="walk", text="Listing already sold.")
+                features = state.features_for_thread(
+                    HUMAN_THREAD_ID,
+                    current_ask=current_ask,
+                    round_idx=round_idx,
+                    max_turns=self.max_turns,
+                )
+                deps = self._deps(item, current_ask, buyer_offer, round_idx)
+            except (KeyError, ValueError) as exc:
+                logfire.warn("seller turn skipped after market state changed: {err}", err=str(exc))
+                return Move(role="seller", action="walk", text="Listing already sold.")
             best = state.best_offer_for(LISTING_ID, exclude_thread_id=HUMAN_THREAD_ID)
             market_context = (
                 f"Seller-visible market context: {int(features.active_buyers)} other active buyer"
@@ -231,7 +245,7 @@ class MarketplaceSeller:
             am = _safe_run(
                 seller_agent,
                 f"Make your move. {market_context}",
-                self._deps(item, current_ask, buyer_offer, round_idx),
+                deps,
                 "seller",
                 typing_label="Seller",
             )
@@ -301,7 +315,7 @@ class BackgroundBuyer(threading.Thread):
             if mv.action == "offer" and mv.offer is not None:
                 self.current_offer = mv.offer
                 if self.market.update_thread(self.thread_id, offer=mv.offer, status="active"):
-                    print(f"\nMarket update: Other buyer offer: {_money(mv.offer)}")
+                    print("\nMarket update: Another buyer made an offer.")
             elif mv.action == "accept" and mv.offer is not None:
                 self.current_offer = mv.offer
                 if self.market.update_thread(self.thread_id, offer=mv.offer):
@@ -311,7 +325,7 @@ class BackgroundBuyer(threading.Thread):
                         logfire.warn("background buyer sale rejected: {err}", err=str(exc))
                         return
                     if sold:
-                        print(f"\nMarket update: Other buyer accepted {_money(mv.offer)}. The listing sold.")
+                        print("\nMarket update: Another buyer accepted. The listing sold.")
                 return
             elif mv.action == "walk":
                 if self.walked_once:
@@ -323,6 +337,9 @@ class BackgroundBuyer(threading.Thread):
 
             if self.stop_event.wait(random.uniform(5.0, 9.0)):
                 return
+
+        if not self.stop_event.is_set() and not self.market.sold_event.is_set():
+            self.market.update_thread(self.thread_id, status="closed")
 
 
 def _build_episode(item: Item, moves: list[Move], outcome: Outcome) -> Episode:
@@ -373,7 +390,7 @@ def play_multiple(
     outcome: Outcome | None = None
     seller_ask = item.list_price
     buyer_offer: float | None = None
-    walked: set[str] = set()
+    seller_walked = False
 
     try:
         with logfire.span(
@@ -401,7 +418,7 @@ def play_multiple(
                         price=None,
                         turns=round_idx,
                         walked_by=None,
-                        reason=f"sold to {sold_to} at {_money(sold_price)}",
+                        reason=f"sold to {sold_to}",
                     )
                     break
 
@@ -415,7 +432,7 @@ def play_multiple(
                         deal=False,
                         price=None,
                         turns=round_idx,
-                        reason=f"sold to {sold_to} at {_money(sold_price)}",
+                        reason=f"sold to {sold_to}",
                     )
                     break
                 if bmove.action == "accept":
@@ -425,18 +442,16 @@ def play_multiple(
                         outcome = _finalize(item, deal=False, price=None, turns=round_idx, reason="listing already sold")
                     break
                 if bmove.action == "walk":
-                    if "buyer" in walked:
-                        market.update_thread(HUMAN_THREAD_ID, status="walked")
-                        outcome = _finalize(
-                            item,
-                            deal=False,
-                            price=None,
-                            turns=round_idx,
-                            walked_by="buyer",
-                            reason="buyer re-confirmed walk",
-                        )
-                        break
-                    walked.add("buyer")
+                    market.update_thread(HUMAN_THREAD_ID, status="walked")
+                    outcome = _finalize(
+                        item,
+                        deal=False,
+                        price=None,
+                        turns=round_idx,
+                        walked_by="buyer",
+                        reason="buyer passed",
+                    )
+                    break
                 elif bmove.offer is not None:
                     buyer_offer = bmove.offer
                     market.update_thread(HUMAN_THREAD_ID, offer=bmove.offer, status="active")
@@ -448,7 +463,7 @@ def play_multiple(
                         deal=False,
                         price=None,
                         turns=round_idx,
-                        reason=f"sold to {sold_to} at {_money(sold_price)}",
+                        reason=f"sold to {sold_to}",
                     )
                     break
 
@@ -460,7 +475,7 @@ def play_multiple(
                         deal=False,
                         price=None,
                         turns=round_idx,
-                        reason=f"sold to {sold_to} at {_money(sold_price)}",
+                        reason=f"sold to {sold_to}",
                     )
                     break
                 if smove.action == "accept":
@@ -470,7 +485,7 @@ def play_multiple(
                         outcome = _finalize(item, deal=False, price=None, turns=round_idx, reason="listing already sold")
                     break
                 if smove.action == "walk":
-                    if "seller" in walked:
+                    if seller_walked:
                         outcome = _finalize(
                             item,
                             deal=False,
@@ -480,7 +495,7 @@ def play_multiple(
                             reason="seller re-confirmed walk",
                         )
                         break
-                    walked.add("seller")
+                    seller_walked = True
                 elif smove.offer is not None:
                     seller_ask = smove.offer
                     market.set_ask(seller_ask)
@@ -494,7 +509,6 @@ def play_multiple(
     ep = _build_episode(item, log, outcome)
     viol = audit_episode(ep)
     r = reward(ep)
-    saved = _record_episode(ep, seat="buyer", policy_desc=policy_desc, reward_val=r, viol=viol, item=item) if save else None
 
     print("\nScorecard")
     print("-" * 60)
@@ -509,8 +523,8 @@ def play_multiple(
         print(f"Audit: {len(viol)} violation(s): {'; '.join(viol)}")
     else:
         print("Audit: clean")
-    if saved:
-        print(f"Saved: {saved}  (source=human - proposer fuel + its own 'human_episode' Logfire trace)")
+    if save:
+        print("Saved: skipped - marketplace games need a portfolio episode schema before becoming proposer fuel.")
     print("Trace: Logfire captured the episode, turns, intent calls, and chat lines." if _TRACED else "Trace: set LOGFIRE_TOKEN in .env to walk the chat natively in Logfire.")
     return 0
 
@@ -525,7 +539,7 @@ def main() -> int:
     p.add_argument("--turns", type=int, default=None, help="hard turn cap")
     p.add_argument("--show-thinking", action="store_true", help="reveal agent private reasoning")
     p.add_argument("--trace-console", action="store_true", help="also print the Logfire span tree inline")
-    p.add_argument("--no-save", action="store_true", help="do not persist this game as a human episode")
+    p.add_argument("--no-save", action="store_true", help="suppress save reminder; marketplace games are not persisted yet")
     args = p.parse_args()
 
     if args.list_items:

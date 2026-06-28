@@ -2,11 +2,12 @@
 
 **A self-improving auto-negotiator.** It lists an item, negotiates to the best price in a
 reasonable time, and **gets better from its own negotiations — with zero human labeling.**
-It learns by negotiating against *itself* (self-play): one shared policy plays both the
-seller and the buyer, each side fighting for its own surplus, refereed by a verifiable
-reward. The counterparty is **pluggable** — self-play is how it trains today, a human can
-step in as the buyer at any moment, and real buyers drop in unchanged when a marketplace is
-wired. The objective is singular: **a real negotiator that never stops improving.**
+The current offline loop improves a seller policy against reproducible buyer families; the
+target loop learns by negotiating against *itself* (self-play): one shared policy plays both
+the seller and the buyer, each side fighting for its own surplus, refereed by a verifiable
+reward. The counterparty is **pluggable** — a human can step in as the buyer at any moment,
+and real buyers drop in unchanged when a marketplace is wired. The objective is singular:
+**a real negotiator that never stops improving.**
 
 > Originated at the AI Engineer World's Fair 2026 (theme: Continual Learning). We are not
 > building a demo — we are building the real thing, and continual improvement is the whole
@@ -47,13 +48,14 @@ decision is what makes this real instead of a simulator:
 
 | Counterparty | What it is | When |
 |---|---|---|
-| **Self-play** *(default)* | The **same shared policy** wearing the buyer's hat, with a hidden reservation, rewarded for the buyer's own surplus. The agent improves by negotiating against itself. | Now — the training engine. No buyers required, no human labels. |
+| **Deterministic buyer families** | Reproducible reservation-respecting counterparties used by the current offline gate. | Now — the implemented training/eval substrate. |
+| **Self-play** | The **same shared policy** wearing the buyer's hat, with a hidden reservation, rewarded for the buyer's own surplus. The agent improves by negotiating against itself. | Target — after the reward-seeking buyer hat is wired. |
 | **Human** | A person types **or speaks** the buyer's messages. Same interface, same typed moves — voice is a **LiveKit + Gemini Live** shell (real-time, cross-language Live Translate) that emits the same `BuyerMove`. | Any time — drop in to feel it out, pressure-test it, or sanity-check a generation. |
 | **Live market** | A real buyer via a connector (eBay Best Offer first, **via the eBay API**). The seller's moves become real offers; the reward becomes the real sale. | When a marketplace is wired — the engine is unchanged. |
 
-We self-play **because it's the strongest way to improve and because we don't have live
-buyers yet** — not because the buyer is fake. The buyer is the same intelligence as the
-seller. Swapping in a human or a real marketplace is a policy swap, not a rewrite.
+We are moving toward self-play **because it's the strongest way to improve and because we don't
+have live buyers yet** — not because the buyer should stay scripted. Swapping in a human or a real
+marketplace is a policy swap, not a rewrite.
 
 The seller side is **one policy managing many listings and many buyer threads**. Self-play should
 therefore become one seller policy against a market panel, not a pile of isolated one-buyer games.
@@ -120,11 +122,10 @@ policy* plus a *per-bucket text-lesson table* — **not** a single global tactic
 - **Why not one global `SKILL.md` + 5 knobs:** fixed capacity (BINEVAL — which we cite — shows prompt-opt
   plateaus after 1–2 iters), FIFO forgetting, and one knob-set can't be "hard on a thin-margin lowballer"
   *and* "soft on an eager fat-margin buyer."
-- **How it improves without weights:** group episodes by bucket → target the weakest **with enough
-  support** → propose **one atomic change** (a global knob nudge *or* one lesson) → **promote only if a
-  paired, single-toggle A/B on a *locked, structurally-different* held-out raises surplus with `viol=0`,
-  clears an FDR threshold, and doesn't regress the global policy.** Validated entries are **demotable**
-  (re-audited; evicted if the effect dies) — "monotonic" means performance under a guard, not hoarded noise.
+- **How it improves without weights today:** generate deterministic episodes → propose one atomic knob
+  change → **promote only if a paired A/B on gating seeds raises surplus with `viol=0` and clears
+  `min_support`**. The locked, structurally-different held-out is measured after tuning, not used for
+  selection. FDR, global non-regression, demotion, and text-lesson promotion are the next guardrails.
 - **Retrieval is a table lookup, not vectors.** Structured key → a `dict` / `WHERE bucket=…`, no
   embeddings. pgvector is reserved for *one optional* job (semantic few-shot of past buyer *messages*)
   and only if it beats structured-key exemplars in an A/B.
@@ -182,7 +183,7 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 | `metrics.py` → `reward.py` | verifiable surplus reward + terminal shaping + Tier-1 audit + panel | ✅ |
 | seller policy / buyer policy | the negotiator + the self-play buyer (one shared policy, two contexts) | 🟡 buyer is a passive heuristic today — make it reward-seeking; LLM path **untested** |
 | `optimizer.py` | reflection → lessons, anti-bloat dedup/cap, verifier-rubric feedback | 🟡 LLM path **untested** |
-| `policy.py` (the learned artifact) | hybrid `PolicyStore`: global parametric `KnobPolicy` + per-bucket text lessons; one-atomic-change promotion via paired locked-held-out A/B (min-support + FDR + global non-regression + demotion) | ⬜ |
+| `policy.py` (the learned artifact) | hybrid `PolicyStore`: global parametric `KnobPolicy` + per-bucket text lessons; current loop promotes knob changes by paired gating A/B; FDR/global non-regression/demotion are not wired yet | 🟡 |
 | `market.py` / portfolio state | one seller, multiple listings, parallel buyer threads, first-firm-commitment guard | 🟡 typed state seam + feature tests |
 | optimizer (Antigravity backend) | Gemini managed agent — multi-step sandbox loop improving **one bucket's** lesson fragment per call (stateful env); proposes, never selects (deferred post-MVP) | ⬜ |
 | voice buyer shell | LiveKit room + Gemini Live/Translate → typed `BuyerMove` in the human seat | ⬜ |
@@ -228,9 +229,9 @@ improving*.
 - [ ] **Hybrid `PolicyStore` (the learned artifact):** a global *parametric* knob policy (pooled
       strength) + per-bucket *text lessons*, keyed by a coarse `(margin_band, buyer_type)` (no
       `price_band`; `buyer_type` after K offers). Promote **one atomic change** per generation via a
-      paired single-toggle A/B on a **locked, structurally-different** held-out, with **min-support + FDR
-      + global non-regression + a demotion path**. This is what makes "improves without weight updates"
-      real (not a prompt that plateaus, not a 27-bin table that starves).
+      paired single-toggle A/B on a gating held-out, keep the **locked, structurally-different** held-out
+      for headline measurement only, and add **FDR + global non-regression + a demotion path** before
+      claiming the full statistical guardrail.
 - [ ] **MarketplaceDomain:** one seller policy manages a portfolio: multiple active listings, many buyer
       threads, truthful competing-interest state, bundle opportunities, and first-firm-commitment wins.
       This is the next self-play substrate because BATNA is portfolio state, not a constant.

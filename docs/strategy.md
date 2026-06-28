@@ -49,7 +49,7 @@ Six steps, in order. Each maps to a lever the engine actually has.
 | 1 | **Set up before you haggle** — anchor on target, justify with real comps, reasoning *before* the number | `opening_anchor_ratio`; the listing |
 | 2 | **Read the buyer before countering** — decode the interest behind the number; classify the type | `opponent.infer` → `buyer_type` (after `K_OFFERS`) |
 | 3 | **Probe, don't disclose** — never name your lowest; bounce "what's your lowest?" with a calibrated question | lesson channel (per-bucket text) |
-| 4 | **Hold price, add value, then concede on a shrinking conditional ladder** — never free, never equal steps, stops at floor | `concession_rate` shrinking with `turns_elapsed` |
+| 4 | **Hold price, add value, then concede on a shrinking conditional ladder** — never free, never equal steps, stops at floor | `concession_rate` shaped by `turn_frac` |
 | 5 | **Know your walk line** — BATNA = relist/hold; floor is the wall | `walkaway_patience`; floor |
 | 6 | **Close for commitment, then be generous** — lock it, then give the last small crumb | `accept_ratio`; the final move |
 

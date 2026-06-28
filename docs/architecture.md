@@ -275,9 +275,9 @@ concession curve 27× and starve every cell. The hybrid keeps the wins of both.
 ```python
 class Features(BaseModel):                 # continuous + scale-free, computed per turn
     margin_ratio: float                    # (list - floor) / list
-    reservation_gap: float                 # (current_ask - est_reservation) / list   (from opponent.infer)
-    urgency: float                         # 0..1 time pressure
-    turns_elapsed: int
+    reservation_gap: float = 0.0            # (current_ask - observed buyer offer) / list
+    turn_frac: float = 0.0                  # round_idx / max_turns
+    urgency: float = 0.0                    # 0..1 time pressure
     active_buyers: float = 0.0              # live competing buyer threads for the listing
     best_offer_gap: float = 0.0             # (current_ask - best competing offer) / list
     listing_age: float = 0.0                # normalized days live
@@ -292,15 +292,15 @@ class Knobs(BaseModel):                     # the 5 resolved scalars for one tur
     urgency: bool = False
 
 class KnobPolicy(BaseModel):               # GLOBAL parametric policy — what the optimizer tunes
-    coeffs: dict[str, float] = {}          # feature→weight per knob; bounded; clamped into Knobs ranges
-    def resolve(self, f: Features) -> Knobs: ...   # affine/logistic map → Knobs (shared everywhere)
+    base: Knobs = Field(default_factory=Knobs)
+    coeffs: dict[str, dict[str, float]] = Field(default_factory=dict)  # knob→feature→weight
+    def resolve(self, f: Features) -> Knobs: ...   # affine map → clamped Knobs
 
 # `Strategy` is retained ONLY as the default seed for KnobPolicy.resolve (the 5 constant fallbacks).
 
-def situation_key(item: Item, belief: Belief, turn: int) -> str:
+def situation_key(item: Item, buyer_type: str = "unknown") -> str:
     margin_band = band((item.list_price - item.floor_price) / item.list_price, [.15, .35])  # thin|mid|fat
     # buyer_type is "unknown" until K offers exist — don't route on a t=0 guess (compounding-error fix):
-    buyer_type  = belief.type_label if turn >= K_OFFERS else "unknown"   # lowballer|measured|eager|unknown
     return f"{margin_band}/{buyer_type}"    # price_band dropped — scale-invariant reward ⇒ it added bins, not signal
 
 class Lesson(BaseModel):
@@ -309,14 +309,13 @@ class Lesson(BaseModel):
     # value-attribution comes ONLY from the paired single-toggle gate (NOT accumulated running means):
     gate_delta: float = 0.0                 # held-out surplus Δ (with − without) at promotion time
     support: int = 0                        # # paired held-out seeds behind gate_delta (min-support gate)
-    beta_a: float = 1.0; beta_b: float = 1.0  # DISCOUNTED Thompson (counts decay — opponent is non-stationary)
 
 class BucketPolicy(BaseModel):
-    lessons: list[Lesson] = []              # validated + value-attributed; demotable (not "never evicted")
+    lessons: list[Lesson] = Field(default_factory=list)
 
 class PolicyStore(BaseModel):               # THE learned artifact
-    knobs: KnobPolicy = KnobPolicy()        # global parametric knob policy (shared strength)
-    buckets: dict[str, BucketPolicy] = {}   # per-(margin_band, buyer_type) text lessons
+    knobs: KnobPolicy = Field(default_factory=KnobPolicy)
+    buckets: dict[str, BucketPolicy] = Field(default_factory=dict)
 ```
 
 At inference: compute `Features`, `knobs = policy.knobs.resolve(features)`, resolve the bucket and
@@ -324,8 +323,12 @@ inject **only that bucket's promoted lessons**. Small prompt, specific knowledge
 
 ### How it learns (per generation) — and the statistical guards that make the curve real
 
+Current code implements the minimal durable gate: a greedy paired A/B over gating seeds with
+`min_support` and `viol == 0`. The fuller statistical guardrail below is the design target; do not
+claim FDR, demotion, or global non-regression until those paths exist in `gambit.engine.improve`.
+
 Three reviewers independently flagged that a naive per-bucket A/B would (a) leak the test set, (b)
-lock in false promotions forever, and (c) be underpowered. The gate is built to answer all three:
+lock in false promotions forever, and (c) be underpowered. The target gate answers all three:
 
 1. **Score** every episode with the deterministic verifiable surplus (the only selector).
 2. **Target** the weakest bucket **among buckets with ≥ `MIN_SUPPORT` episodes** (lowest mean surplus;
@@ -334,11 +337,10 @@ lock in false promotions forever, and (c) be underpowered. The gate is built to 
    *or* one candidate lesson for the target bucket — never both in one A/B (so the gain attributes).
 4. **Gate = paired, single-toggle A/B on a *gating* held-out set.** Apply the change to a **shadow**
    `PolicyStore`; re-run the *same* held-out seeds *this generation*, arms differing **only** by the
-   candidate. Promote iff held-out surplus rises **with `viol=0`**, the effect clears an **FDR /
-   Benjamini-Hochberg** threshold across all candidates this generation (no promoting noise), **and**
-   the **global full-policy** held-out score is non-decreasing (per-bucket greedy can't regress the
-   whole). Otherwise discard. Update the lesson's discounted Beta.
-5. **Demote, don't hoard.** Each generation re-audit a sample of promoted lessons on **fresh** gating
+   candidate. Current code promotes iff held-out surplus rises with `viol=0` and enough support.
+   Target guardrail: add **FDR / Benjamini-Hochberg** across candidates and **global full-policy**
+   non-regression before claiming statistical control.
+5. **Demote, don't hoard.** Target behavior: each generation re-audit a sample of promoted lessons on **fresh** gating
    seeds; **evict any whose effect no longer holds** (CI includes 0). "Monotonic" means *performance*
    under a guard, not an ever-growing table of locked-in noise.
 
@@ -353,7 +355,7 @@ This is RL: the parametric knob policy + the lesson table are what's learned; th
 | Failure mode | Global blob | Pure tabular (27 bins) | Hybrid (this design) |
 |---|---|---|---|
 | Capacity / plateau | fixed, BINEVAL plateau | grows but starved | parametric knobs pool strength; lessons grow capacity |
-| Forgetting | FIFO eviction | none, but noise locked in | validated + **demotable** (re-audited) |
+| Forgetting | FIFO eviction | none, but noise locked in | validated entries; demotion is the target re-audit guard |
 | Attribution | bundled, none | per-cell, but noisy | one atomic change/A/B → attributable |
 | Sample efficiency | one global A/B | relearns 27× | shared knob params + coarse buckets |
 | Specificity | one knob-set | per-bucket knobs | per-bucket *lessons*; knobs vary by continuous features |
@@ -393,7 +395,8 @@ RL (*Later*) is what lifts the per-bucket ceiling.
   coarse behaviors): `lowballer→lowballer`, `tire-kicker→lowballer`, `fence-sitter→measured`,
   `in-a-hurry→eager`. `unknown` until `K_OFFERS` buyer offers exist.
 - **Constants (one place):** `K_OFFERS = 2` (offers before routing on `buyer_type`),
-  `MIN_SUPPORT = <power-calc, start 8>` paired seeds to target/promote a bucket, `FDR_Q = 0.10`.
+  `MIN_SUPPORT = <power-calc, start 8>` paired seeds to target/promote a bucket. `FDR_Q = 0.10`
+  is a target guardrail, not implemented in the current greedy gate.
 - **`Item.target_price`** is an *input* (the seller's aspiration), constrained `floor ≤ target ≤ list`;
   the reward uses only `floor`/`list`, so `target` is guidance, not a scoring term.
 - **Metric names (canonical):** **`surplus`** = `(price−floor)/(list−floor)` (vs the secret floor);
@@ -437,7 +440,8 @@ per-bucket lessons — and is deferred to post-MVP (the core claim is proven wit
   runs on **MiniMax**, not the sandbox — so the change returns to the host in the **`OptimizerProposal`**
   JSON (`target_bucket` + one `lesson` — the reliable read-back path; one atomic change, per the
   attribution rule). The host applies it to a **shadow** `PolicyStore.buckets[target_bucket]`, and the
-  **paired held-out A/B gate** (with FDR + global-non-regression) decides promotion. We do *not* read
+  **paired held-out A/B gate** decides promotion. Target guardrails add FDR + global non-regression.
+  We do *not* read
   the file back out of the sandbox — the JSON is the contract; the in-sandbox `.md` is the working copy.
   (The global-`SKILL.md` rewrite is retired — it plateaus and can't attribute gains; see
   [the learned artifact](#the-learned-artifact--a-hybrid-policy-how-a-frozen-model-still-learns).)
@@ -503,7 +507,7 @@ try:
     proposal = OptimizerProposal.model_validate_json(interaction.output_text)
 except ValidationError:
     proposal = await self._local.propose(ctx)     # never blocks a generation on a malformed proposal
-# Host applies the single change to a SHADOW PolicyStore; the paired held-out A/B (FDR + global non-regression) decides promotion.
+# Host applies the single change to a SHADOW PolicyStore; the paired held-out A/B decides promotion.
 ```
 
 ## The negotiation loop is a referee over two `Policy` objects
@@ -562,19 +566,20 @@ smuggled in as the production offline path.
 
 ## Self-play — the pluggable counterparty
 
-The buyer is not a simulator bolted onto a seller. It is the **same self-improving policy wearing
-the buyer's hat**, and it is one of three interchangeable `BuyerPolicy` implementations behind the
-referee:
+The buyer must not remain a simulator bolted onto a seller. The target self-play path is the **same
+self-improving policy wearing the buyer's hat**, behind the same referee seam. Current offline
+training still uses deterministic buyer families while that reward-seeking buyer hat is being built:
 
 | `BuyerPolicy` | What it is | Role |
 |---|---|---|
-| **self-play** *(default)* | the shared seller/buyer policy, given a `BuyerContext` with a hidden reservation, rewarded for `budget − price` | the training engine — improves with no human labels, no live buyers |
+| **deterministic buyer families** | reservation-respecting heuristic counterparties | current offline train/gate substrate |
+| **self-play** | the shared seller/buyer policy, given a `BuyerContext` with a hidden reservation, rewarded for `budget − price` | target training substrate — improves with no human labels, no live buyers |
 | **human** | a person supplies the buyer's `text`/`offer`; the harness wraps it as a `BuyerMove` | drop a human in to try, probe, or sanity-check a generation |
 | **live market** | an eBay (Best Offer) connector maps real buyer offers into `BuyerMove` and seller moves into real offers (`connectors/ebay.py`, Phase 2) | real buyers, real sales — same loop |
 
-We self-play because it is the strongest way to improve **and** because live buyers aren't wired
-yet — not because the buyer is fake. Swapping a human or a marketplace in is a `BuyerPolicy` swap;
-`negotiation.py`, the reward, and the integrity rails do not change.
+We are moving toward self-play because it is the strongest way to improve **and** because live buyers
+aren't wired yet — not because the buyer should stay fake. Swapping a human or a marketplace in is a
+`BuyerPolicy` swap; `negotiation.py`, the reward, and the integrity rails do not change.
 
 ### Why a shared policy (the AlphaZero move)
 
@@ -759,8 +764,8 @@ gambit/
   models.py          # ALL domain types as BaseModel: Item, BuyerPersona, Message, Features,
                      #   Knobs, KnobPolicy, Strategy (knob seed), Lesson, BucketPolicy, PolicyStore,
                      #   Outcome, Episode, Belief (+ field/model validators)
-  policy.py          # the learned artifact: situation_key(), KnobPolicy.resolve(features),
-                     #   PolicyStore get/apply (shadow), paired held-out A/B promotion + FDR + demotion
+  policy.py          # the learned artifact: situation_key(), KnobPolicy.resolve(features), PolicyStore
+                     #   current gate: paired held-out A/B; target gates add FDR + demotion
   eval_harness.py    # offline scorer mounted into the Antigravity sandbox (+ used by the gate)
   agents/
     seller.py        # Agent + SellerMove + output_validator (floor rail)
@@ -792,8 +797,8 @@ scripts/run_demo.py  # entry: logfire.configure() → run loop
 | `chat_json(...)` then `.get()`/`float(...)`/`_clamp(...)` in every caller | `output_type=Model`; `Field(ge=, le=)`; validators |
 | `action = str(data.get("action")).lower()` | `action: Literal["offer","accept","walk"]` |
 | `_enforce_reservation` / floor clamps (manual `if`) | `@agent.output_validator` raising `ModelRetry` |
-| `merge_tactics` dedup + char cap | retired — lessons live per-bucket with value-attribution; demotable (re-audited), not FIFO-evicted |
-| one global `Strategy.tactics` blob + 5 global knobs (plateaus, can't attribute, forgets) | **`PolicyStore`** (hybrid): a global parametric `KnobPolicy` (pooled strength) + per-bucket text `Lesson`s; one atomic change per gen, promoted by a paired locked-held-out A/B with FDR + demotion |
+| `merge_tactics` dedup + char cap | retired — lessons live per-bucket with value-attribution; demotion is a target guardrail, not current code |
+| one global `Strategy.tactics` blob + 5 global knobs (plateaus, can't attribute, forgets) | **`PolicyStore`** (hybrid): a global parametric `KnobPolicy` (pooled strength) + per-bucket text `Lesson`s; current code promotes one atomic knob change through a paired gating A/B |
 | `Settings` dataclass + `os.getenv` | `pydantic-settings.BaseSettings` |
 | `try/except: fall back to heuristic` inside each agent | explicit `Policy` selection at wiring time |
 | no tracing | Logfire spans + `instrument_pydantic_ai` |

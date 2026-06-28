@@ -120,3 +120,19 @@ def test_market_features_ignore_inactive_listings_and_threads():
     assert state.active_threads_for("l1") == []
     with pytest.raises(ValueError, match="inactive"):
         state.features_for_thread("t1", current_ask=95, round_idx=1, max_turns=6)
+
+
+def test_marketplace_state_rejects_inconsistent_external_ids():
+    item = _item()
+    with pytest.raises(ValueError, match="listing key"):
+        MarketplaceState(listings={"l1": ListingState(listing_id="stale", item=item)})
+    with pytest.raises(ValueError, match="thread key"):
+        MarketplaceState(
+            listings={"l1": ListingState(listing_id="l1", item=item)},
+            threads={"t1": BuyerThreadState(thread_id="stale", listing_id="l1")},
+        )
+    with pytest.raises(ValueError, match="unknown listing"):
+        MarketplaceState(
+            listings={"l1": ListingState(listing_id="l1", item=item)},
+            threads={"t1": BuyerThreadState(thread_id="t1", listing_id="missing")},
+        )

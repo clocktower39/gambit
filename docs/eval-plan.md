@@ -36,14 +36,21 @@ counterparties it never trained against, with `viol=0` — no weight updates, no
 The three "done" properties map to sections: **real** → §2 harness + the live-LLM path; **keeps
 improving** → §3b/§4; **trustworthy** → §3a/§5/§6.
 
+**Current implementation status:** `gambit.engine.improve` is a greedy paired A/B over `gate_seeds`
+with `min_support` and `viol == 0`. `scripts/run_offline.py` trains the seller against deterministic
+buyer families and reports one locked transfer panel at the end. FDR, demotion, checkpoint leagues,
+reward-seeking buyer self-play, and the multi-listing `MarketplaceDomain` are target gates, not current
+code.
+
 ## 2. Counterparties & the held-out design (the load-bearing decision)
 
 The negotiation loop is a referee over two policies; eval swaps the *buyer*:
 
 | Buyer | Role in eval |
 |---|---|
-| **Self-play** (shared policy, assigned hidden reservation) | the training engine — generates the signal |
-| **Market panel** (one seller, many buyer threads/listings) | the real self-play substrate — tests BATNA, inventory pressure, bundles, and thread arbitration |
+| **Deterministic buyer families** | current offline training/gating substrate; reproducible and cheap, but not true self-play |
+| **Self-play** (shared policy, assigned hidden reservation) | target training engine once the reward-seeking buyer hat is wired |
+| **Market panel** (one seller, many buyer threads/listings) | target substrate for BATNA, inventory pressure, bundles, and thread arbitration |
 | **Held-out — a *different policy family*** | the truth signal for generalization |
 | **Human / live eBay** | post-MVP; converts "lift in simulation" into lift in reality |
 
@@ -87,7 +94,7 @@ ever sees. Rotate gating seeds across generations so the gate can't memorize the
   one candidate change. **No accumulated running means** (`reward_with`/`reward_without` as lifetime
   averages are confounded by a non-stationary opponent and co-present lessons — don't use them as the
   decision signal).
-- **Metrics / pass:**
+- **Target metrics / pass:**
   1. **Locked-test generational curve:** mean surplus on the **locked final test** is
      monotone-non-decreasing across generations; end > start with bootstrap CI excluding 0.
   2. **One atomic change per A/B:** each generation promotes at most one change per bucket (knob nudge
@@ -100,8 +107,11 @@ ever sees. Rotate gating seeds across generations so the gate can't memorize the
      **full-policy** locked-test score to be non-decreasing post-promotion, not just the bucket's.
   6. **Held-out-Δ sanity:** held-out Δ should be **≤ train Δ**. Held-out climbing faster/higher than
      train signals an *easier* held-out (in-distribution leak), not generalization — fail the run, fix the set.
-- **Method:** run `improve_loop`; for each candidate, score the shadow policy with/without on the same
+- **Target method:** run `improve_loop`; for each candidate, score the shadow policy with/without on the same
   gating seeds; apply FDR; promote survivors; record `gate_delta` + `support`; headline reads the locked set.
+- **Current code:** `improve()` implements the paired gating-seed contrast, min-support, and hard
+  `viol == 0` gate. It does not yet implement FDR, global non-regression, demotion, or lesson promotion.
+  `scripts/run_offline.py` reports the locked panel after tuning; the locked set must not select candidates.
 
 ### c) Coverage growth & targeting
 - **Tested:** the system spends effort where it's weak and broadens over time.
@@ -109,8 +119,11 @@ ever sees. Rotate gating seeds across generations so the gate can't memorize the
   `target_bucket` is among the lowest-surplus buckets ≥ 90% of the time.
 
 ### d) Portfolio / parallel-buyer orchestration
-- **Tested:** one seller policy can manage multiple listings and active buyer threads without
+- **Target:** one seller policy can manage multiple listings and active buyer threads without
   destroying its own BATNA.
+- **Current code:** `MarketplaceState` has typed portfolio state and tests for feature construction /
+  sale finalization. `scripts/play_multiple.py` is an interactive one-listing harness. Neither is wired
+  into `Domain.rollout` or the improvement gate yet.
 - **Metrics / pass:** no double-sales; no fabricated competing-interest claims; first firm commitment
   wins; active competing buyers make the policy firmer; stale inventory / explicit inventory pressure
   makes it more flexible; bundle opportunities improve portfolio reward without below-floor sales.
@@ -174,9 +187,10 @@ gen-0**; if seeded, the curve must climb **past the strong prior** (the credible
 deliberate pushover.
 
 ## 8. Scorecard (report at demo)
-**Gate row (all must PASS — else stop-ship):** `viol=0` (live verifier) on train + held-out + self-play ·
-0 promotions that regress the **locked** test · FDR-controlled, min-support promotions only · 0 dead-effect
-entries left `promoted` (demotion working) · held-out Δ ≤ train Δ.
+**Current gate row (all must PASS — else stop-ship):** `viol=0` on the implemented verifier path ·
+paired gating-seed promotion beats incumbent · `min_support` cleared · locked set is report-only.
+**Target gate row:** live verifier clean on train + held-out + self-play · FDR-controlled promotions ·
+global non-regression · demotion removes dead effects · held-out Δ ≤ train Δ.
 
 **Headline (only meaningful if gates pass):**
 | # | Metric | Target |

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .models import Item
 from .policy import Features
@@ -49,6 +49,21 @@ class MarketplaceState(BaseModel):
     max_listing_age_days: int = Field(default=30, ge=1)
     inventory_pressure: float = Field(default=0.0, ge=0.0, le=1.0)
 
+    @model_validator(mode="after")
+    def _validate_ids(self) -> "MarketplaceState":
+        for listing_id, listing in self.listings.items():
+            if listing.listing_id != listing_id:
+                raise ValueError(f"listing key {listing_id!r} does not match listing_id {listing.listing_id!r}")
+        for thread_id, thread in self.threads.items():
+            if thread.thread_id != thread_id:
+                raise ValueError(f"thread key {thread_id!r} does not match thread_id {thread.thread_id!r}")
+            if thread.listing_id not in self.listings:
+                raise ValueError(f"thread {thread_id!r} references unknown listing {thread.listing_id!r}")
+            unknown_interests = [lid for lid in thread.interested_listing_ids if lid not in self.listings]
+            if unknown_interests:
+                raise ValueError(f"thread {thread_id!r} references unknown interested listings {unknown_interests!r}")
+        return self
+
     def active_threads_for(self, listing_id: str) -> list[BuyerThreadState]:
         listing = self.listings.get(listing_id)
         if listing is None or listing.status != "active":
@@ -86,14 +101,15 @@ class MarketplaceState(BaseModel):
         if listing.status != "active" or thread.status != "active":
             raise ValueError("cannot build pricing features for an inactive listing/thread")
         item = listing.item
-        best_other_offer = self.best_offer_for(listing.listing_id, exclude_thread_id=thread_id)
+        listing_id = thread.listing_id
+        best_other_offer = self.best_offer_for(listing_id, exclude_thread_id=thread_id)
         best_offer_gap = 0.0 if best_other_offer is None else (current_ask - best_other_offer) / item.list_price
         reservation_gap = 0.0 if thread.current_offer is None else (current_ask - thread.current_offer) / item.list_price
         return Features(
             margin_ratio=item.margin_ratio,
             reservation_gap=reservation_gap,
             turn_frac=round_idx / max(max_turns, 1),
-            active_buyers=float(max(0, len(self.active_threads_for(listing.listing_id)) - 1)),
+            active_buyers=float(max(0, len(self.active_threads_for(listing_id)) - 1)),
             best_offer_gap=best_offer_gap,
             listing_age=listing.days_live / self.max_listing_age_days,
             inventory_pressure=self.inventory_pressure,
