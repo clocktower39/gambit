@@ -238,7 +238,7 @@ def test_llm_accept_binds_to_table_price(monkeypatch):
     item = _item(floor_price=80, list_price=100, target_price=90)
     # the model tries to close at an inflated, self-named price regardless of the table
     monkeypatch.setattr(agents, "_ask",
-                        lambda agent, prompt: agents.AgentMove(text="deal!", action="accept", offer=999))
+                        lambda agent, prompt, **_kw: agents.AgentMove(text="deal!", action="accept", offer=999))
 
     seller = agents.LLMSeller()
     # buyer's standing offer is 85 → a seller accept closes at 85, not the model's 999

@@ -8,8 +8,11 @@ side against a heuristic one — the referee never learns which is which (that's
 Each side sees ONLY its own private information: the seller knows the secret floor (and must
 never reveal or sell below it); the buyer knows its hidden budget (and is additionally bounded
 by the `enforce_reservation` hard rail, so a silver-tongued seller can't talk it over budget).
-We deliberately do NOT clamp the seller to the floor — a below-floor seller move is the very
-integrity signal `audit_episode` exists to catch.
+The seller carries the symmetric rail (architecture.md, the four-agents table): a floor-aware
+`output_validator` raises `ModelRetry` on any below-floor offer/accept so the model self-corrects
+(re-price or walk) instead of cheating, and `_move` refuses a below-floor *accept* (the table price
+can be under the floor even when the model didn't name a number) by holding the line. `audit_episode`
+remains the deterministic backstop that measures any breach that still slips through.
 
 `run_episode` is synchronous but `Agent.run` is async, so these policies bridge async→sync via
 `asyncio.run` per move. That makes them safe to call from a sync top-level (the live runner) but
@@ -56,7 +59,10 @@ def _run_sync(coro):
         return pool.submit(lambda: asyncio.run(coro)).result()
 
 
-def _ask(agent, prompt: str, attempts: int = 5) -> AgentMove:
+_SELLER_TEMP = 0.2   # low temperature: cut sampling variance so paired A/B comparisons are less noisy
+
+
+def _ask(agent, prompt: str, attempts: int = 5, deps=None) -> AgentMove:
     """Get one structured move, retrying a FRESH call on M3's intermittent endpoint flakiness.
 
     M3 over the Anthropic-compat endpoint fails two transient ways: (1) it leaks native tool-call
@@ -64,7 +70,8 @@ def _ask(agent, prompt: str, attempts: int = 5) -> AgentMove:
     returns a response whose `content` is null, which pydantic_ai's Anthropic adapter then iterates —
     `TypeError: 'NoneType' object is not iterable`. Both clear on a clean retry, so we re-call a few
     times with a short backoff. `output_retries` only covers (1) within a conversation; this catches
-    both with fresh calls before surfacing the failure honestly (never fabricate a move)."""
+    both with fresh calls before surfacing the failure honestly (never fabricate a move). `deps` carries
+    per-run context to the agent's output validator (the seller passes its secret floor)."""
     import time as _time
 
     from pydantic_ai.exceptions import UnexpectedModelBehavior
@@ -72,7 +79,7 @@ def _ask(agent, prompt: str, attempts: int = 5) -> AgentMove:
     last: Exception | None = None
     for i in range(attempts):
         try:
-            return _run_sync(agent.run(prompt)).output
+            return _run_sync(agent.run(prompt, deps=deps)).output
         except (UnexpectedModelBehavior, TypeError) as e:
             last = e
             _time.sleep(0.4 * (i + 1))      # brief backoff for transient endpoint hiccups / rate blips
@@ -114,15 +121,30 @@ class LLMSeller:
         self._agent = None  # lazily built so construction stays cheap / offline-safe
 
     def _build_agent(self):
-        from pydantic_ai import Agent
+        from pydantic_ai import Agent, ModelRetry, RunContext
 
         system = _SELLER_SYSTEM
         if self._lessons:
             # Promoted lessons are advisory tactics, appended so the integrity rails above stay primary.
             system += "\n\nLessons from past negotiations:\n" + "\n".join(f"- {x}" for x in self._lessons)
-        # retries on output > 1: M3 occasionally emits a malformed tool-call instead of clean JSON;
-        # an in-conversation re-prompt usually recovers, so we'd rather retry than fail an episode.
-        return Agent(model_for("chat"), output_type=AgentMove, system_prompt=system, retries={"output": 3})
+        # deps_type=float carries the secret floor to the output validator; low temperature cuts
+        # variance; retries cover M3's occasional malformed tool-call AND the validator's ModelRetry.
+        agent = Agent(model_for("chat"), output_type=AgentMove, deps_type=float, system_prompt=system,
+                      model_settings={"temperature": _SELLER_TEMP}, retries={"output": 4})
+
+        @agent.output_validator
+        def _floor_rail(ctx: RunContext[float], out: AgentMove) -> AgentMove:
+            # Integrity rail (architecture.md): the seller may NEVER offer/accept below its floor.
+            # Reject a model-named below-floor price → ModelRetry, so it re-prices or walks rather than cheat.
+            floor = ctx.deps
+            if out.action in ("offer", "accept") and out.offer is not None and out.offer < floor - 1e-6:
+                raise ModelRetry(
+                    f"Your move would {out.action} at ${out.offer:.0f}, BELOW your secret floor ${floor:.0f}. "
+                    f"Never go below the floor. Counter at or above ${floor:.0f}, or walk away."
+                )
+            return out
+
+        return agent
 
     @property
     def agent(self):
@@ -130,15 +152,20 @@ class LLMSeller:
             self._agent = self._build_agent()
         return self._agent
 
-    def _move(self, prompt: str, *, accept_price: float) -> Move:
-        out = _ask(self.agent, prompt)
-        # Integrity rail: an accept ALWAYS closes at the price ON THE TABLE, never one the model
-        # self-names. Otherwise an LLM seller could emit action="accept", offer=list_price on turn 1
-        # and close above the buyer's standing offer with no consent — uncaught reward inflation that
-        # Tier-1 can't see (the accept's own price is "in the transcript"). Offers stay verbatim so the
-        # below-floor audit still catches a cheating seller.
-        offer = accept_price if out.action == "accept" else out.offer
-        return Move(role="seller", text=out.text, action=out.action, offer=offer, reasoning=out.reasoning)
+    def _move(self, prompt: str, *, floor: float, accept_price: float, hold_price: float) -> Move:
+        out = _ask(self.agent, prompt, deps=floor)
+        if out.action == "accept":
+            # An accept ALWAYS closes at the price ON THE TABLE, never one the model self-names (that
+            # would be uncaught reward inflation Tier-1 can't see). And if that table price is below the
+            # floor, REFUSE the accept and hold the line — the seller must not close below the wall even
+            # when the model didn't name a sub-floor number.
+            if accept_price < floor - 1e-6:
+                return Move(role="seller", action="offer", offer=hold_price,
+                            text="That's below what I can do — I'll hold here for now.",
+                            reasoning="floor rail: refused a below-floor accept")
+            return Move(role="seller", action="accept", offer=accept_price, text=out.text, reasoning=out.reasoning)
+        # offer / walk pass through (the output validator already kept any offer at/above floor).
+        return Move(role="seller", action=out.action, offer=out.offer, text=out.text, reasoning=out.reasoning)
 
     def opening(self, item: Item) -> Move:
         prompt = (
@@ -147,7 +174,8 @@ class LLMSeller:
             f"This is your OPENING move — the buyer has not spoken yet. Round 0 of {self.max_turns}.\n"
             "State your opening ask as a single move."
         )
-        return self._move(prompt, accept_price=item.list_price)  # accept-on-open is degenerate; backstop only
+        # accept-on-open is degenerate; list_price is a safe backstop for both accept and hold.
+        return self._move(prompt, floor=item.floor_price, accept_price=item.list_price, hold_price=item.list_price)
 
     def respond(self, item: Item, current_ask: float, buyer_offer: float | None, round_idx: int) -> Move:
         prompt = (
@@ -159,9 +187,10 @@ class LLMSeller:
             f"- Round {round_idx} of {self.max_turns}.\n"
             "Respond with a single move (offer a new ask, accept, or walk)."
         )
-        # An accept closes at the buyer's standing offer (never above our own ask), else our ask.
+        # An accept closes at the buyer's standing offer (never above our own ask), else our ask;
+        # hold at the current ask (above floor) if the model tries to accept below the floor.
         accept_price = min(buyer_offer, current_ask) if buyer_offer is not None else current_ask
-        return self._move(prompt, accept_price=accept_price)
+        return self._move(prompt, floor=item.floor_price, accept_price=accept_price, hold_price=current_ask)
 
 
 class LLMBuyer:
