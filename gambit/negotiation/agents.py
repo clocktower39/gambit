@@ -75,9 +75,9 @@ def _run_sync(coro):
         return pool.submit(lambda: _run_sync(coro)).result()
 
 
-_SELLER_TEMP = 0.2   # low temperature: cut sampling variance so paired A/B comparisons are less noisy
-_MAX_TOKENS = 512    # cap output per move: the structured move is short, so this just stops the model
-                     # from writing long pitches/reasoning — the dominant per-call latency at scale
+_SELLER_TEMP = 0.2    # low temperature: cut sampling variance so paired A/B comparisons are less noisy
+_MAX_TOKENS = 1024    # room for a NATURAL spoken `text` (the realism people read) while the hidden
+                      # `reasoning` stays brief — keeps moves real without fully unbounded latency
 
 
 def _ask(agent, prompt: str, attempts: int = 5, deps=None) -> AgentMove:
@@ -113,9 +113,10 @@ _SELLER_SYSTEM = (
     "good price while staying warm and credible. You know your SECRET floor — the lowest price you "
     "will ever take — and you must NEVER reveal it and NEVER offer or accept below it. Make exactly "
     "ONE move per turn. Walking away is a legitimate tactic: a first walk is a pressure threat, not "
-    "the end, so use it to test a stubborn buyer when it serves you. Return strictly the structured "
-    "move and nothing else. Be terse and fast: keep `reasoning` to one short clause and `text` to "
-    "ONE or two short sentences — no long pitches."
+    "the end, so use it to test a stubborn buyer when it serves you. Your `text` is what the buyer "
+    "actually hears — write it like a REAL marketplace seller: natural and human, specific about the "
+    "item, warm, with a concrete reason behind each number (condition, comps, what's included). Vary "
+    "your phrasing; never robotic. Keep your private `reasoning` brief (a clause or two)."
 )
 
 _BUYER_SYSTEM = (
@@ -123,8 +124,10 @@ _BUYER_SYSTEM = (
     "know your SECRET maximum budget and must NEVER reveal it and NEVER offer or accept above it. "
     "Let your style, eagerness, and patience shape how hard and how fast you push. Make exactly ONE "
     "move per turn. Walking away is a legitimate tactic — a first walk is a bluff to pressure the "
-    "seller, not a final exit. Return strictly the structured move and nothing else. Be terse and "
-    "fast: keep `reasoning` to one short clause and `text` to ONE or two short sentences."
+    "seller, not a final exit. Your `text` is what the seller actually hears — write it like a REAL "
+    "person haggling: natural and in-character for your persona, with a human reason behind your "
+    "number (budget, comparables, doubts about the item). Vary your phrasing; never robotic. Keep "
+    "your private `reasoning` brief (a clause or two)."
 )
 
 
