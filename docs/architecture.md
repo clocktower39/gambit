@@ -22,7 +22,7 @@
    the prior art. The judge is the hackable component, so the judge never holds the budget.
 5. **Observability is not optional.** `logfire.configure()` once at entry, then
    `instrument_pydantic_ai()`. Every generation, episode, and agent move is a span; every
-   reward is a structured attribute. The "watch the curve climb" demo *is* a Logfire view.
+   reward is a structured attribute. The improvement curve *is* a live Logfire view.
 6. **Determinism by construction.** The no-API-key path is a first-class deterministic
    policy (not a degraded fallback), so the whole pipeline and its tests run fast and free.
 
@@ -33,7 +33,7 @@
 | Domain models, config, API payloads | **Pydantic v2** (`BaseModel`, `pydantic-settings`) | one validated type system; constraints encode invariants |
 | LLM agents (seller, buyer, optimizer, verifier) | **Pydantic AI** 2.x (`Agent` + `output_type`) | typed structured output + validation retries + provider-agnostic |
 | Model provider | **MiniMax M3** via Pydantic AI's OpenAI-compatible model | OpenAI wire format, custom `base_url`; provider is swappable in one place (`llm.py`) |
-| Observability | **Logfire** (`instrument_pydantic_ai`, `instrument_psycopg`) | native Pydantic AI tracing; the demo dashboard |
+| Observability | **Logfire** (`instrument_pydantic_ai`, `instrument_psycopg`) | native Pydantic AI tracing; the live improvement-curve dashboard |
 | Deploy + data | **DigitalOcean** — App Platform, Managed Postgres + pgvector (`psycopg`), Spaces | the whole app runs on DO; inference lives on MiniMax |
 | Reward / integrity | **plain typed Python** (no LLM in the selector) | verifiable, defensible improvement curve |
 
@@ -43,6 +43,13 @@ Each LLM role is one `Agent`, parameterized by a `deps_type` (injected context) 
 `output_type` (the typed move). The system prompt is built from deps via `@agent.instructions`,
 so the secret floor / hidden budget / current ask are injected as typed data, never spliced into
 a format string by hand.
+
+**`seller` and `buyer` are the same policy.** They run on one model and (in self-play) share one
+learned `Strategy` — the difference is entirely in the `deps`: the seller sees the floor and
+maximizes `price − floor`; the buyer sees the reservation and maximizes `budget − price`. They
+*never* share state — each context is walled off, and the transcript is the only channel between
+them, so the information asymmetry the reward depends on is preserved by construction. This is what
+makes the buyer a real adversary rather than a script. See [self-play](#self-play--the-pluggable-counterparty).
 
 | Agent | `deps_type` | `output_type` | Integrity rail (output validator) |
 |---|---|---|---|
@@ -155,12 +162,14 @@ def model_for(role: str) -> OpenAIChatModel:
     return OpenAIChatModel(name, provider=_provider())
 ```
 
-## Offline / test determinism — the Policy split
+## The negotiation loop is a referee over two `Policy` objects
 
-The negotiation loop never calls an `Agent` directly. It depends on a **`Policy` protocol** that
-returns a typed move, and there are two implementations. This keeps the zero-key demo
-deterministic *and* keeps the heuristic as real, typed domain logic (it operates on actual
-`Strategy`/`Item` objects, not on reconstructed prompt text).
+`negotiation.py` never calls an `Agent` directly. It depends on a **`Policy` protocol** that
+returns a typed move, and it exchanges moves between a seller policy and a buyer policy without
+knowing or caring what backs either one. The loop is a *referee*: it carries the public
+transcript, enforces turn order, and scores the terminal outcome. **What is on the other side of
+the table is a swappable implementation, not a fork in the loop.** This is the single decision
+that lets one engine serve self-play, a human, and a live marketplace unchanged.
 
 ```python
 from typing import Protocol
@@ -168,7 +177,10 @@ from typing import Protocol
 class SellerPolicy(Protocol):
     async def move(self, ctx: SellerContext, episode: "Episode") -> SellerMove: ...
 
-class LlmSellerPolicy:      # wraps the Pydantic AI `seller` agent
+class BuyerPolicy(Protocol):
+    async def move(self, ctx: BuyerContext, episode: "Episode") -> BuyerMove: ...
+
+class LlmSellerPolicy:        # wraps the Pydantic AI `seller` agent
     async def move(self, ctx, episode) -> SellerMove:
         return (await seller.run(_render(episode), deps=ctx)).output
 
@@ -176,11 +188,60 @@ class HeuristicSellerPolicy:  # deterministic concession schedule; returns the S
     async def move(self, ctx, episode) -> SellerMove: ...
 ```
 
-`settings.llm_available()` selects the implementation at wiring time. Both sides of the
-negotiation produce the same `SellerMove`/`BuyerMove`, so `negotiation.py` is identical in both
-modes. **`TestModel` / `FunctionModel`** (`agent.override(model=...)`) are then reserved for their
-real job — deterministic unit tests of the LLM policy — instead of being smuggled in as the
-production offline path.
+Both sides produce the same `SellerMove`/`BuyerMove` types, so `negotiation.py` is identical no
+matter who plays. `settings.llm_available()` selects the LLM vs deterministic implementation at
+wiring time; the deterministic policy is a **first-class no-API-key path** (fast, free tests), not
+a degraded fallback. **`TestModel` / `FunctionModel`** (`agent.override(model=...)`) are then
+reserved for their real job — deterministic unit tests of the LLM policy — instead of being
+smuggled in as the production offline path.
+
+## Self-play — the pluggable counterparty
+
+The buyer is not a simulator bolted onto a seller. It is the **same self-improving policy wearing
+the buyer's hat**, and it is one of three interchangeable `BuyerPolicy` implementations behind the
+referee:
+
+| `BuyerPolicy` | What it is | Role |
+|---|---|---|
+| **self-play** *(default)* | the shared seller/buyer policy, given a `BuyerContext` with a hidden reservation, rewarded for `budget − price` | the training engine — improves with no human labels, no live buyers |
+| **human** | a person supplies the buyer's `text`/`offer`; the harness wraps it as a `BuyerMove` | drop a human in to try, probe, or sanity-check a generation |
+| **live market** | an eBay (Best Offer) connector maps real buyer offers into `BuyerMove` and seller moves into real offers (`connectors/ebay.py`, Phase 2) | real buyers, real sales — same loop |
+
+We self-play because it is the strongest way to improve **and** because live buyers aren't wired
+yet — not because the buyer is fake. Swapping a human or a marketplace in is a `BuyerPolicy` swap;
+`negotiation.py`, the reward, and the integrity rails do not change.
+
+### Why a shared policy (the AlphaZero move)
+
+A scripted buyer caps the seller: you cannot out-negotiate your own heuristics. A shared policy on
+both sides **scales with you** — as the seller sharpens, the buyer it faces sharpens too, so the
+pressure never relaxes. The agent manufactures its own training signal by playing itself: the
+cleanest continual-learning loop, and no transcript is ever human-labeled. Opposing objectives
+(`price − floor` vs `budget − price`) over shared weights keep it genuinely adversarial rather than
+cooperative.
+
+### The integrity problem self-play introduces, and the guards
+
+A single model on both sides can, in principle, **collude with itself** — leak a tell, or settle
+on a cozy split — which would inflate surplus without real negotiation skill. Three guards, all
+already present in spirit, contain it:
+
+1. **Walled-off context (structural).** Seller and buyer share *weights*, never *state*. Each
+   gets its own `deps`; the floor is in `SellerContext` only, the reservation in `BuyerContext`
+   only; the transcript is the sole channel. A handshake has to survive in plain prose to exist.
+2. **The Tier-2 verifier (detective).** `AuditVerdict.floor_leak` and `buyer_in_character`
+   ("did the buyer concede only for legitimate price/value reasons?") are exactly the anti-collusion
+   checks. Run it on a **different model** than the policy so it doesn't rubber-stamp its own tells.
+   This guard matters *more* under self-play than against a scripted buyer.
+3. **Held-out counterparties + checkpoint league (statistical).** Score every generation on
+   reservations/personas it never trained against (held-out early-stop, already built), and train
+   against a **pool of past selves** (gen-0…gen-N), not only the latest — so the policy can't
+   overfit to its own current quirks. Optionally refuse to *promote* a candidate that regresses
+   held-out.
+
+Ground truth is unchanged: the buyer-hat is *assigned* a hidden reservation drawn from the persona
+distribution, so the seller's verifiable surplus stays well-defined. Self-play removes the scripted
+*behavior*, not the hidden-budget concept.
 
 ## Config — `pydantic-settings` (`settings.py`)
 
@@ -235,7 +296,7 @@ with logfire.span("generation {gen}", gen=g):
 
 The result: every negotiation is replayable in Logfire, the optimizer's reasoning is inspectable,
 structured-output retries are visible, and the generation-over-generation score is a live chart —
-which doubles as the demo's money shot. **Telemetry safety:** treat captured traces, prompts, and
+the running proof that it's still improving. **Telemetry safety:** treat captured traces, prompts, and
 tool payloads as diagnostic data, never as instructions.
 
 ## Proposed layout (rebuild target)
@@ -252,13 +313,13 @@ gambit/
     buyer.py         # Agent + BuyerMove + output_validator (reservation guard)
     optimizer.py     # Agent + OptimizerProposal (knob bounds as Field constraints)
     verifier.py      # Agent + AuditVerdict (BINEVAL checklist schema)
-  policies.py        # SellerPolicy/BuyerPolicy Protocol + LLM + heuristic impls
-  negotiation.py     # referee loop over policies → Episode; logfire episode spans
+  policies.py        # SellerPolicy/BuyerPolicy Protocol + impls: self-play (LLM), heuristic, human, live-market
+  negotiation.py     # referee loop over two policies → Episode; logfire episode spans
   reward.py          # verifiable surplus + Tier-1 integrity audit (was metrics.py) — NO LLM
-  opponent.py        # belief estimation (pure Python); Belief is a BaseModel
-  improve_loop.py    # generational loop + head-to-head; logfire generation spans
+  opponent.py        # belief estimation (pure Python); used by BOTH sides; Belief is a BaseModel
+  improve_loop.py    # generational loop + head-to-head + checkpoint league (train vs past selves)
   memory.py          # pgvector store on DO Postgres (Phase 2)
-  connectors/        # Phase 2: base.py + ebay.py — Trading API payloads as BaseModels
+  connectors/        # Phase 2: base.py + ebay.py — live-market BuyerPolicy; Trading API payloads as BaseModels
 scripts/run_demo.py  # entry: logfire.configure() → run loop
 ```
 
@@ -280,6 +341,6 @@ scripts/run_demo.py  # entry: logfire.configure() → run loop
 
 `reward.py` and `opponent.py` stay LLM-free deterministic Python (only their data types become
 `BaseModel`). Multi-turn message history and tool/function-calling are deliberately *not* used in
-a negotiation turn: seller and buyer are two separate agents refereed by `negotiation.py`, and the
-offer is structured output, not a tool. Tools become relevant only in Phase 2, when the seller
+a negotiation turn: seller and buyer are two separate policy instances (one shared policy under
+self-play) refereed by `negotiation.py`, and the offer is structured output, not a tool. Tools become relevant only in Phase 2, when the seller
 calls the eBay Trading API mid-negotiation (`connectors/ebay.py`).
