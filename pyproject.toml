@@ -5,11 +5,13 @@ description = "Gambit — a self-improving auto-negotiator (AI Engineer World's 
 requires-python = ">=3.11"
 dependencies = [
     "pydantic-ai",            # typed agents + validated structured output; MiniMax M3 (OpenAI-compatible)
+    "pydantic-evals",         # dataset/evaluator harness for the M0 spike + (later) the regression suite
     "pydantic-settings>=2.0", # config from env/.env, validated at import
     "logfire[psycopg]>=2.0",  # observability — Pydantic AI tracing is built into logfire core; psycopg extra for DB tracing
     "python-dotenv>=1.0",     # backs pydantic-settings' env_file=".env" loading
     "psycopg[binary]>=3.1",   # DO Postgres (Tier 2)
     "pgvector>=0.2.5",        # pgvector memory (Tier 2)
+    "anthropic>=0.111.0",
 ]
 
 [dependency-groups]

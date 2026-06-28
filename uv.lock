@@ -12,7 +12,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-06-21T07:47:19.332726Z"
+exclude-newer = "2026-06-21T08:31:24.426192Z"
 exclude-newer-span = "P1W"
 
 [[package]]
@@ -963,10 +963,12 @@ name = "gambit"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "anthropic" },
     { name = "logfire", extra = ["psycopg"] },
     { name = "pgvector" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pydantic-ai" },
+    { name = "pydantic-evals" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
 ]
@@ -985,10 +987,12 @@ feature-layer = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anthropic", specifier = ">=0.111.0" },
     { name = "logfire", extras = ["psycopg"], specifier = ">=2.0" },
     { name = "pgvector", specifier = ">=0.2.5" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "pydantic-ai" },
+    { name = "pydantic-evals" },
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
 ]

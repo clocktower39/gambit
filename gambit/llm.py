@@ -1,32 +1,33 @@
-"""MiniMax-M3 wired through Pydantic AI's NATIVE Anthropic model.
+"""MiniMax-M3 model factory for Pydantic AI, via the Anthropic-compatible endpoint.
 
-MiniMax ships an Anthropic-compatible endpoint, so we use Pydantic AI's `AnthropicModel`
-(native Anthropic Messages wire format: thinking blocks, tool-use — which is how Pydantic AI
-enforces `output_type`) pointed at MiniMax's `base_url`, *not* the OpenAI-compat shim.
-
-The provider lives here only. Swapping MiniMax for real Anthropic — or any other
-Anthropic-compatible host — is a one-line `base_url` change in settings.
+The provider lives in exactly one place, so swapping the host (or pointing at the China
+endpoint) is a one-line/.env change. Built once and cached.
 """
 
 from __future__ import annotations
 
 from functools import lru_cache
 
-from anthropic import AsyncAnthropic
-from pydantic_ai.models.anthropic import AnthropicModel
-from pydantic_ai.providers.anthropic import AnthropicProvider
-
 from gambit.settings import settings
 
 
 @lru_cache(maxsize=1)
-def _provider() -> AnthropicProvider:
-    # Build the Anthropic client ourselves so base_url is set the same way across SDK versions.
+def _provider():
+    from anthropic import AsyncAnthropic
+    from pydantic_ai.providers.anthropic import AnthropicProvider
+
+    # MiniMax speaks the Anthropic wire format at a custom base_url; pass a configured client.
     client = AsyncAnthropic(api_key=settings.minimax_api_key, base_url=settings.minimax_base_url)
     return AnthropicProvider(anthropic_client=client)
 
 
-def model_for(role: str = "chat") -> AnthropicModel:
-    """Return the MiniMax model for a role: 'chat' (seller/optimizer), 'buyer', or 'verifier'."""
-    name = settings.verifier_model or settings.minimax_model if role == "verifier" else settings.minimax_model
+def model_for(role: str):
+    """Return the Pydantic AI model for a role: 'chat' | 'buyer' | 'verifier'."""
+    from pydantic_ai.models.anthropic import AnthropicModel
+
+    name = {
+        "chat": settings.minimax_model,
+        "buyer": settings.minimax_model,
+        "verifier": settings.verifier_model_id,
+    }[role]
     return AnthropicModel(name, provider=_provider())
