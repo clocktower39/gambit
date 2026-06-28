@@ -67,7 +67,7 @@ def main() -> None:
     for r in rows:
         viol = int(r.get("locked_viol", 0))
         if viol > 0:
-            dirty.append(r.get("gen"))
+            dirty.append(r.get("gen", 0))
         print(f"{r.get('gen', 0):>4} | {r.get('locked_reward', 0.0):>+13.3f} | "
               f"{r.get('locked_skill', 0.0):>+12.3f} | {viol:>4} | {r.get('n_lessons', 0):>7} | "
               f"{'y' if r.get('promoted') else 'n'}")
