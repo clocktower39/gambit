@@ -235,7 +235,9 @@ numeric part is sample-efficient and the textual part stays interpretable:
    the interpretable, diffable, Antigravity-editable channel — the part a human (or the managed agent)
    can read and the part that carries situation-specific tactics a scalar can't.
 
-The frozen LLM executes; the knob policy + lesson table are what learn.
+The frozen LLM executes; the knob policy + lesson table are what learn. **The cold-start content for
+both — the `KnobPolicy`'s expected shape and the per-bucket starter lessons, plus the hard red lines —
+is the negotiation doctrine in [`strategy.md`](./strategy.md)** (distilled from the 7-book playbook).
 
 **Why not one global `SKILL.md` + 5 global knobs** (the retired design): a single prompt has fixed
 capacity — BINEVAL (arXiv:2606.27226, which we cite) finds prompt-opt gains collapse after 1–2 iters

@@ -137,7 +137,8 @@ gambit/
   improve_loop.py  # generational learning loop + head-to-head (Logfire generation spans)
   connectors/      # Phase 2: eBay API connector (payloads as BaseModels)
 scripts/run_demo.py
-docs/architecture.md  # engineering design & approach
+docs/architecture.md  # engineering design & approach (how it learns)
+docs/strategy.md      # negotiation doctrine & rules of engagement (what the agent does) + cold-start prior
 docs/self-learning.md # research grounding (which paper buys what)
 docs/eval-plan.md     # how we prove it works & keeps improving (safety vs transferable validity)
 docs/ebay.md          # Phase-2 eBay connector runbook

@@ -271,7 +271,8 @@ improving*.
   in `docs/playbook/` — literature we read *around* the system. "Zero human labeling" is a property of
   the **reward signal** (verifiable surplus, no labeled transcripts), **not** of the initialization —
   so seeding a bucket's starter lessons from the playbook is a *prior*, like giving AlphaZero the rules,
-  not a label. The stronger claim is "it improves *past a strong prior*," not "past a deliberate
+  not a label. The distilled doctrine + the per-bucket starter lessons + the red lines are written up in
+  [`docs/strategy.md`](docs/strategy.md). The stronger claim is "it improves *past a strong prior*," not "past a deliberate
   pushover." Optional, off by default; the reward + held-out gate still decide what survives, so the
   integrity wall is untouched.
 - **Repo:** https://github.com/clocktower39/gambit (public).
