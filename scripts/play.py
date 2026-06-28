@@ -333,6 +333,25 @@ def _safe_run(agent: Agent, task: str, deps, who: str, *, typing_label: str | No
                          reasoning=f"agent error: {type(e).__name__}: {e}")
 
 
+def _agent_move(am: AgentMove, role: str, standing: float | None, *,
+                floor: float | None = None, budget: float | None = None) -> Move:
+    """Map an AgentMove to a domain Move. An 'accept' binds to the price the OTHER side actually put
+    on the table (`standing`) — never a number the accepter names — so a deal can't close at a price
+    the counterparty never offered. If the agent 'accepts' but names a *different* price it really
+    meant a counter, so emit an offer. Floor/budget keep any accept legal."""
+    if am.action == "accept":
+        if standing is None:                                       # nothing on the table → treat as a counter/hold
+            return Move(role=role, action="offer", offer=am.offer, text=am.text, reasoning=am.reasoning)
+        if am.offer is not None and abs(am.offer - standing) > 1e-6:   # named its own number → a counter, not an accept
+            return Move(role=role, action="offer", offer=am.offer, text=am.text, reasoning=am.reasoning)
+        if floor is not None and standing < floor:                # seller can't accept below floor → hold at floor
+            return Move(role=role, action="offer", offer=floor, text=am.text, reasoning=am.reasoning)
+        if budget is not None and standing > budget:              # buyer can't accept above budget → hold at budget
+            return Move(role=role, action="offer", offer=budget, text=am.text, reasoning=am.reasoning)
+        return Move(role=role, action="accept", offer=standing, text=am.text, reasoning=am.reasoning)
+    return Move(role=role, action=am.action, offer=am.offer, text=am.text, reasoning=am.reasoning)
+
+
 # --- the four seats -----------------------------------------------------------------------
 
 class LlmSeller(_Seat):
@@ -367,8 +386,7 @@ class LlmSeller(_Seat):
             am = _safe_run(seller_agent, "Make your move.",
                            self._deps(item, current_ask, buyer_offer, round_idx), "seller",
                            typing_label="Seller")
-            return self._commit(Move(role="seller", action=am.action, offer=am.offer,
-                                     text=am.text, reasoning=am.reasoning), span=span)
+            return self._commit(_agent_move(am, "seller", buyer_offer, floor=item.floor_price), span=span)
 
 
 class LlmBuyer(_Seat):
@@ -387,8 +405,7 @@ class LlmBuyer(_Seat):
                                      current_offer=current_offer, round_idx=round_idx,
                                      max_rounds=self.max_turns, transcript=_render(self.log)), "buyer",
                            typing_label="Buyer")
-            return self._commit(Move(role="buyer", action=am.action, offer=am.offer,
-                                     text=am.text, reasoning=am.reasoning), span=span)
+            return self._commit(_agent_move(am, "buyer", seller_ask, budget=budget), span=span)
 
 
 def _ask(prompt: str) -> str | None:
