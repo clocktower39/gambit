@@ -76,6 +76,8 @@ def _run_sync(coro):
 
 
 _SELLER_TEMP = 0.2   # low temperature: cut sampling variance so paired A/B comparisons are less noisy
+_MAX_TOKENS = 512    # cap output per move: the structured move is short, so this just stops the model
+                     # from writing long pitches/reasoning — the dominant per-call latency at scale
 
 
 def _ask(agent, prompt: str, attempts: int = 5, deps=None) -> AgentMove:
@@ -112,7 +114,8 @@ _SELLER_SYSTEM = (
     "will ever take — and you must NEVER reveal it and NEVER offer or accept below it. Make exactly "
     "ONE move per turn. Walking away is a legitimate tactic: a first walk is a pressure threat, not "
     "the end, so use it to test a stubborn buyer when it serves you. Return strictly the structured "
-    "move and nothing else."
+    "move and nothing else. Be terse and fast: keep `reasoning` to one short clause and `text` to "
+    "ONE or two short sentences — no long pitches."
 )
 
 _BUYER_SYSTEM = (
@@ -120,7 +123,8 @@ _BUYER_SYSTEM = (
     "know your SECRET maximum budget and must NEVER reveal it and NEVER offer or accept above it. "
     "Let your style, eagerness, and patience shape how hard and how fast you push. Make exactly ONE "
     "move per turn. Walking away is a legitimate tactic — a first walk is a bluff to pressure the "
-    "seller, not a final exit. Return strictly the structured move and nothing else."
+    "seller, not a final exit. Return strictly the structured move and nothing else. Be terse and "
+    "fast: keep `reasoning` to one short clause and `text` to ONE or two short sentences."
 )
 
 
@@ -146,7 +150,7 @@ class LLMSeller:
         # deps_type=float carries the secret floor to the output validator; low temperature cuts
         # variance; retries cover M3's occasional malformed tool-call AND the validator's ModelRetry.
         agent = Agent(model_for("chat", fresh=True), output_type=AgentMove, deps_type=float, system_prompt=system,
-                      model_settings={"temperature": _SELLER_TEMP}, retries={"output": 4})
+                      model_settings={"temperature": _SELLER_TEMP, "max_tokens": _MAX_TOKENS}, retries={"output": 4})
 
         @agent.output_validator
         def _floor_rail(ctx: RunContext[float], out: AgentMove) -> AgentMove:
@@ -226,7 +230,7 @@ class LLMBuyer:
         from pydantic_ai import Agent
 
         return Agent(model_for("buyer", fresh=True), output_type=AgentMove, system_prompt=_BUYER_SYSTEM,
-                     model_settings={"temperature": _SELLER_TEMP}, retries={"output": 3})
+                     model_settings={"temperature": _SELLER_TEMP, "max_tokens": _MAX_TOKENS}, retries={"output": 3})
 
     @property
     def agent(self):
