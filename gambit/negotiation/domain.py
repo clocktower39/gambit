@@ -9,8 +9,8 @@ whether a side is a heuristic, a human, or an LLM. That's the seam.
 from __future__ import annotations
 
 from ..engine.seam import EpisodeResult
-from .models import Episode, Item, Knobs, Move, Outcome, budget_of, situation_key
-from .policies import HeuristicBuyer, KnobSellerPolicy
+from .models import Episode, Item, Outcome, budget_of, situation_key
+from .policies import BuyerCounterparty, SellerPolicy
 from .reward import audit_episode, reward
 
 
@@ -29,7 +29,7 @@ def _finalize(item: Item, budget: float, *, deal: bool, price: float | None, tur
                    reason=reason, surplus=surplus, skill=skill)
 
 
-def run_episode(item: Item, seller: KnobSellerPolicy, buyer: HeuristicBuyer,
+def run_episode(item: Item, seller: SellerPolicy, buyer: BuyerCounterparty,
                 max_turns: int = 6) -> Episode:
     """Pure referee over two policies → terminal Episode. Domain-specific turn-taking only."""
     persona = buyer.persona
@@ -79,7 +79,7 @@ class NegotiationDomain:
         self.items = items
         self.max_turns = max_turns
 
-    def rollout(self, policy: KnobSellerPolicy, counterparty: HeuristicBuyer, seed: int) -> EpisodeResult:
+    def rollout(self, policy: SellerPolicy, counterparty: BuyerCounterparty, seed: int) -> EpisodeResult:
         item = self.items[seed % len(self.items)]          # seed selects the scenario, deterministically
         ep = run_episode(item, policy, counterparty, self.max_turns)
         o = ep.outcome

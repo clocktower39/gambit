@@ -8,7 +8,27 @@ run is fully determined by inputs — the basis for paired-seed A/B later.
 
 from __future__ import annotations
 
+from typing import Protocol
+
 from .models import BuyerPersona, Item, Knobs, Move, budget_of
+
+
+class SellerPolicy(Protocol):
+    """What the referee needs from a seller — satisfies the engine's opaque `Policy`.
+    Slice 2's parametric / LLM sellers implement this same shape."""
+
+    def opening(self, item: Item) -> Move: ...
+    def respond(self, item: Item, current_ask: float, buyer_offer: float | None, round_idx: int) -> Move: ...
+
+
+class BuyerCounterparty(Protocol):
+    """What the referee needs from a buyer — satisfies the engine's `Counterparty`.
+    `family` lets held-out be a *different behavior family*, not the same sim re-parameterized."""
+
+    family: str
+    persona: BuyerPersona
+
+    def respond(self, item: Item, seller_ask: float, round_idx: int, current_offer: float | None) -> Move: ...
 
 
 def enforce_reservation(move: Move, budget: float) -> Move:

@@ -31,8 +31,9 @@ class Item(BaseModel):
 
     @model_validator(mode="after")
     def _floor_le_target_le_list(self):
-        if not (self.floor_price <= self.target_price <= self.list_price):
-            raise ValueError("require floor_price <= target_price <= list_price")
+        # floor < list keeps margin_ratio > 0 (no degenerate zero-margin item slips through silently)
+        if not (self.floor_price <= self.target_price <= self.list_price and self.floor_price < self.list_price):
+            raise ValueError("require floor_price <= target_price <= list_price and floor_price < list_price")
         return self
 
     @property
