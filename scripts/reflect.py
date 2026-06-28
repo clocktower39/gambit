@@ -38,15 +38,14 @@ from pydantic import BaseModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # make `gambit` importable
 
-import logfire
 from pydantic_ai import Agent, RunContext
 
 from gambit.llm import model_for
 from gambit.settings import settings
+from gambit import observability as obs
 
 HUMAN_EPISODES_DIR = Path("data/human_episodes")
 REFLECTIONS_DIR = Path("data/reflections")
-_TRACED = False
 
 
 def _money(value: float | int | None) -> str:
@@ -177,16 +176,11 @@ def _save_reflection(src: Path, out: dict) -> Path | None:
         return None
 
 
-def _emit_logfire(out: dict) -> None:
-    if not _TRACED:
-        return
+def _emit_reflection(out: dict) -> None:
     o = out["outcome"]
-    with logfire.span("reflection · {bucket}", kind="reflection", bucket=out["bucket"],
-                      source_file=out["source_file"],
-                      seller_lesson=out["seller"]["candidate_lesson"],
-                      buyer_lesson=out["buyer"]["candidate_lesson"],
-                      deal=o.get("deal"), surplus=o.get("surplus"), viol=o.get("viol")):
-        pass
+    obs.reflection(bucket=out["bucket"], seller_lesson=out["seller"]["candidate_lesson"],
+                   buyer_lesson=out["buyer"]["candidate_lesson"],
+                   surplus=o.get("surplus"), viol=int(o.get("viol") or 0))
 
 
 def _print_reflection(rec: dict, seller: Reflection, buyer: Reflection, dest: Path | None) -> None:
@@ -224,7 +218,7 @@ def reflect_episode(path: Path, *, as_json: bool) -> dict | None:
         "seller": seller.model_dump(), "buyer": buyer.model_dump(),
     }
     dest = _save_reflection(path, out)
-    _emit_logfire(out)
+    _emit_reflection(out)
     if as_json:
         print(json.dumps(out, indent=2))
     else:
@@ -232,22 +226,11 @@ def reflect_episode(path: Path, *, as_json: bool) -> dict | None:
     return out
 
 
-def _configure_logfire() -> bool:
-    if settings.logfire_token:
-        logfire.configure(token=settings.logfire_token, service_name="gambit",
-                          scrubbing=False, inspect_arguments=False)
-        logfire.instrument_pydantic_ai()
-        return True
-    logfire.configure(send_to_logfire=False, scrubbing=False, inspect_arguments=False)
-    return False
-
-
 def _episodes(dir_: Path) -> list[Path]:
     return sorted(dir_.glob("*.json"), key=lambda p: p.stat().st_mtime)
 
 
 def main() -> int:
-    global _TRACED
     ap = argparse.ArgumentParser(description="Dual-sided post-episode reflection (proposer fuel; never selects)")
     ap.add_argument("--file", default=None, help="reflect a single episode JSON")
     ap.add_argument("--dir", default=str(HUMAN_EPISODES_DIR), help="episode dir (default data/human_episodes)")
@@ -268,15 +251,16 @@ def main() -> int:
             return 0
         targets = eps if args.all else [eps[-1]]      # default: the most recent episode
 
-    _TRACED = _configure_logfire()
-    for p in targets:
-        if not p.exists():
-            print(f"  ! not found: {p}")
-            continue
-        try:
-            reflect_episode(p, as_json=args.json)
-        except Exception as e:  # noqa: BLE001 — one bad episode shouldn't abort the batch
-            print(f"  ! reflection failed for {p.name}: {e}")
+    obs.configure()
+    with obs.job("reflection", source="agent", title="reflection batch"):
+        for p in targets:
+            if not p.exists():
+                print(f"  ! not found: {p}")
+                continue
+            try:
+                reflect_episode(p, as_json=args.json)
+            except Exception as e:  # noqa: BLE001 — one bad episode shouldn't abort the batch
+                print(f"  ! reflection failed for {p.name}: {e}")
     return 0
 
 
