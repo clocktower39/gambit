@@ -36,7 +36,7 @@ class Features(BaseModel):
     """Continuous, scale-free decision features (the KnobPolicy's input)."""
 
     margin_ratio: float          # (list - floor) / list
-    urgency: float = 0.0         # seller time pressure, 0..1
+    urgency: float = 0.0         # seller time pressure, 0..1 (reserved; resolve() uses base.urgency for now)
     # reservation_gap / turns_elapsed land with opponent.infer + per-turn resolution (later slice)
 
 
@@ -54,7 +54,7 @@ class KnobPolicy(BaseModel):
             opening_anchor_ratio=_clamp("opening_anchor_ratio", b.opening_anchor_ratio),
             concession_rate=_clamp("concession_rate", b.concession_rate - 0.5 * adj),
             accept_ratio=_clamp("accept_ratio", b.accept_ratio + 0.2 * adj),
-            walkaway_patience=int(_clamp("walkaway_patience", b.walkaway_patience)),
+            walkaway_patience=int(round(_clamp("walkaway_patience", b.walkaway_patience))),
             urgency=b.urgency,
         )
 

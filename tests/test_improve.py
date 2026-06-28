@@ -32,15 +32,14 @@ def _weak_start() -> PolicyStore:
 def test_curve_moves_on_heldout_with_zero_viol():
     domain, buyers = _domain(), _buyers()
     start = _weak_start()
-    before = mean_reward(run_batch(domain, start, buyers, SEEDS))
     final, history = improve(
         domain, start, knob_nudges,
         train_cps=buyers, gate_cps=buyers, seeds=SEEDS,
         generations=12, min_support=len(buyers) * len(SEEDS),
     )
-    after = history[-1]["reward"]
-    assert after > before                         # the claim: held-out reward climbs
-    assert all(h["viol"] == 0 for h in history)   # every promotion is integrity-clean
+    # paired within the SAME run: final gen vs gen-0 baseline (no independent re-measure)
+    assert history[-1]["reward"] > history[0]["reward"]   # the claim: held-out reward climbs
+    assert all(h["viol"] == 0 for h in history)           # every promotion is integrity-clean
     # monotone non-decreasing by construction (greedy accept only on improvement)
     rewards = [h["reward"] for h in history]
     assert rewards == sorted(rewards)

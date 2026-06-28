@@ -23,7 +23,10 @@ def knob_nudges(store: PolicyStore, train_results: list[EpisodeResult] | None = 
     cands: list[PolicyStore] = []
     for field, step in _KNOB_STEPS.items():
         cur = getattr(base, field)
-        cands.append(store.with_base(**{field: cur + step}))
-        cands.append(store.with_base(**{field: cur - step}))
-    cands.append(store.with_base(urgency=not base.urgency))
+        for cand in (store.with_base(**{field: cur + step}), store.with_base(**{field: cur - step})):
+            if cand.knobs.base != base:          # skip clamped no-ops (knob already at a bound)
+                cands.append(cand)
+    toggle = store.with_base(urgency=not base.urgency)
+    if toggle.knobs.base != base:
+        cands.append(toggle)
     return cands

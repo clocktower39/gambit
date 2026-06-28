@@ -77,8 +77,7 @@ def improve(
             score = select(res)
             if score > best_score + 1e-9:              # paired held-out improvement
                 best_p, best_score, best_res = cand, score, res
-        if best_p is None:                              # plateau → stop (no statistical churn)
-            history.append({"gen": g, "improved": False, **_panel(base_res)})
+        if best_p is None:                              # plateau → stop (no stale re-stamp, no churn)
             break
         policy, base, base_res = best_p, best_score, best_res
         history.append({"gen": g, "improved": True, **_panel(base_res)})
