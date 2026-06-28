@@ -59,7 +59,8 @@ from gambit.negotiation.fixtures import PERSONAS
 from gambit.settings import settings
 
 MAX_DEFAULT = 10
-DEFAULT_CHECKPOINT = Path("checkpoints/latest.json")
+CHECKPOINTS_DIR = Path("checkpoints")
+DEFAULT_CHECKPOINT = CHECKPOINTS_DIR / "latest.json"      # the loop's pointer to its newest trained policy
 HUMAN_EPISODES_DIR = Path("data/human_episodes")
 _TRACE_CONSOLE = False
 
@@ -492,14 +493,29 @@ class HumanBuyer(_Seat):
 
 # --- policy loading + the game ------------------------------------------------------------
 
+def _newest_checkpoint() -> Path | None:
+    """The most recently written checkpoint in checkpoints/ — so play auto-tracks whatever the
+    training loop wrote, regardless of how it names the files. Ignores the latest.json pointer."""
+    if not CHECKPOINTS_DIR.is_dir():
+        return None
+    files = [p for p in CHECKPOINTS_DIR.glob("*.json") if p.name != "latest.json"]
+    return max(files, key=lambda p: p.stat().st_mtime, default=None)
+
+
 def load_policy(path: str | None) -> tuple[PolicyStore, str]:
-    """Load the agent the human will face: an explicit checkpoint, else checkpoints/latest.json,
-    else the seeded cold-start prior (docs/strategy.md). The checkpoint is just PolicyStore JSON."""
-    target = Path(path) if path else DEFAULT_CHECKPOINT
-    if target.exists():
-        return PolicyStore.model_validate_json(target.read_text()), f"checkpoint {target}"
-    if path:                                                        # explicit path that isn't there → fail loud
-        raise SystemExit(f"checkpoint not found: {path}")
+    """Load the agent the human will face. Explicit --checkpoint wins; otherwise auto-pick the
+    newest trained checkpoint the loop wrote (checkpoints/latest.json pointer, else the newest
+    file in checkpoints/); else fall back to the seeded prior. A checkpoint is just PolicyStore JSON."""
+    if path:
+        target = Path(path)
+        if target.exists():
+            return PolicyStore.model_validate_json(target.read_text()), f"checkpoint {target}"
+        raise SystemExit(f"checkpoint not found: {path}")           # explicit path that isn't there → fail loud
+    if DEFAULT_CHECKPOINT.exists():
+        return PolicyStore.model_validate_json(DEFAULT_CHECKPOINT.read_text()), f"checkpoint {DEFAULT_CHECKPOINT} (latest)"
+    newest = _newest_checkpoint()
+    if newest:
+        return PolicyStore.model_validate_json(newest.read_text()), f"checkpoint {newest} (newest)"
     return PolicyStore(), "seeded cold-start prior (no checkpoint yet — train one to face a stronger agent)"
 
 
@@ -509,12 +525,15 @@ def _configure_logfire(console: bool) -> bool:
     # scrubbing OFF: our prompts say "secret floor"/"budget" — negotiation terms, not real
     # credentials — and Logfire's default redaction would hide the very chat we want to walk.
     console_opt = logfire.ConsoleOptions(span_style="indented") if console else False
+    # inspect_arguments=False: we always pass explicit kwargs, and f-string introspection fails
+    # under the script's sys.path shim (the noisy InspectArgumentsFailedWarning mid-game).
     if settings.logfire_token:
         logfire.configure(token=settings.logfire_token, service_name="gambit",
-                          console=console_opt, scrubbing=False)
+                          console=console_opt, scrubbing=False, inspect_arguments=False)
         logfire.instrument_pydantic_ai()
         return True
-    logfire.configure(send_to_logfire=False, console=console_opt, scrubbing=False)
+    logfire.configure(send_to_logfire=False, console=console_opt, scrubbing=False,
+                      inspect_arguments=False)
     return False
 
 

@@ -36,6 +36,21 @@ from gambit.negotiation.policy import KnobPolicy  # noqa: E402
 from gambit.negotiation.fixtures import GATE_SEEDS, ITEMS, LOCKED_SEEDS, PERSONAS, TRAIN_SEEDS  # noqa: E402
 
 
+CHECKPOINTS_DIR = Path("checkpoints")
+
+
+def _save_checkpoint(policy: PolicyStore, name: str = "offline") -> Path:
+    """Persist the trained PolicyStore so `scripts/play.py` can face it. Writes
+    checkpoints/<name>.json and updates checkpoints/latest.json (the pointer play.py reads by default),
+    so 'play the latest trained agent' is automatic after a run."""
+    CHECKPOINTS_DIR.mkdir(parents=True, exist_ok=True)
+    blob = policy.model_dump_json(indent=2)
+    named = CHECKPOINTS_DIR / f"{name}.json"
+    named.write_text(blob)
+    (CHECKPOINTS_DIR / "latest.json").write_text(blob)
+    return named
+
+
 def _weak_start(shaped: bool = True) -> PolicyStore:
     # a deliberately poor seller (concedes fast + accepts low) on the chosen substrate
     return PolicyStore(knobs=KnobPolicy(shaped=shaped)).with_base(concession_rate=0.80, accept_ratio=0.80)
@@ -110,6 +125,10 @@ def main() -> None:
     else:
         verdict = "diagnostic: uniform beats hybrid on this split; do not claim substrate lift yet"
     print(f"verdict: {verdict}")
+
+    saved = _save_checkpoint(final)
+    print(f"\nsaved trained policy → {saved}  (+ checkpoints/latest.json)"
+          f"\nface it live: uv run python scripts/play.py")
 
     if not (transfer_ok and coeff_ok and hybrid_lift_ok):
         raise SystemExit(1)
