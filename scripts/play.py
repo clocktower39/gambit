@@ -2,9 +2,10 @@
 """Negotiate by hand against the trained agent — the interactive, real-world seat.
 
 You take one seat; the **M3 agent driven by its learned `PolicyStore`** plays the other. This is
-the bridge to the real world: the same policy that improves in self-play is the one you haggle
-here — load the latest checkpoint (or a specific generation) and you're negotiating against what
-it actually learned (its resolved knobs + the promoted per-bucket lessons), not a blank prompt.
+the bridge to the real world: the same seller policy that improves through the offline gate is the
+one you haggle here — load the latest checkpoint (or a specific generation) and you're negotiating
+against what it actually learned (its resolved knobs + the promoted per-bucket lessons), not a blank
+prompt.
 
 You just *talk* — free text. An M3 extractor reads your intent (offer / accept / walk / banter)
 while the agent responds in character, so "that screen's cracked, I'll give you 380", "ayooo",
@@ -314,7 +315,8 @@ class _Seat:
         self.log.append(mv)
         span.set_attributes({"action": mv.action, "offer": mv.offer,
                              "text": mv.text, "reasoning": mv.reasoning})
-        logfire.info("{line}", line=_line(mv))            # readable chat line, nested in the turn
+        obs.move(role=mv.role, action=mv.action, offer=mv.offer,   # structured move (gambit.kind=move)
+                 text=mv.text, reasoning=mv.reasoning)
         if self.echo_moves:
             print(f"{_terminal_label(mv)}: {_terminal_text(mv)}")
             if self.show_thinking and mv.reasoning:
@@ -625,29 +627,22 @@ def play(seat: str, item: Item, persona: BuyerPersona, policy: PolicyStore, poli
     print("Type naturally: ask, counter, accept, or pass. Ctrl-D also passes.\n")
 
     bucket = situation_key(item)
-    jt, src = "human-vs-agent", "human"
     trace_id = None
     # One job span tags the whole game [human-vs-agent, human]; baggage (run_id/checkpoint) auto-stamps
-    # every child — the per-turn spans AND the pydantic-ai model calls — so it filters cleanly.
-    with obs.job(jt, source=src, checkpoint=_checkpoint_label(policy_desc), seat=seat,
-                 matchup=matchup, item=item.name, list_price=item.list_price, floor=item.floor_price), \
+    # every child — the per-turn move events AND the pydantic-ai model calls — so it filters cleanly.
+    with obs.job("human-vs-agent", source="human", checkpoint=_checkpoint_label(policy_desc),
+                 title=f"{item.name} — {matchup}", seat=seat,
+                 list_price=item.list_price, floor=item.floor_price), \
          obs.episode(bucket=bucket, seat=seat):
         trace_id = obs.current_trace_id()
         ep = run_episode(item, seller, buyer, max_turns=referee_turns)
         o = ep.outcome
         viol = audit_episode(ep)
         r = reward(ep)
-        obs.record_reward(r, job_type=jt, source=src, bucket=bucket)
-        if o.deal:
-            obs.record_surplus(o.surplus, job_type=jt, source=src, bucket=bucket)
-            obs.record_skill(o.skill, job_type=jt, source=src, bucket=bucket)
-        obs.record_episode(deal=o.deal, viol=len(viol), job_type=jt, source=src, bucket=bucket)
+        obs.outcome(deal=o.deal, result=("deal" if o.deal else "no-deal"), price=o.price, reward=r,
+                    surplus=o.surplus, skill=o.skill, viol=len(viol), turns=o.turns, bucket=bucket)
         saved = _record_episode(ep, seat=seat, policy_desc=policy_desc, reward_val=r,
                                 viol=viol, item=item) if save else None
-        obs.emit("human episode {result}", result=("deal" if o.deal else "no-deal"),
-                 kind="human_episode", deal=o.deal, price=o.price, turns=o.turns, reward=r,
-                 surplus=o.surplus, skill=o.skill, viol=len(viol), bucket=bucket,
-                 saved=str(saved) if saved else None, transcript=ep.transcript())
 
     print("\nScorecard")
     print("─" * 60)

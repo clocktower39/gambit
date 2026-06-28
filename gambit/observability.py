@@ -90,18 +90,20 @@ def _baggage(**kv) -> dict:
 @contextmanager
 def job(job_type: JobType, *, source: Source, run_id: str | None = None,
         checkpoint: str | None = None, generation: int | None = None,
-        bucket: str | None = None, **attrs) -> Iterator[object | None]:
-    """The root span for one invocation. Tags [job_type, source] and sets baggage so every child
-    span (turns, model calls, http) inherits run_id/job_type/source/checkpoint/generation."""
+        bucket: str | None = None, title: str | None = None, **attrs) -> Iterator[object | None]:
+    """The root span for one invocation (`gambit.kind=job`). Tags [job_type, source] and sets baggage
+    so every child span (turns, model calls, http) inherits run_id/job_type/source/checkpoint/generation.
+    `title` is the human-readable run name the UI shows (e.g. 'iPhone — you vs trained seller')."""
     if not is_on():
         yield None
         return
     run_id = run_id or uuid.uuid4().hex
-    span_attrs = _attrs(job_type=job_type, source=source, run_id=run_id,
-                        checkpoint=checkpoint, generation=generation, bucket=bucket, **attrs)
+    span_attrs = _attrs(kind="job", job_type=job_type, source=source, run_id=run_id,
+                        checkpoint=checkpoint, generation=generation, bucket=bucket, title=title, **attrs)
     bag = _baggage(job_type=job_type, source=source, run_id=run_id,
                    checkpoint=checkpoint, generation=generation)
-    with logfire.set_baggage(**bag), logfire.span(f"job: {job_type}", _tags=[job_type, source], **span_attrs) as span:
+    with logfire.set_baggage(**bag), \
+         logfire.span(title or f"job: {job_type}", _tags=[job_type, source], **span_attrs) as span:
         yield span
 
 
@@ -111,7 +113,7 @@ def generation(gen: int, *, checkpoint: str | None = None, **attrs) -> Iterator[
     if not is_on():
         yield None
         return
-    span_attrs = _attrs(generation=gen, checkpoint=checkpoint, **attrs)
+    span_attrs = _attrs(kind="generation", generation=gen, checkpoint=checkpoint, **attrs)
     with logfire.set_baggage(**_baggage(generation=gen, checkpoint=checkpoint)), \
          logfire.span(f"generation {gen}", **span_attrs) as span:
         yield span
@@ -124,9 +126,58 @@ def episode(*, bucket: str, seat: str | None = None, split: str | None = None,
     if not is_on():
         yield None
         return
-    span_attrs = _attrs(bucket=bucket, seat=seat, split=split, seed=seed, **attrs)
+    span_attrs = _attrs(kind="episode", bucket=bucket, seat=seat, split=split, seed=seed, **attrs)
     with logfire.span(f"episode {bucket}", **span_attrs) as span:
         yield span
+
+
+def _bag(key: str) -> str | None:
+    """Read a `gambit.<key>` value out of the active baggage (set by job())."""
+    if not is_on():
+        return None
+    try:
+        return (logfire.get_baggage() or {}).get(f"gambit.{key}")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def move(*, role: str, action: str, offer: float | None = None, text: str = "",
+         reasoning: str | None = None) -> None:
+    """A structured negotiation move (`gambit.kind=move`) — the transcript, queryable by attribute
+    instead of regex-parsed from a message. High-volume; use on human-facing seats, not RL inner loops."""
+    if not is_on():
+        return
+    logfire.info("move", **_attrs(kind="move", role=role, action=action, offer=offer,
+                                  text=text, reasoning=reasoning))
+
+
+def outcome(*, deal: bool, result: str | None = None, price: float | None = None,
+            reward: float | None = None, surplus: float | None = None, skill: float | None = None,
+            viol: int = 0, turns: int | None = None, bucket: str | None = None) -> None:
+    """The terminal outcome of one episode (`gambit.kind=outcome`) AND the metric records in one call.
+    job_type/source come from the active job's baggage, so callers don't repeat them."""
+    if not is_on():
+        return
+    logfire.info("outcome", **_attrs(kind="outcome", deal=deal, result=result, price=price, reward=reward,
+                                     surplus=surplus, skill=skill, viol=viol, turns=turns, bucket=bucket))
+    jt, src = _bag("job_type"), _bag("source")
+    if jt and src:
+        if reward is not None:
+            record_reward(reward, job_type=jt, source=src, bucket=bucket)
+        if deal and surplus is not None:
+            record_surplus(surplus, job_type=jt, source=src, bucket=bucket)
+        if deal and skill is not None:
+            record_skill(skill, job_type=jt, source=src, bucket=bucket)
+        record_episode(deal=bool(deal), viol=int(viol or 0), job_type=jt, source=src, bucket=bucket)
+
+
+def reflection(*, bucket: str, seller_lesson: str | None = None, buyer_lesson: str | None = None,
+               surplus: float | None = None, viol: int = 0) -> None:
+    """A Gemini-proposed lesson event (`gambit.kind=reflection`)."""
+    if not is_on():
+        return
+    logfire.info("reflection", **_attrs(kind="reflection", bucket=bucket, seller_lesson=seller_lesson,
+                                        buyer_lesson=buyer_lesson, surplus=surplus, viol=viol))
 
 
 def emit(msg: str, *, level: Literal["debug", "info", "warn", "error"] = "info",
