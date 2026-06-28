@@ -160,7 +160,7 @@ export default function LivePage() {
           <button className="btn" onClick={runFresh} disabled={starting || status === "live"}>
             {starting ? "starting…" : status === "live" ? "running…" : "▶ Run a fresh climb"}
           </button>
-          <Link href="/" className="btn ghost">Browse past runs →</Link>
+          <Link href="/history" className="btn ghost">Browse past runs →</Link>
         </div>
       </header>
 
