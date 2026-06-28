@@ -114,13 +114,18 @@ async def _health(request: Request) -> Response:
                          "policy": POLICY_DESC, "n_items": len(ITEMS)})
 
 
-from gambit.logfire_read import run_detail, runs_list, runs_stream  # noqa: E402  (read REAL runs from Logfire)
+from gambit.logfire_read import run_detail, runs_list, runs_stream  # noqa: E402  (Logfire — history browsing)
+from gambit.watch import watch_start, watch_stream  # noqa: E402  (local JSONL bus — the LIVE climb view)
 
 app = Starlette(
     routes=[
         Route("/", _agent_endpoint, methods=["POST"]),
         Route("/items", _items, methods=["GET"]),
         Route("/health", _health, methods=["GET"]),
+        # LIVE runs view: the fast, rate-limit-free JSONL bus (curve + spotlight + held-out transfer)
+        Route("/watch/stream", watch_stream, methods=["GET"]),
+        Route("/watch/start", watch_start, methods=["POST"]),
+        # HISTORY browsing: Logfire read API (behind the 7s rate-gate, slow poll)
         Route("/runs", runs_list, methods=["GET"]),
         Route("/runs/stream", runs_stream, methods=["GET"]),
         Route("/run", run_detail, methods=["GET"]),

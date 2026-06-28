@@ -43,23 +43,41 @@ class AgentMove(BaseModel):
     offer: float | None = None
 
 
-def _run_sync(coro):
-    """Run an async coroutine to completion from sync code.
+import threading
 
-    `run_episode` is a sync referee, so we own the event loop here. If we're already inside a
-    running loop (e.g. a notebook), `asyncio.run` would raise — fall back to a dedicated thread so
-    the call still completes rather than crashing the episode."""
+_THREAD_LOOP = threading.local()
+
+
+def _run_sync(coro):
+    """Run an async coroutine to completion from sync code, reusing ONE persistent event loop per
+    thread (NOT a fresh loop per call).
+
+    `run_episode` is a sync referee that calls Agent.run once per move. `asyncio.run` per call
+    creates and *destroys* an event loop every move; the AsyncAnthropic httpx connections are bound
+    to that loop, so on teardown they (a) flood stderr with 'Event loop is closed' / 'no running
+    event loop' errors and (b) get discarded — forcing a brand-new TCP+TLS connection on the next
+    move. Over a long, concurrent (ThreadPool) run that is both noisy and slow. A persistent
+    per-thread loop keeps the connection pool alive across moves and the teardown quiet. Each worker
+    thread gets its own loop, so concurrency stays safe (paired with the per-instance client)."""
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.run(coro)
+        loop = getattr(_THREAD_LOOP, "loop", None)
+        if loop is None or loop.is_closed():
+            loop = asyncio.new_event_loop()
+            _THREAD_LOOP.loop = loop
+        return loop.run_until_complete(coro)
+    # Already inside a running loop (e.g. a notebook) → isolate the work in a worker thread, which
+    # has no running loop of its own and so takes the persistent-loop path above.
     import concurrent.futures
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        return pool.submit(lambda: asyncio.run(coro)).result()
+        return pool.submit(lambda: _run_sync(coro)).result()
 
 
 _SELLER_TEMP = 0.2   # low temperature: cut sampling variance so paired A/B comparisons are less noisy
+_MAX_TOKENS = 512    # cap output per move: the structured move is short, so this just stops the model
+                     # from writing long pitches/reasoning — the dominant per-call latency at scale
 
 
 def _ask(agent, prompt: str, attempts: int = 5, deps=None) -> AgentMove:
@@ -96,7 +114,8 @@ _SELLER_SYSTEM = (
     "will ever take — and you must NEVER reveal it and NEVER offer or accept below it. Make exactly "
     "ONE move per turn. Walking away is a legitimate tactic: a first walk is a pressure threat, not "
     "the end, so use it to test a stubborn buyer when it serves you. Return strictly the structured "
-    "move and nothing else."
+    "move and nothing else. Be terse and fast: keep `reasoning` to one short clause and `text` to "
+    "ONE or two short sentences — no long pitches."
 )
 
 _BUYER_SYSTEM = (
@@ -104,7 +123,8 @@ _BUYER_SYSTEM = (
     "know your SECRET maximum budget and must NEVER reveal it and NEVER offer or accept above it. "
     "Let your style, eagerness, and patience shape how hard and how fast you push. Make exactly ONE "
     "move per turn. Walking away is a legitimate tactic — a first walk is a bluff to pressure the "
-    "seller, not a final exit. Return strictly the structured move and nothing else."
+    "seller, not a final exit. Return strictly the structured move and nothing else. Be terse and "
+    "fast: keep `reasoning` to one short clause and `text` to ONE or two short sentences."
 )
 
 
@@ -130,7 +150,7 @@ class LLMSeller:
         # deps_type=float carries the secret floor to the output validator; low temperature cuts
         # variance; retries cover M3's occasional malformed tool-call AND the validator's ModelRetry.
         agent = Agent(model_for("chat", fresh=True), output_type=AgentMove, deps_type=float, system_prompt=system,
-                      model_settings={"temperature": _SELLER_TEMP}, retries={"output": 4})
+                      model_settings={"temperature": _SELLER_TEMP, "max_tokens": _MAX_TOKENS}, retries={"output": 4})
 
         @agent.output_validator
         def _floor_rail(ctx: RunContext[float], out: AgentMove) -> AgentMove:
@@ -210,7 +230,7 @@ class LLMBuyer:
         from pydantic_ai import Agent
 
         return Agent(model_for("buyer", fresh=True), output_type=AgentMove, system_prompt=_BUYER_SYSTEM,
-                     model_settings={"temperature": _SELLER_TEMP}, retries={"output": 3})
+                     model_settings={"temperature": _SELLER_TEMP, "max_tokens": _MAX_TOKENS}, retries={"output": 3})
 
     @property
     def agent(self):

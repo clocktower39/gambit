@@ -4,6 +4,10 @@ const nextConfig = {
   env: {
     AGUI_URL: process.env.AGUI_URL ?? "http://localhost:8000/",
   },
+  // Home is the live "watch it climb" view; the Logfire run-history lives at /history.
+  async redirects() {
+    return [{ source: "/", destination: "/live", permanent: false }];
+  },
   turbopack: {
     // Pin the project root to THIS dir. Without it Next infers the root from a stray
     // ~/package-lock.json and mis-resolves aliases.
