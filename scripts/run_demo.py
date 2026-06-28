@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Phase-1 demo: run the self-improvement loop, then show the gen-0 vs gen-N
-head-to-head against the same buyer.
+"""Legacy Phase-1 demo: run the original dataclass self-improvement loop, then show
+the gen-0 vs gen-N head-to-head against the same buyer.
+
+The active typed engine demo is `scripts/run_offline.py`; this script is kept as a
+backward-compatible legacy path.
 
     python scripts/run_demo.py --offline            # no API key needed
     python scripts/run_demo.py --generations 8      # uses DO Inference if key is set
@@ -25,10 +28,10 @@ def main() -> int:
     # Make the package importable when run from the repo root.
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-    from gambit.config import llm_available
-    from gambit.improve_loop import default_pairs, evaluate, head_to_head, holdout_pairs, improve
-    from gambit.models import budget_of
-    from gambit.personas import ITEMS, PERSONAS
+    from gambit.legacy.config import llm_available
+    from gambit.legacy.improve_loop import default_pairs, evaluate, head_to_head, holdout_pairs, improve
+    from gambit.legacy.models import budget_of
+    from gambit.legacy.personas import ITEMS, PERSONAS
 
     mode = "DigitalOcean Inference (LLM)" if llm_available() else "offline heuristics"
     print(f"=== Gambit — self-improving negotiator | mode: {mode} ===\n")
@@ -67,7 +70,7 @@ def main() -> int:
     print(f"score {h0['score']:.3f} -> {hN['score']:.3f}   surplus {h0['avg_surplus']:.2f} -> {hN['avg_surplus']:.2f}")
 
     # Tier-2 reward-integrity audit (binary-question checklist) on the final strategy.
-    from gambit.verifier import QLABEL, audit_run
+    from gambit.legacy.verifier import QLABEL, audit_run
     final_eps, _ = evaluate(last["strategy"], pairs, args.turns)
     rep = audit_run(final_eps)
     print("\n--- Tier-2 integrity audit (binary checklist) ---")
