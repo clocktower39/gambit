@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from .models import BuyerPersona, Item, Knobs, Move, budget_of
+from .policy import Features, KnobPolicy
 
 
 class SellerPolicy(Protocol):
@@ -47,12 +48,30 @@ class KnobSellerPolicy:
     """The seller. Behavior is fully determined by `Knobs` (the per-bucket lessons channel
     arrives in a later slice). Implements the engine's opaque `Policy`."""
 
-    def __init__(self, knobs: Knobs, name: str = "seed"):
-        self.knobs = knobs
+    def __init__(self, knobs: Knobs | KnobPolicy, name: str = "seed", max_turns: int = 6):
+        self.knob_policy = knobs if isinstance(knobs, KnobPolicy) else KnobPolicy(base=knobs, coeffs={})
         self.name = name
+        self.max_turns = max_turns
+
+    def _knobs(
+        self,
+        item: Item,
+        *,
+        current_ask: float | None = None,
+        buyer_offer: float | None = None,
+        round_idx: int = 0,
+    ) -> Knobs:
+        ask = current_ask if current_ask is not None else item.list_price
+        gap = 0.0 if buyer_offer is None else (ask - buyer_offer) / item.list_price
+        return self.knob_policy.resolve(Features(
+            margin_ratio=item.margin_ratio,
+            reservation_gap=gap,
+            turn_frac=round_idx / max(self.max_turns, 1),
+            urgency=1.0 if self.knob_policy.base.urgency else 0.0,
+        ))
 
     def opening_ask(self, item: Item) -> float:
-        return round(item.list_price * self.knobs.opening_anchor_ratio)
+        return round(item.list_price * self._knobs(item).opening_anchor_ratio)
 
     def opening(self, item: Item) -> Move:
         ask = self.opening_ask(item)
@@ -62,7 +81,7 @@ class KnobSellerPolicy:
 
     def respond(self, item: Item, current_ask: float, buyer_offer: float | None, round_idx: int) -> Move:
         """Return the seller's move. `offer` on an `offer` action is the new standing ask."""
-        k, floor = self.knobs, item.floor_price
+        k, floor = self._knobs(item, current_ask=current_ask, buyer_offer=buyer_offer, round_idx=round_idx), item.floor_price
         if buyer_offer is None:
             return self.opening(item)
         acceptable = max(floor, item.list_price * k.accept_ratio)

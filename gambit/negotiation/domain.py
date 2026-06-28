@@ -12,7 +12,7 @@ import random
 
 from ..engine.seam import EpisodeResult
 from .models import Episode, Item, Outcome, budget_of, situation_key
-from .policy import Features, PolicyStore
+from .policy import PolicyStore
 from .policies import BuyerCounterparty, KnobSellerPolicy, SellerPolicy
 from .reward import audit_episode, reward
 
@@ -109,8 +109,7 @@ class NegotiationDomain:
 
     def rollout(self, policy: PolicyStore, counterparty: BuyerCounterparty, seed: int) -> EpisodeResult:
         item = self.scenario(seed)                         # seed GENERATES the scenario, deterministically
-        knobs = policy.knobs.resolve(Features(margin_ratio=item.margin_ratio))  # global parametric → per-episode
-        seller = KnobSellerPolicy(knobs)
+        seller = KnobSellerPolicy(policy.knobs, max_turns=self.max_turns)       # global parametric → per-turn
         ep = run_episode(item, seller, counterparty, self.max_turns)
         o = ep.outcome
         return EpisodeResult(

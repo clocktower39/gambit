@@ -3,10 +3,10 @@
 Held-out (build-order #3, docs/eval-plan.md §2) rests on TWO genuinely independent separations:
   - a *different behavior family* — `FirmAnchorBuyer`, not `HeuristicBuyer` re-parameterized
     (slicing these personas with new `budget_ratio`s is in-distribution and proves nothing); and
-  - a *different set of scenarios* — `NegotiationDomain.scenario(seed)` GENERATES a distinct
+  - different scenario splits — `NegotiationDomain.scenario(seed)` GENERATES a distinct
     margin/price scenario per seed (not a bare item index), so the disjoint seed sets below
-    cover disjoint scenarios. The improve loop trains/gates only on `TRAIN_SEEDS`; the headline
-    transfer number is scored once on `LOCKED_SEEDS`, which no promotion decision ever touches.
+    cover disjoint scenarios. The improve loop proposes from `TRAIN_SEEDS`, promotes on
+    `GATE_SEEDS`, and scores the headline transfer once on `LOCKED_SEEDS`.
 So a gain on the locked set is transfer across BOTH family and scenario — not leakage.
 """
 
@@ -15,9 +15,10 @@ from __future__ import annotations
 from .models import BuyerPersona, Item
 
 # Seed splits (load-bearing). Each seed generates a distinct scenario (see domain.scenario), so
-# these disjoint integer ranges are disjoint *scenarios*. TRAIN_SEEDS feed the proposer + the
-# promotion gate; LOCKED_SEEDS are reserved for the final, gate-never-sees-it transfer measurement.
+# these disjoint integer ranges are disjoint *scenarios*. TRAIN_SEEDS feed the proposer, GATE_SEEDS
+# feed the promotion gate, and LOCKED_SEEDS are reserved for the final transfer measurement.
 TRAIN_SEEDS: list[int] = list(range(6))
+GATE_SEEDS: list[int] = list(range(50, 58))
 LOCKED_SEEDS: list[int] = list(range(100, 108))
 
 ITEMS: list[Item] = [

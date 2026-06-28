@@ -10,15 +10,17 @@ from __future__ import annotations
 from gambit.engine import improve, mean_reward, run_batch, summarize
 from gambit.engine.improve import _panel
 from gambit.negotiation import (
+    Features,
     FirmAnchorBuyer,
     HeuristicBuyer,
+    KnobPolicy,
     KnobSellerPolicy,
     NegotiationDomain,
     PolicyStore,
     knob_nudges,
     run_episode,
 )
-from gambit.negotiation.fixtures import ITEMS, LOCKED_SEEDS, PERSONAS, TRAIN_SEEDS
+from gambit.negotiation.fixtures import GATE_SEEDS, ITEMS, LOCKED_SEEDS, PERSONAS, TRAIN_SEEDS
 from gambit.negotiation.models import budget_of
 
 SEEDS = list(range(6))
@@ -36,6 +38,13 @@ def _buyers():
 def _weak_start() -> PolicyStore:
     # a deliberately poor seller: concedes fast + accepts low → leaves surplus on the table.
     return PolicyStore().with_base(concession_rate=0.80, accept_ratio=0.80)
+
+
+def _tune(domain, start: PolicyStore, *, generations: int = 12):
+    buyers = _buyers()
+    return improve(domain, start, knob_nudges, train_cps=buyers, gate_cps=buyers,
+                   train_seeds=TRAIN_SEEDS, gate_seeds=GATE_SEEDS,
+                   generations=generations, min_support=len(buyers) * len(GATE_SEEDS))
 
 
 def test_curve_moves_on_heldout_with_zero_viol():
@@ -84,6 +93,23 @@ def test_one_knob_sweep_effect_size():
     greedy = mean_reward(run_batch(domain, PolicyStore().with_base(concession_rate=0.80), buyers, SEEDS))
     firm = mean_reward(run_batch(domain, PolicyStore().with_base(concession_rate=0.10), buyers, SEEDS))
     assert firm != greedy            # the knob moves the metric (non-trivial effect size)
+
+
+def test_knob_policy_uses_learned_feature_coefficients():
+    # Doctrine is now seed data in feature coefficients, not fixed arithmetic in resolve().
+    store = PolicyStore(knobs=KnobPolicy()).with_base(concession_rate=0.50, accept_ratio=0.90)
+    thin = Features(margin_ratio=0.10)
+    fat = Features(margin_ratio=0.55)
+    late = Features(margin_ratio=0.10, turn_frac=1.0)
+
+    thin_knobs = store.knobs.resolve(thin)
+    fat_knobs = store.knobs.resolve(fat)
+    late_knobs = store.knobs.resolve(late)
+    assert thin_knobs.concession_rate < fat_knobs.concession_rate  # thin margin protects the wall
+    assert late_knobs.concession_rate < thin_knobs.concession_rate  # shrinking ladder over turns
+
+    nudged = store.with_coeff("concession_rate", "thin_margin", -0.20)
+    assert nudged.knobs.resolve(thin).concession_rate < thin_knobs.concession_rate
 
 
 # --- Slice 3: honest held-out — a structurally different family + a locked, never-gated set -------
@@ -135,8 +161,12 @@ def test_locked_and_train_cover_disjoint_scenarios():
     # saw. Assert disjointness at the SCENARIO level (not just disjoint integers, which is tautological).
     domain = _domain()
     train_scen = {domain.scenario(s).model_dump_json() for s in TRAIN_SEEDS}
+    gate_scen = {domain.scenario(s).model_dump_json() for s in GATE_SEEDS}
     locked_scen = {domain.scenario(s).model_dump_json() for s in LOCKED_SEEDS}
+    assert train_scen.isdisjoint(gate_scen)
     assert train_scen.isdisjoint(locked_scen)
+    assert gate_scen.isdisjoint(locked_scen)
+    assert len(gate_scen) == len(GATE_SEEDS)
     assert len(locked_scen) == len(LOCKED_SEEDS)   # every locked seed is its own distinct scenario
 
 
@@ -146,20 +176,45 @@ def test_improvement_transfers_to_locked_unseen_family():
     # gate never saw. Transfer must be positive, integrity-clean, and — the generalization signature
     # — the unseen-family Δ must not exceed the tuned-family Δ (else the held-out was simply easier).
     domain = _domain()
-    train, locked = _buyers(), _firm_anchor()
     start = _weak_start()
-    final, history = improve(
-        domain, start, knob_nudges,
-        train_cps=train, gate_cps=train, seeds=TRAIN_SEEDS,
-        generations=12, min_support=len(train) * len(TRAIN_SEEDS),
-    )
+    locked = _firm_anchor()
+    final, history = _tune(domain, start)
 
     locked_start = summarize(run_batch(domain, start, locked, LOCKED_SEEDS))
     locked_final = summarize(run_batch(domain, final, locked, LOCKED_SEEDS))
-    train_delta = history[-1]["reward"] - history[0]["reward"]
+    gate_delta = history[-1]["reward"] - history[0]["reward"]
     locked_delta = locked_final["reward"] - locked_start["reward"]
 
-    assert train_delta > 0                                  # the loop actually climbed on what it tuned
+    assert gate_delta > 0                                   # the loop actually climbed on the promotion gate
     assert locked_final["reward"] > locked_start["reward"]  # and the gain TRANSFERS to the unseen family
+    assert locked_final["skill"] > locked_start["skill"]    # scoreboard improves, not just surplus/deal mix
     assert locked_final["viol"] == 0                        # transfer is integrity-clean
-    assert locked_delta <= train_delta + 1e-9              # generalization, not an easier held-out (leak)
+    assert locked_delta <= gate_delta + 1e-9                # generalization, not an easier held-out (leak)
+
+
+# --- Slice 4: substrate ablation — does the situation-keyed PolicyStore earn its keep? ------------
+
+def _locked_reward(domain, policy):
+    return summarize(run_batch(domain, policy, _firm_anchor(), LOCKED_SEEDS))["reward"]
+
+
+def test_substrate_ablation_is_measured_without_overclaiming():
+    # eval-plan §N3: with the SAME optimizer + gate, vary only the substrate and score on the LOCKED
+    # held-out. This is a diagnostic: both learned substrates should beat frozen, but hybrid must not
+    # be asserted to beat uniform unless the locked split actually shows it.
+    domain = _domain()
+
+    hybrid_start = PolicyStore(knobs=KnobPolicy(shaped=True)).with_base(concession_rate=0.80, accept_ratio=0.80)
+    uniform_start = PolicyStore(knobs=KnobPolicy(shaped=False)).with_base(concession_rate=0.80, accept_ratio=0.80)
+
+    uniform_final, hybrid_final = _tune(domain, uniform_start)[0], _tune(domain, hybrid_start)[0]
+    frozen = _locked_reward(domain, hybrid_start)            # gen-0, no learning
+    uniform = _locked_reward(domain, uniform_final)          # learning, one flat knob set
+    hybrid = _locked_reward(domain, hybrid_final)            # learning + margin-keyed knobs
+
+    assert uniform > frozen                                  # the loop lifts the held-out even uniformly
+    assert hybrid > frozen                                   # coefficient-shaped policy still transfers
+    assert hybrid_final.knobs.coeffs != hybrid_start.knobs.coeffs  # coefficient path is actually exercised
+    # every arm stays integrity-clean on the held-out
+    for policy in (hybrid_start, uniform_final, hybrid_final):
+        assert summarize(run_batch(domain, policy, _firm_anchor(), LOCKED_SEEDS))["viol"] == 0

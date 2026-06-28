@@ -4,9 +4,9 @@
 > negotiates*. Distilled from the 7-book research in [`playbook/`](./playbook/) (see especially
 > [`SECTION-9-final-synthesis.md`](./playbook/SECTION-9-final-synthesis.md) and the
 > [concession table](./playbook/assets/json/concession-table.json)). It is also the **cold-start
-> prior** for the hybrid `PolicyStore` — seed the `KnobPolicy` and the per-bucket lessons from here,
-> then let the learning loop refine it. The strong claim is "improves *past expert strategy*," not
-> "past a pushover."
+> prior** for the hybrid `PolicyStore` — seed the `KnobPolicy` base knobs, feature coefficients, and
+> per-bucket lessons from here, then let the learning loop refine them. The strong claim is "improves
+> *past expert strategy*," not "past a pushover."
 
 ---
 
@@ -78,32 +78,63 @@ enforced by the reward + the Tier-1/Tier-2 verifier, not left to the policy's di
 - ❌ **React instantly** to a rude/ambiguous message — pause, then respond calmly.
 - ❌ **Go off-platform / accept odd payment** — safety stop, not a negotiation. Never ship before confirmed on-platform payment.
 
+### 4.1 The walk-away — bluff or real (and how to handle one)
+
+A walk-away is the most common pressure move, and usually a **bluff, not the end**. The target
+runtime should treat "forget it / I'm out / 350 or I walk" as a *tactic*, not a terminal event:
+
+- **The wall doesn't move because someone stood up.** Never let a threatened or actual walk push you
+  below the floor or into a panic concession — extracting exactly that is the bluff's whole purpose.
+- **Call it or bridge it — once.** On a walk the agent gets one calm response: either let them go (the
+  BATNA/relist stands), or make **one** final *conditional* offer with a small face-saving crumb
+  ("$465, today, and I'll include the case") — never a capitulation, never below floor.
+- **Don't chase.** One bridge, then stop. Chasing a walker with escalating cuts just trains them to
+  walk again.
+- **The agent's own walk is real, not theater.** A calm, BATNA-backed walk is its strongest lever
+  against a stuck lowballer (use it when the estimated reservation < floor, or the ladder has stalled) —
+  but it only walks when it would genuinely relist, never as a stunt.
+- **Integrity (self-play):** a *staged* mutual walk that resolves into a cozy split is collusion, not
+  negotiation — the Tier-2 verifier (`buyer_in_character`) must flag a concession that follows a walk
+  for no legitimate reason.
+
+**Mechanical requirement for the next referee slice:** for the bluff to exist at all, a walk must be
+**non-terminal** — the referee gives the other side one rebuttal turn, and no-deal is reached only on a
+re-confirmed/second walk or timeout. The current MVP referee still treats `walk` as terminal, so this is
+an explicit implementation gap, not current coverage.
+
 ---
 
 ## 5. The knob doctrine (how the parametric `KnobPolicy` should behave)
 
-The global `KnobPolicy` resolves the 5 scalars from continuous `Features`. This is the *expected
-shape* of that function — the seed and the sanity check for what the learner converges toward.
+The global `KnobPolicy` is the numeric strategy spine, not a bag of fixed constants. It keeps a
+`base` knob set plus learned feature coefficients; each seller turn computes scale-free `Features`
+and `resolve()` returns clamped per-turn `Knobs`.
 
 | Feature rises → | `opening_anchor` | `concession_rate` | `accept_ratio` | `walkaway_patience` |
 |---|---|---|---|---|
-| **margin_ratio ↑** (fat: lots of room above floor) | stay high | slightly higher (room exists) — but make them *work* for it | slightly lower (room to take less than list) | normal |
-| **margin_ratio ↓** (thin) | high | **low** — protect the wall, add value instead | **high** (only near-list closes) | shorter (walk sooner) |
-| **reservation_gap ↑** (ask far above the est. reservation) | — | concede *toward the estimate*, never below floor; if est. < floor → hold/walk | — | shorter |
+| **thin_margin** (little room above floor) | high | **low** — protect the wall, add value instead | **high** (only near-list closes) | shorter (walk sooner) |
+| **fat_margin** (lots of room above floor) | stay high | slightly higher (room exists) — but make them *work* for it | slightly lower (room to take less than list) | normal |
+| **reservation_gap ↑** (ask far above the observed buyer offer) | — | concede *toward the estimate*, never below floor; if est. < floor → hold/walk | — | shorter |
 | **reservation_gap ≈ 0 / negative** (buyer at/over your ask) | — | small move or none | accept | — |
 | **urgency ↑** (seller time pressure) | — | **faster, larger** steps | **lower** (accept sooner) | **shorter** (close, don't grind) |
-| **turns_elapsed ↑** | — | **shrinking increments** (Ackerman ladder); smallest near the floor | drift toward accept | approaching the wall |
+| **turn_frac ↑** (later in the negotiation) | — | **shrinking increments** (Ackerman ladder); smallest near the floor | drift toward accept | approaching the wall |
 
-Two doctrines encoded here: **opponent-aware pricing** (when `reservation_gap` says the buyer is
-eager, *stop conceding* — hold near their estimated reservation) and the **shrinking ladder** (each
-concession smaller than the last, conditional on closing now).
+The implementation maps this directly: margin becomes `thin_margin` / `fat_margin`, the buyer's last
+offer creates `reservation_gap`, the turn index creates `turn_frac`, and urgency shapes the other
+knobs. This is less hard-coded because the learner can move both the base knobs and the coefficients
+that say when a feature should make the seller firmer or looser.
+
+That still is not a full LLM planner. It is a bounded affine policy over a few doctrine-approved
+levers. The language layer can sound human, but the offline learning claim is narrower: learn better
+feature-conditioned prices, acceptance thresholds, and walk timing without crossing the red lines.
 
 ---
 
 ## 6. The situational lessons (cold-start prior for the buckets)
 
-Per-bucket text lessons keyed by `(margin_band, buyer_type)` — seed `PolicyStore.buckets` with these,
-then let the gate validate/demote them. `buyer_type` is `unknown` until `K_OFFERS` offers exist.
+Per-bucket text lessons keyed by `(margin_band, buyer_type)` — seed `PolicyStore.buckets` with these
+once the text channel is live, then let future lesson gates validate/demote them. `buyer_type` is
+`unknown` until `K_OFFERS` offers exist.
 
 | buyer_type → | **thin margin** | **mid margin** | **fat margin** |
 |---|---|---|---|
@@ -146,10 +177,10 @@ The current self-play engine is a **price negotiation over a hidden reservation*
 
 | Doctrine element | In the current engine? |
 |---|---|
-| Anchor on target, shrinking conditional ladder, accept threshold, walk line | ✅ yes — the `KnobPolicy` |
+| Anchor on target, shrinking conditional ladder, accept threshold, walk line | ✅ yes — `KnobPolicy.resolve(Features)` |
 | Probe-don't-disclose, buyer-type tactics | 🟡 partial — the lesson channel, if seeded |
 | Never below floor, never leak floor | ✅ yes — reward + verifier |
-| Never fabricate, never cave to pressure | 🟡 partial — verifier `honest`; pressure has no analog in the price sim |
+| Never fabricate, never cave to pressure | 🟡 partial — verifier `honest`; pressure's analog is the **walk-away (§4.1)**, but non-terminal walk handling is still a next-slice gap |
 | Bundles, shipping, loyalty, golden bridge | ❌ no — needs a real listing / multi-item state |
 | Ghosting, disputes/refunds, off-platform scam | ❌ no — needs real async + payment + post-sale |
 | "Why isn't it selling" / listing-quality | ❌ no — needs listing + comp data |
@@ -158,8 +189,13 @@ The current self-play engine is a **price negotiation over a hidden reservation*
 
 ## 9. How this plugs into the learning machinery
 
-- **Cold-start prior:** §5 seeds the `KnobPolicy` default shape; §6 seeds `PolicyStore.buckets`. The
-  gate then validates each lesson on locked held-out and **demotes** what doesn't hold.
+- **Cold-start prior:** §5 seeds `KnobPolicy.base` and the default coefficient signs; §6 is the intended
+  seed for `PolicyStore.buckets` once text lessons are live. Today the offline gate validates numeric
+  policy changes on held-out gate panels, then reports locked held-out transfer; lesson
+  validation/demotion is future machinery.
+- **What learns offline:** proposal generation can nudge one base knob, one feature coefficient, or
+  the urgency toggle at a time. The report shows final base knobs and `learned coeffs`, so coefficient
+  drift is visible instead of hidden inside "the strategy got better."
 - **The red lines (§4 NEVERs) are guardrails, not learnable behavior:** the floor is the reward wall;
   floor-leak / fabrication are verifier checks. The learner tunes *how to win within* the lines; it
   must never learn to cross them — that's what `viol=0` protects.
@@ -168,3 +204,39 @@ The current self-play engine is a **price negotiation over a hidden reservation*
 - **The honest line:** the agent never invents facts, so "justify with comps" only works when real
   comps are supplied. In the sim there are no comps — that part of the doctrine activates with the eBay
   connector. Until then, the price-core doctrine (§5) is what's live.
+
+---
+
+## 10. Operational prompts (the doctrine, compressed for the agents)
+
+The seller/buyer **target system prompts** are this doctrine in miniature — short enough to ride on
+every turn, with situational depth eventually coming from per-bucket lessons (§6) injected via
+`@agent.instructions`. The current offline engine does not read lesson text, and the live harness only
+uses a slimmer prompt/context path. Keep the structured output minimal (a spoken line + an optional
+price + accept/walk); the *tactics* live in the language the model generates, governed by these.
+
+**Seller (system prompt):**
+> You are a sharp, warm marketplace seller in a multi-turn negotiation. Close at the highest price the
+> buyer will truly pay, in reasonable time — and walk rather than take a bad deal.
+> - You have a SECRET FLOOR: never sell below it, never reveal or hint at it.
+> - Anchor on your target with a real reason; hold price and add value before conceding; concede on a
+>   shrinking, conditional ladder — never equal steps, never for free.
+> - A buyer's walk-away is usually a bluff: don't panic-concede or cross your floor to save the deal.
+>   Stay calm — either let them go (you can relist) or make ONE final conditional offer with a small
+>   face-saving extra, then stop chasing.
+> - Lead with empathy, keep replies short and human, never fabricate comps or scarcity, and don't cave
+>   to pressure or threats.
+
+**Buyer (system prompt — the self-play counterparty):**
+> You are a shrewd, friendly buyer in a multi-turn negotiation. Pay as little as possible — and walk
+> rather than overpay.
+> - You have a HIDDEN MAX BUDGET: never offer or accept above it, never reveal it.
+> - Open below budget with a reason; concede slowly and conditionally; make the seller justify every
+>   dollar.
+> - Use pressure honestly — a credible walk-away, a deadline, take-it-or-leave-it — but a real walk is
+>   your strongest lever; don't bluff yourself into a deal you'd regret.
+> - Keep replies short and human, never fabricate, and concede only for legitimate reasons.
+
+In the target runtime, each turn also gets the **live context** (the standing price, the other side's
+last move, the public transcript, and this bucket's promoted lessons) via `@agent.instructions`. The
+system prompt is the constant doctrine; the instructions are the situation.

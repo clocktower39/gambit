@@ -1,9 +1,9 @@
 """The domain-agnostic generational self-improvement loop.
 
 A proposer (domain-specific) suggests candidate policies; the engine promotes one only if it
-beats the current policy on a *held-out* set over the SAME seeds (paired), with enough support
-and zero integrity violations. This is the whole claim: a frozen actuator whose policy improves,
-verified on counterparties it didn't train against.
+beats the current policy on a *held-out* gate panel (paired), with enough support and zero
+integrity violations. This is the whole claim: a frozen actuator whose policy improves under a
+separate verifier panel instead of accepting self-reported improvement.
 
 KISS (per the build spec): paired held-out A/B + minimum-support + a hard viol gate. FDR /
 Thompson / demotion are deliberately deferred until a measured effect justifies them. Nothing
@@ -47,24 +47,32 @@ def improve(
     *,
     train_cps: list[Counterparty],
     gate_cps: list[Counterparty],
-    seeds: list[int],
+    seeds: list[int] | None = None,
+    train_seeds: list[int] | None = None,
+    gate_seeds: list[int] | None = None,
     generations: int = 10,
     min_support: int = 8,
     select: Metric = mean_reward,
 ) -> tuple[P, list[dict]]:
     """Greedy hill-climb: each generation, accept the best candidate that beats the incumbent on
-    the held-out gate (paired over `seeds`), clears `min_support`, and is integrity-clean. The
+    the held-out gate (paired over `gate_seeds`), clears `min_support`, and is integrity-clean. The
     held-out gate metric is monotone-non-decreasing by construction; early-stop on a plateau."""
 
+    if seeds is not None:
+        train_seeds = train_seeds or seeds
+        gate_seeds = gate_seeds or seeds
+    if train_seeds is None or gate_seeds is None:
+        raise ValueError("provide either seeds=... or both train_seeds=... and gate_seeds=...")
+
     def gate(p: P) -> list[EpisodeResult]:
-        return run_batch(domain, p, gate_cps, seeds)
+        return run_batch(domain, p, gate_cps, gate_seeds)
 
     base_res = gate(policy)
     base = select(base_res)
     history = [{"gen": 0, "improved": False, **_panel(base_res)}]
 
     for g in range(1, generations + 1):
-        train_res = run_batch(domain, policy, train_cps, seeds)
+        train_res = run_batch(domain, policy, train_cps, train_seeds)
         best_p: P | None = None
         best_score = base
         best_res: list[EpisodeResult] = base_res
