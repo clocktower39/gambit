@@ -8,10 +8,13 @@ The agent improves in production from real use: it reflects on the conversations
 had, rewrites its own negotiation strategy, and keeps what measurably wins.
 
 ## The demo in one line
-> Same item, same buyer, same hidden budget. The day-one agent closes at **\$448**.
-> After learning from its own negotiations — zero human labels — it closes the identical
-> buyer at **\$471**, and *more than doubles* its surplus on buyers it never trained on.
-> Watch the curve climb across generations.
+> Same item, same hidden budget. Across generations the agent extracts **more of the buyer's true
+> willingness to pay** — its **skill** (surplus vs. the hidden budget) climbs — and the gain **holds on
+> a locked set of buyers it never trained on**, with zero human labels and frozen weights.
+> Watch the curve climb.
+>
+> *(Numbers below are illustrative from the deterministic offline path — no live-LLM result exists yet;
+> the real curve is the locked-held-out, skill-led one in [`docs/eval-plan.md`](docs/eval-plan.md).)*
 
 ## How it works
 
@@ -32,18 +35,21 @@ had, rewrites its own negotiation strategy, and keeps what measurably wins.
   (lowballer, fence-sitter, in-a-hurry, tire-kicker) and rewarded for its own surplus — so the
   agent improves by negotiating against itself, no human labels. A **human** (by text or voice)
   or a **live market** (eBay) drops into the same seat unchanged. The seller never sees the budget.
-- **Seller** — negotiates from the **resolved situation-bucket** of a learned `PolicyStore`, keyed
-  by `(price_band, margin_band, buyer_type)`: per-bucket anchor, concession schedule, accept
-  threshold, walk-away patience, **plus that bucket's validated lessons**. The model's weights are
-  frozen — *the policy table is what learns.*
+- **Seller** — negotiates from a learned **hybrid policy** (`PolicyStore`): a **global parametric knob
+  policy** (anchor, concession schedule, accept threshold, walk-away patience — computed from
+  continuous, scale-free features, so strength pools across situations) **plus per-bucket validated
+  lessons** keyed by a coarse `(margin_band, buyer_type)`. The model's weights are frozen — *the policy
+  is what learns.*
 - **Optimizer** — the self-improvement brain. The weights can't change, so it improves the **data the
-  agent reads**: each generation it finds the weakest bucket and proposes a scoped knob tweak or
-  lesson, kept only if a **per-bucket held-out A/B** raises surplus with `viol=0` (Beta/Thompson
-  exploration; validated lessons are never evicted → no forgetting). Offline it runs a deterministic
-  search so the loop is testable with no API key. A **Gemini Antigravity** backend can run this as a
-  managed agent that edits *one weak bucket's* skill fragment across generations. Either way it
-  *proposes* — the deterministic reward *selects*. (Why a table, not one global prompt: a single
-  prompt plateaus, forgets, and can't attribute gains — see [`docs/architecture.md`](docs/architecture.md).)
+  agent reads**: each generation it targets the weakest bucket (with enough support) and proposes **one
+  atomic change** — a knob nudge *or* one lesson — kept only if a **paired A/B on a locked,
+  structurally-different held-out** raises surplus with `viol=0`, clears an FDR threshold, and doesn't
+  regress the global policy; dead effects are later **demoted** (no forgetting, no hoarding noise).
+  Offline it runs a deterministic search so the loop is testable with no API key. A **Gemini
+  Antigravity** backend (post-MVP) runs the *lesson* channel as a multi-step sandbox agent that edits
+  one bucket's fragment across generations. Either way it *proposes* — the deterministic reward
+  *selects*. (Why not one global prompt or a 27-bin table: the first plateaus/forgets, the second
+  starves — see [`docs/architecture.md`](docs/architecture.md).)
 - **Reward** — a *deterministic, verifiable* surplus from the secret floor drives selection
   (no LLM judge — following arXiv:2604.09855), with a terminal penalty for going below floor and
   neutral credit for walking away. A reward-integrity guard audits every transcript so the
@@ -76,10 +82,11 @@ uv run python scripts/run_demo.py --generations 8
 Offline sample output:
 
 ```
-gen 0  score=0.132  close=67%  skill=0.34  price=$510  anchor=1.00  viol=0%  deals=6/12
-gen 6  score=0.250  close=67%  skill=0.69  price=$550  anchor=0.92  viol=0%  deals=6/12
->>> Self-taught agent captured $+23 more from the same buyer.
-held-out buyers (never trained on):  surplus 0.16 -> 0.36
+# illustrative — deterministic offline path (NOT a live-LLM result); viol here = below-floor/hallucination only
+gen 0  skill=0.34  surplus=0.13  close=67%  price=$510  anchor=1.00  viol=0(offline)  deals=6/12
+gen 6  skill=0.69  surplus=0.25  close=67%  price=$540  anchor=0.92  viol=0(offline)  deals=6/12
+>>> +$30 on the same buyer; lead metric is skill (0.34 -> 0.69).
+locked held-out (never trained on):  skill 0.31 -> 0.41   # climbs LESS than train (the honest signature)
 ```
 
 ## Roadmap & prize stack
@@ -87,7 +94,7 @@ held-out buyers (never trained on):  surplus 0.16 -> 0.36
 | Phase | What | Status |
 |---|---|---|
 | **1 — Learning core** | seller + self-play buyer (one shared policy) + self-improvement loop + reward + head-to-head | ✅ runnable (offline + MiniMax M3) |
-| **1 — Learned artifact** | situation-keyed `PolicyStore` (per-bucket knobs + value-attributed lessons) + per-bucket held-out A/B promotion — replaces the global tactics blob | ⬜ |
+| **1 — Learned artifact** | hybrid `PolicyStore`: global parametric knob policy + per-bucket lessons; one-atomic-change promotion via paired **locked-held-out** A/B (min-support + FDR + global non-regression + demotion) | ⬜ |
 | **1 — Self-improving optimizer** | **Gemini Antigravity** managed agent improves one weak bucket's skill fragment across generations (stateful env) — proposes, never selects | ⬜ |
 | **2 — Real marketplace** | eBay connector (real list + Best Offer loop, **eBay API**) — see `docs/ebay.md` | ⬜ |
 | **2 — Voice buyer seat** | **LiveKit + Gemini Live/Translate**: a human haggles by voice, cross-language, in the buyer seat | ⬜ |
@@ -115,9 +122,10 @@ gambit/
   settings.py      # pydantic-settings BaseSettings (env / .env, validated)
   observability.py # logfire.configure() + instrument_pydantic_ai (once, at entry)
   llm.py           # MiniMax M3 OpenAIChatModel factory + FallbackModel (inner loop)
-  models.py        # ALL domain types as Pydantic BaseModel (+ validators): Item, Strategy
-                   #   (per-bucket knobs), Lesson, BucketPolicy, PolicyStore, Episode, Belief
-  policy.py        # the learned artifact: situation_key() + PolicyStore + per-bucket held-out promotion
+  models.py        # ALL domain types as Pydantic BaseModel (+ validators): Item, Features, Knobs,
+                   #   KnobPolicy, Strategy (knob seed), Lesson, BucketPolicy, PolicyStore, Episode, Belief
+  policy.py        # learned artifact: situation_key() + KnobPolicy.resolve() + shadow PolicyStore
+                   #   + paired locked-held-out promotion (min-support, FDR, demotion)
   agents/          # seller · buyer · optimizer · verifier (typed Agents)
                    #   + optimizer_antigravity.py — Gemini managed-agent optimizer backend
   policies.py      # Policy protocol: self-play (LLM) · heuristic · human · live-market

@@ -94,33 +94,37 @@ human ever labels a transcript.
   buyer `budget − price`) — opposing objectives over shared weights make self-play genuinely adversarial.
 - **Reward-integrity guard** so the curve is defensible: Tier-1 deterministic audit (done), Tier-2
   binary-question verifier on a *different model* (done), Tier-3 held-out counterparties (done).
-- **What's learned is a policy *table*, not a prompt blob** (see below): the optimizer proposes a
-  change scoped to one weak situation-bucket, and the held-out A/B gate keeps it or drops it. The loop
-  early-stops on a held-out plateau.
+- **What's learned is a policy, not a prompt blob** (see below): the optimizer proposes *one atomic
+  change*, and a paired held-out A/B gate keeps it or drops it. The loop early-stops on a held-out plateau.
 
 ### What actually gets learned (a frozen model still learns)
 
 **MiniMax M3's weights never change — it's a frozen actuator.** So everything Gambit learns lives in
-*data it reads at inference time*. The learned artifact is a **situation-keyed policy table**
-(contextual-bandit / tabular RL), **not** a single global tactics prompt:
+*data it reads at inference time*. The learned artifact is a **hybrid** — a global *parametric knob
+policy* plus a *per-bucket text-lesson table* — **not** a single global tactics prompt (and not a pure
+27-bin table, which starves on a small episode budget):
 
-- The situation is structured and low-dimensional — `(price_band, margin_band, buyer_type)`. Each
-  **bucket** holds its own knobs + a few **validated, value-attributed lessons**. At a turn, the agent
-  infers the bucket and injects only that row: a small, specific prompt; total capacity = the whole table.
-- **Why not one global `SKILL.md` + 5 knobs:** a single prompt has fixed capacity (BINEVAL — which we
-  cite — shows prompt-opt plateaus after 1–2 iters), forces FIFO eviction (it forgets the lesson that
-  mattered), and can't tell "hard on a thin-margin lowballer" from "soft on an eager fat-margin buyer."
-- **How it improves without weights:** group episodes by bucket → find the weakest → propose a
-  *scoped* knob/lesson change → **promote only if it raises surplus on a held-out, structurally
-  different opponent with `viol=0`** (Beta/Thompson drives exploration). The table grows monotonically;
-  nothing validated is evicted. Antigravity is just the stronger *proposer* for one bucket — it never selects.
-- **Retrieval is a table lookup, not vectors.** The key is a structured tuple, so it's a `dict` /
-  `WHERE bucket=…` — no embeddings. pgvector is reserved for *one optional* job (semantic few-shot
-  retrieval of past buyer *messages*) and only if it beats structured-key exemplars in an A/B.
-- **Honest ceiling:** each bucket plateaus at what the frozen model can execute with a perfect row —
-  you can't prompt past the base model. The claim is therefore **monotonic + coverage-growing +
-  attributable + held-out-verified, not unbounded.** Weight-level RL (*Later*) is what lifts the
-  per-bucket ceiling. This is the truthful version of "never stops improving."
+- **Numeric channel — pooled, parametric.** The 5 knobs are the output of a small function of
+  *continuous, scale-free* features (margin ratio, reservation gap, urgency); its parameters are
+  **global**, so one thin-margin episode sharpens the concession curve *everywhere*. Sample-efficient.
+- **Text channel — per-bucket, interpretable.** Short lessons keyed by a **coarse** tuple
+  `(margin_band, buyer_type)` — `price_band` dropped (the reward is scale-invariant, so it added bins,
+  not signal); `buyer_type` is `unknown` until a few offers exist (don't route on a t=0 guess). This is
+  the diffable, Antigravity-editable channel.
+- **Why not one global `SKILL.md` + 5 knobs:** fixed capacity (BINEVAL — which we cite — shows prompt-opt
+  plateaus after 1–2 iters), FIFO forgetting, and one knob-set can't be "hard on a thin-margin lowballer"
+  *and* "soft on an eager fat-margin buyer."
+- **How it improves without weights:** group episodes by bucket → target the weakest **with enough
+  support** → propose **one atomic change** (a global knob nudge *or* one lesson) → **promote only if a
+  paired, single-toggle A/B on a *locked, structurally-different* held-out raises surplus with `viol=0`,
+  clears an FDR threshold, and doesn't regress the global policy.** Validated entries are **demotable**
+  (re-audited; evicted if the effect dies) — "monotonic" means performance under a guard, not hoarded noise.
+- **Retrieval is a table lookup, not vectors.** Structured key → a `dict` / `WHERE bucket=…`, no
+  embeddings. pgvector is reserved for *one optional* job (semantic few-shot of past buyer *messages*)
+  and only if it beats structured-key exemplars in an A/B.
+- **Honest ceiling:** each bucket plateaus at what the frozen model can execute — you can't prompt past
+  the base model. The claim is **monotonic + coverage-growing + attributable + locked-held-out-verified,
+  not unbounded.** Weight-level RL (*Later*) lifts the per-bucket ceiling. The truthful "never stops improving."
 
 ---
 
@@ -172,8 +176,8 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 | `metrics.py` → `reward.py` | verifiable surplus reward + terminal shaping + Tier-1 audit + panel | ✅ |
 | seller policy / buyer policy | the negotiator + the self-play buyer (one shared policy, two contexts) | 🟡 buyer is a passive heuristic today — make it reward-seeking; LLM path **untested** |
 | `optimizer.py` | reflection → lessons, anti-bloat dedup/cap, verifier-rubric feedback | 🟡 LLM path **untested** |
-| `policy.py` (the learned artifact) | situation-keyed `PolicyStore` (per-bucket knobs + validated lessons) + per-bucket held-out A/B promotion — replaces the global tactics blob | ⬜ |
-| optimizer (Antigravity backend) | Gemini managed agent that improves **one weak bucket's** lesson fragment per call (stateful env) — proposes, never selects | ⬜ |
+| `policy.py` (the learned artifact) | hybrid `PolicyStore`: global parametric `KnobPolicy` + per-bucket text lessons; one-atomic-change promotion via paired locked-held-out A/B (min-support + FDR + global non-regression + demotion) | ⬜ |
+| optimizer (Antigravity backend) | Gemini managed agent — multi-step sandbox loop improving **one bucket's** lesson fragment per call (stateful env); proposes, never selects (deferred post-MVP) | ⬜ |
 | voice buyer shell | LiveKit room + Gemini Live/Translate → typed `BuyerMove` in the human seat | ⬜ |
 | listing media | Nano Banana listing image/text-in-image for the eBay post | ⬜ |
 | `improve_loop.py` | generational loop + held-out early-stop | ✅ (⬜ checkpoint league) |
@@ -193,8 +197,17 @@ an interface we already have*, so the core loop, the reward, and the integrity r
 Milestones are capabilities, not stage tricks. Each one makes it *more real* or *better at
 improving*.
 
-### Now — the engine is real and improving live
+> **MVP build order (decided).** M0 de-risk + typed foundation → M1 hybrid `PolicyStore` (offline) →
+> M2 a structurally-different held-out family → **M3 the substrate ablation = the headline** → M4 typed
+> agents live on MiniMax + reward-seeking buyer → M5 live anti-collusion verifier. Deferred for the MVP:
+> Antigravity, voice, eBay, Nano Banana, pgvector, checkpoint league, deploy. Full per-milestone
+> done-criteria + eval gates in [`docs/eval-plan.md`](docs/eval-plan.md).
+
+### Now — de-risk + the engine real and improving live
 - [x] uv project (`pyproject.toml` + `uv.lock`); `pydantic-ai` installed.
+- [ ] **M0 spike (gate, first):** prove `OpenAIChatModel(minimax) + output_type=SellerMove` returns
+      schema-valid output + `response_format` enforcement on M3; **measure $/call + latency → per-generation
+      cost**; fill `MINIMAX_BASE_URL`/`MODEL` (TBD). *Runs in parallel with the no-LLM foundation below.*
 - [ ] `gambit/llm.py`: Pydantic AI model on MiniMax + typed outputs
       (`SellerMove`, `BuyerMove`, `OptimizerProposal`, `AuditVerdict`).
 - [ ] Refactor seller/buyer/`optimizer.propose_llm`/`verifier._verify_llm` to typed agents;
@@ -202,13 +215,15 @@ improving*.
 - [ ] Config via `pydantic-settings`: `MINIMAX_API_KEY`/`_BASE_URL`/`_MODEL`, keep `OFFLINE`.
 - [ ] Logfire at the entry point — every agent run + the curve traced.
 - **Real when:** a live MiniMax run shows surplus climbing across generations with `viol=0%`,
-      and the gains hold on held-out counterparties.
+      and the gains hold on a **locked, structurally-different** held-out set.
 
 ### Next — make self-play genuinely adversarial
-- [ ] **Situation-keyed `PolicyStore` (the learned artifact):** replace the single global tactics
-      blob + 5 global knobs with per-bucket knobs + validated, value-attributed lessons, retrieved by
-      `situation_key(item, belief)` at inference and promoted per-bucket on held-out. This is what makes
-      "improves without weight updates" real rather than a prompt that plateaus (BINEVAL).
+- [ ] **Hybrid `PolicyStore` (the learned artifact):** a global *parametric* knob policy (pooled
+      strength) + per-bucket *text lessons*, keyed by a coarse `(margin_band, buyer_type)` (no
+      `price_band`; `buyer_type` after K offers). Promote **one atomic change** per generation via a
+      paired single-toggle A/B on a **locked, structurally-different** held-out, with **min-support + FDR
+      + global non-regression + a demotion path**. This is what makes "improves without weight updates"
+      real (not a prompt that plateaus, not a 27-bin table that starves).
 - [ ] **Reward-seeking buyer:** the buyer-hat optimizes its own surplus (today it's a passive
       reservation-respecting heuristic). This is what turns "two agents" into real self-play.
 - [ ] **Structurally-different held-out:** make the held-out promotion gate run against a different
@@ -280,6 +295,19 @@ improving*.
 - **Call volume / cost / latency** — a generation = many negotiations × turns × 2 agents (+ verifier).
   Keep batches small while iterating; scale once it holds.
 - **Overfitting to self** — train and judge on held-out counterparties, not just the practiced ones.
+- **Gate leakage (the deepest learning risk)** — the held-out set is *consumed* by the promotion gate,
+  so a curve can climb by overfitting the gate, not by transfer. Guard: a **three-way split** — train ·
+  a *gating* held-out (the gate may overfit it) · a **LOCKED final test set touched once** for the
+  headline. The headline number comes only from the locked set.
+- **Promoting noise / never forgetting** — hundreds of per-bucket A/Bs ⇒ false positives; "never evict"
+  locks them in forever. Guard: **min-support** before a bucket is targeted/promoted, **FDR control**
+  across a generation's candidates, **one atomic change per A/B** (so gains attribute), and a **demotion
+  path** (re-audit promoted entries on fresh seeds; evict dead effects). "Monotonic" = performance under
+  a guard, not a hoard.
+- **Easy-held-out illusion** — if held-out climbs *faster/higher* than train, the held-out is easier,
+  not sterner. Guard: held-out is a **different, frozen policy family** (not the same sim with a new
+  `budget_ratio`), report **skill** (vs hidden budget) not just surplus, and treat held-out Δ > train Δ
+  as a red flag. No real frozen-LLM number exists yet — offline figures are labeled illustrative.
 
 ---
 

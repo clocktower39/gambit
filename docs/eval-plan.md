@@ -50,7 +50,22 @@ The negotiation loop is a referee over two policies; eval swaps the *buyer*:
 different `budget_ratio`.** A held-out set that is the same generator with new params is *in-distribution*;
 it proves nothing about transfer. Use a different family: a separately-prompted LLM buyer, a second
 heuristic, or a human. Reservations are still *assigned* (so verifiable surplus stays well-defined), but
-the **behavior policy differs**. All runs keyed by integer **seed** for paired comparison and regression.
+the **behavior policy differs**, and the held-out buyer's policy is **frozen** (it never reads the shared
+store, so rising seller surplus is skill, not co-drift). All runs keyed by integer **seed** for paired
+comparison and regression.
+
+**Three-way split — no test-set leakage (load-bearing).** The promotion gate *selects* on held-out
+hundreds of times, so a single held-out set would be overfit by the gate and the curve would be
+illusory. Split into three, never blurred:
+
+| Split | Used by | Overfit expected? |
+|---|---|---|
+| **train** | generates episodes / the proposer | n/a |
+| **gating held-out** (different family) | the per-promotion A/B, every generation | yes — that's its job |
+| **LOCKED final test** (different family, distinct seeds) | the **headline curve only**, touched **once** at the end | must stay clean |
+
+The gate may climb the gating set; credibility comes from the **locked** set, which no promotion decision
+ever sees. Rotate gating seeds across generations so the gate can't memorize them either.
 
 ## 3. Per-component evals
 
@@ -65,18 +80,27 @@ the **behavior policy differs**. All runs keyed by integer **seed** for paired c
   checked. **Report `viol` from the live-LLM verifier path, and label any offline `viol=0` as offline.**
 
 ### b) PolicyStore learning (VALIDITY — the core)
-- **Tested:** the learned artifact actually improves, per-bucket, and the gains transfer.
+- **Tested:** the learned artifact actually improves, attributably, and the gains transfer to the locked set.
+- **The gate (the only contrast that counts):** a promotion is decided by a **paired, single-toggle A/B
+  on the gating held-out, within the promotion generation** — arms share seeds and differ *only* by the
+  one candidate change. **No accumulated running means** (`reward_with`/`reward_without` as lifetime
+  averages are confounded by a non-stationary opponent and co-present lessons — don't use them as the
+  decision signal).
 - **Metrics / pass:**
-  1. **Held-out generational curve:** mean held-out surplus is monotone-non-decreasing across
-     generations (allowing early-stop noise); end > start with bootstrap CI excluding 0.
-  2. **Promotion-gate soundness:** every *promoted* knob/lesson beats its withheld control **on
-     held-out** (`reward_with > reward_without`), not just on training. Audit the log: 0 promotions that
-     regress held-out.
-  3. **No-regression:** post-promotion policy ≥ pre-promotion on a fixed held-out eval set.
-  4. **Attribution sanity:** because A/B is per-bucket + per-lesson, each gain localizes to one
-     `situation_key` — assert the improving bucket is the one that changed.
-- **Method:** run the generational loop (`improve_loop`); diff `PolicyStore.buckets[k]` per generation;
-  re-score with/without each promotion on held-out seeds.
+  1. **Locked-test generational curve:** mean surplus on the **locked final test** is
+     monotone-non-decreasing across generations; end > start with bootstrap CI excluding 0.
+  2. **One atomic change per A/B:** each generation promotes at most one change per bucket (knob nudge
+     *or* one lesson), so every gain localizes to one `situation_key` + one entry.
+  3. **Min-support:** a bucket is neither targeted nor promoted below `MIN_SUPPORT` paired seeds (set by
+     a power calc, not a round number) — else the gate promotes sampling noise.
+  4. **Multiple-comparison control:** apply **Benjamini-Hochberg FDR** across all candidate promotions in
+     a generation; with many buckets, an uncorrected α=.05 locks in ~N·α false positives permanently.
+  5. **Global non-regression:** per-bucket greedy can regress the whole (shared policy); require the
+     **full-policy** locked-test score to be non-decreasing post-promotion, not just the bucket's.
+  6. **Held-out-Δ sanity:** held-out Δ should be **≤ train Δ**. Held-out climbing faster/higher than
+     train signals an *easier* held-out (in-distribution leak), not generalization — fail the run, fix the set.
+- **Method:** run `improve_loop`; for each candidate, score the shadow policy with/without on the same
+  gating seeds; apply FDR; promote survivors; record `gate_delta` + `support`; headline reads the locked set.
 
 ### c) Coverage growth & targeting
 - **Tested:** the system spends effort where it's weak and broadens over time.
@@ -94,10 +118,14 @@ the **behavior policy differs**. All runs keyed by integer **seed** for paired c
   shows held-out doesn't degrade vs latest-only; the held-out **promotion gate refuses** a candidate that
   regresses held-out.
 
-### f) Forgetting check (the FIFO failure we designed out)
-- **Tested:** a lesson validated in gen *N* is still present and still helps in gen *N+k* (no eviction).
-- **Metric / pass:** sample promoted lessons from early generations; assert each is still in its bucket
-  and its `reward_with > reward_without` still holds. Any silently-dropped validated lesson = a bug.
+### f) Demotion check (active re-audit, not "never evict")
+- **Tested:** promoted entries still *earn their place* — and dead ones are removed. "Never evict" would
+  lock in every false-positive promotion permanently, so the design demotes, it doesn't hoard.
+- **Mechanism:** each generation, re-audit a sample of promoted lessons/knob-nudges on **fresh** gating
+  seeds; if a re-run paired A/B's CI now includes 0, **demote** (un-promote) it. Validated-and-still-live
+  entries persist (no FIFO eviction); only effects that no longer hold are dropped.
+- **Metric / pass:** 0 entries whose effect has died remain `promoted`; report demotions/generation.
+  A genuinely good early lesson should survive re-audit at gen *N+k* — assert a sample does.
 
 ## 4. Headline experiment — improvement that transfers (+ substrate ablation)
 
@@ -135,15 +163,16 @@ gen-0**; if seeded, the curve must climb **past the strong prior** (the credible
 deliberate pushover.
 
 ## 8. Scorecard (report at demo)
-**Gate row (all must PASS — else stop-ship):** `viol=0` on train + held-out + self-play · 0 promotions
-that regress held-out · 0 silently-evicted validated lessons.
+**Gate row (all must PASS — else stop-ship):** `viol=0` (live verifier) on train + held-out + self-play ·
+0 promotions that regress the **locked** test · FDR-controlled, min-support promotions only · 0 dead-effect
+entries left `promoted` (demotion working) · held-out Δ ≤ train Δ.
 
 **Headline (only meaningful if gates pass):**
 | # | Metric | Target |
 |---|---|---|
-| N1 | **Held-out surplus climb** (gen-0 → gen-N), bootstrap CI | Δ > 0, CI excludes 0 |
-| N2 | **Skill** (vs hidden budget) on held-out, reported beside surplus | climbs with N1 |
-| N3 | **Substrate-ablation lift** — PolicyStore vs global-prompt on held-out | PolicyStore keeps climbing where global plateaus |
+| N1 | **Locked-test surplus climb** (gen-0 → gen-N), bootstrap CI | Δ > 0, CI excludes 0 |
+| N2 | **Skill** (vs hidden budget) on the locked set, reported beside surplus (the lead metric) | climbs with N1 |
+| N3 | **Substrate-ablation lift** — hybrid PolicyStore vs global-prompt vs frozen, on the locked set | PolicyStore keeps climbing where global plateaus |
 | N4 | **Integrity** — live-verifier `viol` | **0** (labeled live, not offline) |
 | N5 | **Belief calibration** — reservation error / type accuracy | within target |
 
