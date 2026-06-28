@@ -16,6 +16,7 @@ Needs MINIMAX_API_KEY (agents + verifier). The --gemini step needs GEMINI_API_KE
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -27,6 +28,7 @@ from gambit.negotiation.agents import LLMBuyer, LLMSeller  # noqa: E402
 from gambit.negotiation.fixtures import ITEMS, PERSONAS  # noqa: E402
 from gambit.negotiation.verifier import QLABEL, verify_episode  # noqa: E402
 from gambit.settings import settings  # noqa: E402
+from gambit import observability as obs  # noqa: E402
 
 
 def _play(domain, seller, buyer, seed: int, *, show_transcript: bool) -> dict:
@@ -51,6 +53,9 @@ def _play(domain, seller, buyer, seed: int, *, show_transcript: bool) -> dict:
     print(f"  seed {seed} [{rec['bucket']}] {buyer.family:>9} → "
           f"deal={o.deal} price={o.price} reward={rec['reward']:+.3f} viol={rec['viol']} "
           f"verifier[{v.get('mode', '?')}]:{flagtxt}  ({dt:.0f}s · {rec['reason']})")
+    obs.outcome(deal=o.deal, result=("deal" if o.deal else "no-deal"), price=o.price,
+                reward=rec["reward"], surplus=o.surplus, skill=rec["skill"],
+                viol=rec["viol"], turns=o.turns, bucket=rec["bucket"])
     return rec
 
 
@@ -75,6 +80,13 @@ def main() -> None:
         print("MINIMAX_API_KEY not set — add it to .env and rerun.")
         return
 
+    obs.configure()
+    with obs.job("self-play", source="agent", run_id=os.environ.get("GAMBIT_RUN_ID"),
+                 title="live M3 self-play"):
+        _run(args)
+
+
+def _run(args) -> None:
     domain = NegotiationDomain(ITEMS)
     seller = LLMSeller(name="m3-seller")
     if args.buyer == "llm":
@@ -114,6 +126,7 @@ def main() -> None:
     new_store = AntigravityOptimizer().propose(PolicyStore(), bucket, transcripts, perf)
     lesson = new_store.buckets[bucket].lessons[-1].text
     print(f"proposed lesson:\n  {lesson}\n")
+    obs.reflection(bucket=bucket, seller_lesson=lesson, surplus=perf["mean_reward"], viol=perf["viol"])
 
     seller_with_lesson = LLMSeller(name="m3-seller+lesson", lessons=[lesson])
     seeds_in_bucket = [r["seed"] for r in recs if r["bucket"] == bucket]
