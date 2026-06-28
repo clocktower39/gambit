@@ -239,22 +239,16 @@ def main() -> int:
 
 
 def _emit_logfire(agg: dict) -> None:
-    """Optionally land the god-view in Logfire too (kind=overview). Never required; never crashes."""
-    try:
-        from gambit.settings import settings
-        if not getattr(settings, "logfire_token", ""):
-            return
-        import logfire
-        logfire.configure(token=settings.logfire_token, service_name="gambit",
-                          scrubbing=False, inspect_arguments=False, console=False)
+    """Land the god-view in Logfire as a gambit.kind=overview record (best-effort; never crashes)."""
+    from gambit import observability as obs
+    obs.configure()
+    with obs.job("overview", source="agent", title="overview"):
         t = agg["top"]
-        logfire.info("overview", kind="overview", source="human",
-                     episodes=t["episodes"], deals=t["deals"], close_rate=t["close_rate"],
-                     mean_surplus_deals=t["mean_surplus_deals"], mean_reward=t["mean_reward"],
-                     total_viol=t["total_viol"], buckets=len(agg["buckets"]),
-                     weakest=[b["bucket"] for b in agg["weakest"]])
-    except Exception:  # noqa: BLE001 — observability is best-effort
-        pass
+        obs.emit("overview", kind="overview",
+                 episodes=t["episodes"], deals=t["deals"], close_rate=t["close_rate"],
+                 mean_surplus_deals=t["mean_surplus_deals"], mean_reward=t["mean_reward"],
+                 total_viol=t["total_viol"], buckets=len(agg["buckets"]),
+                 weakest=[b["bucket"] for b in agg["weakest"]])
 
 
 if __name__ == "__main__":

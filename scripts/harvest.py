@@ -287,21 +287,15 @@ def _write_out(agg: dict, out_path: Path) -> Path | None:
 
 
 def _emit_logfire(agg: dict) -> None:
-    """Optionally land the harvest in Logfire (kind=harvest). Never required; never crashes."""
-    try:
-        from gambit.settings import settings
-        if not getattr(settings, "logfire_token", ""):
-            return
-        import logfire
-        logfire.configure(token=settings.logfire_token, service_name="gambit",
-                          scrubbing=False, inspect_arguments=False, console=False)
+    """Land the harvest in Logfire as a gambit.kind=harvest record (best-effort; never crashes)."""
+    from gambit import observability as obs
+    obs.configure()
+    with obs.job("harvest", source="agent", title="harvest"):
         per_bucket = {k: len(v["candidates"]) for k, v in agg["buckets"].items()}
-        logfire.info("harvest", kind="harvest", source="human",
-                     episodes=agg["episodes"], reflections=agg["reflections"],
-                     buckets=len(agg["buckets"]), candidates=sum(per_bucket.values()),
-                     min_support=agg["min_support"], per_bucket=per_bucket)
-    except Exception:  # noqa: BLE001 — observability is best-effort
-        pass
+        obs.emit("harvest", kind="harvest",
+                 episodes=agg["episodes"], reflections=agg["reflections"],
+                 buckets=len(agg["buckets"]), candidates=sum(per_bucket.values()),
+                 min_support=agg["min_support"])
 
 
 def main() -> int:
