@@ -13,7 +13,7 @@ import sys
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Gambit self-improvement demo")
-    parser.add_argument("--generations", type=int, default=6)
+    parser.add_argument("--generations", type=int, default=8, help="max generations (early-stop may end sooner)")
     parser.add_argument("--turns", type=int, default=6)
     parser.add_argument("--offline", action="store_true", help="force heuristic mode (no API)")
     parser.add_argument("--all-items", action="store_true", help="evaluate on all items x personas")
@@ -65,6 +65,18 @@ def main() -> int:
     _, hN = evaluate(last["strategy"], ho, args.turns)
     print("\n--- held-out buyers (never trained on) ---")
     print(f"score {h0['score']:.3f} -> {hN['score']:.3f}   surplus {h0['avg_surplus']:.2f} -> {hN['avg_surplus']:.2f}")
+
+    # Tier-2 reward-integrity audit (binary-question checklist) on the final strategy.
+    from gambit.verifier import QLABEL, audit_run
+    final_eps, _ = evaluate(last["strategy"], pairs, args.turns)
+    rep = audit_run(final_eps)
+    print("\n--- Tier-2 integrity audit (binary checklist) ---")
+    print(f"{rep['clean']}/{rep['n']} episodes clean   flagged={rep['flagged']}")
+    print("  " + "   ".join(f"{QLABEL[q]}: {n}" for q, n in rep["by_question"].items()))
+    for ex in rep["examples"]:
+        print(f"  ! {ex}")
+    if not llm_available():
+        print("  (offline: deterministic checks only; floor-leak / character / honesty run in LLM mode)")
     return 0
 
 

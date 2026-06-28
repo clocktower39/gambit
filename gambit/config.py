@@ -23,6 +23,8 @@ class Settings:
     api_key: str = os.getenv("DIGITAL_OCEAN_MODEL_ACCESS_KEY", "")
     chat_model: str = os.getenv("CHAT_MODEL", "llama3.3-70b-instruct")
     buyer_model: str = os.getenv("BUYER_MODEL", "llama3.3-70b-instruct")
+    # Tier-2 integrity verifier — ideally a different/stronger model; falls back to chat_model.
+    verifier_model: str = os.getenv("VERIFIER_MODEL", "")
     # Force deterministic heuristics (no network) when OFFLINE is set or no key exists.
     offline: bool = _truthy(os.getenv("OFFLINE"))
 
