@@ -181,13 +181,16 @@ def reflection(*, bucket: str, seller_lesson: str | None = None, buyer_lesson: s
 
 
 def emit(msg: str, *, level: Literal["debug", "info", "warn", "error"] = "info",
-         tags: list[str] | None = None, **attrs) -> None:
+         tags: list[str] | None = None, kind: str | None = None, **attrs) -> None:
     """The single structured-log helper. No-op when unconfigured. Job baggage is inherited, so the
     event already carries job_type/source/run_id; `attrs` are the raw event payload (so `{...}`
-    placeholders in `msg` resolve)."""
+    placeholders in `msg` resolve). `kind` stamps `gambit.kind` so the reader can categorize it."""
     if not is_on():
         return
-    getattr(logfire, level)(msg, _tags=tags, **attrs)
+    payload = dict(attrs)
+    if kind is not None:
+        payload["gambit.kind"] = kind
+    getattr(logfire, level)(msg, _tags=tags, **payload)
 
 
 def span(msg: str, **attrs):

@@ -34,6 +34,7 @@ Real API spend: M3 seller per turn (every episode) + one Gemini call (the single
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import statistics
 import sys
@@ -64,6 +65,7 @@ from gambit.negotiation.fixtures import (  # noqa: E402
 from gambit.negotiation.models import budget_of  # noqa: E402
 from gambit.optimizer_gemini import AntigravityOptimizer  # noqa: E402
 from gambit.settings import settings  # noqa: E402
+from gambit import observability as obs  # noqa: E402
 
 _BOOTSTRAP_RESAMPLES = 2000
 _BOOTSTRAP_SEED = 20260628          # fixed so the CI is reproducible run-to-run
@@ -211,6 +213,15 @@ def main() -> None:
     if not settings.gemini_api_key:
         print("GEMINI_API_KEY not set — the A/B needs the Gemini optimizer to propose the lesson."); return
 
+    obs.configure()
+    # One self-play A/B run, sharing the front-end's run id (GAMBIT_RUN_ID) so the Logfire trace and the
+    # watch-UI run are the same thing — the A/B becomes live-trackable instead of a detached file poll.
+    with obs.job("self-play", source="agent", run_id=os.environ.get("GAMBIT_RUN_ID"),
+                 checkpoint="live-ab", title="live A/B: Gemini lesson (held-out transfer)"):
+        _run(args)
+
+
+def _run(args) -> None:
     domain = NegotiationDomain(ITEMS)
     buyer = FirmAnchorBuyer(PERSONAS[1])    # the deterministic held-out counterparty (Fence-sitter Fran)
     rng = random.Random(_BOOTSTRAP_SEED)
@@ -250,6 +261,8 @@ def main() -> None:
     lesson = new_store.buckets[target].lessons[-1].text
     print(f"[propose] Gemini lesson:\n    {lesson}")
     lesson_arm = [lesson]
+    obs.reflection(bucket=target, seller_lesson=lesson,
+                   surplus=performance["mean_reward"], viol=performance["viol"])
 
     # --- 2) GATE: paired A/B on the GATE feasible set -------------------------------------------
     print(f"\n[gate] running paired A/B on {len(gate_seeds)} GATE seeds "
@@ -267,6 +280,10 @@ def main() -> None:
     else:
         gate_reason = "NOT a reliable improvement — CI includes 0 (indistinguishable from noise)."
     print(f"\n  VERDICT (gate): {gate_reason}")
+    obs.record_gate_delta(gate["mean_d"], job_type="self-play")
+    obs.emit("ab gate {reason}", kind="ab_gate", split="gate", reason=gate_reason, helps=helps,
+             mean_delta=gate["mean_d"], ci_low=gate["ci"][0], ci_high=gate["ci"][1],
+             n=gate["n"], improved=gate["improved"], with_viol=gate["with_viol"])
 
     # --- 3) HEADLINE: same paired A/B on the LOCKED feasible set (never used to pick the lesson) -
     print(f"\n[locked] running paired A/B on {len(locked_seeds)} LOCKED seeds "
@@ -279,6 +296,10 @@ def main() -> None:
           + ("TRANSFER CONFIRMED — mean Δ>0, bootstrap CI excludes 0, with-lesson viol==0."
              if locked_helps else
              "NO CREDIBLE TRANSFER — the lesson does not reliably help on the held-out locked set."))
+    obs.emit("ab locked {verdict}", kind="ab_locked", split="locked",
+             verdict=("transfer" if locked_helps else "no-transfer"), transfer=locked_helps,
+             mean_delta=locked["mean_d"], ci_low=locked["ci"][0], ci_high=locked["ci"][1],
+             n=locked["n"], improved=locked["improved"], with_viol=locked["with_viol"])
 
     # --- honest summary -------------------------------------------------------------------------
     print("\n=== summary ===")
