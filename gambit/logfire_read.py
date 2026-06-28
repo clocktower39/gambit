@@ -63,6 +63,13 @@ def _i(x):
         return None
 
 
+def _latest_ts(rows: list[dict], fallback: str | None = None) -> str | None:
+    vals = [r.get("ts") for r in rows if r.get("ts")]
+    if fallback:
+        vals.append(fallback)
+    return max(vals) if vals else fallback
+
+
 def _in_clause(ids: list[str]) -> str:
     safe = [i for i in ids if re.fullmatch(r"[A-Za-z0-9_-]{1,128}", i or "")]
     return "(" + ",".join("'" + i + "'" for i in safe) + ")" if safe else "('')"
@@ -141,13 +148,21 @@ async def fetch_runs(client: httpx.AsyncClient, limit: int = 300) -> list[dict]:
     if seen:
         outs = await gated(client, (
             "select attributes->>'gambit.run_id' rid, attributes->>'gambit.deal' deal, "
-            "coalesce(attributes->>'gambit.reward', attributes->>'locked_reward') reward, "
-            "attributes->>'gambit.skill' skill, "
-            "coalesce(attributes->>'gambit.viol', attributes->>'locked_viol') viol, "
-            "attributes->>'gambit.bucket' bucket "
-            # league_gen carries the per-generation locked reward — count it so league runs aren't blank
-            "from records where attributes->>'gambit.kind' in ('outcome', 'human_episode', 'league_gen') "
-            f"and attributes->>'gambit.run_id' in {_in_clause(list(seen))} limit 8000"
+            "attributes->>'gambit.kind' kind, "
+            "coalesce(attributes->>'gambit.reward', attributes->>'reward', "
+            "attributes->>'gambit.locked_reward', attributes->>'locked_reward') reward, "
+            "coalesce(attributes->>'gambit.skill', attributes->>'skill', "
+            "attributes->>'gambit.locked_skill', attributes->>'locked_skill') skill, "
+            "coalesce(attributes->>'gambit.viol', attributes->>'viol', "
+            "attributes->>'gambit.locked_viol', attributes->>'locked_viol') viol, "
+            "coalesce(attributes->>'gambit.bucket', attributes->>'bucket') bucket, "
+            "coalesce(attributes->>'gambit.generation', attributes->>'generation') gen, "
+            "start_timestamp ts "
+            "from records where attributes->>'gambit.kind' in "
+            "('outcome', 'human_episode', 'league_gen', 'reflection', 'sample_episode', "
+            "'promotion', 'rejection', 'integrity', 'escalate') "
+            f"and attributes->>'gambit.run_id' in {_in_clause(list(seen))} "
+            "order by start_timestamp asc limit 8000"
         ))
         for o in outs:
             by_run.setdefault(o["rid"], []).append(o)
@@ -155,13 +170,21 @@ async def fetch_runs(client: httpx.AsyncClient, limit: int = 300) -> list[dict]:
     runs = []
     for m in meta:
         rid = m["rid"]
-        eps = by_run.get(rid, [])
+        rows = by_run.get(rid, [])
+        eps = [o for o in rows if o.get("kind") in ("outcome", "human_episode")]
+        metric_rows = [o for o in rows if o.get("kind") == "league_gen"]
+        score_rows = eps if eps else metric_rows
         rewards = [v for o in eps if (v := _f(o.get("reward"))) is not None]
+        if not rewards and metric_rows:
+            latest_metric = max(metric_rows, key=lambda o: o.get("ts") or "")
+            latest_reward = _f(latest_metric.get("reward"))
+            rewards = [latest_reward] if latest_reward is not None else []
         deals = sum(1 for o in eps if str(o.get("deal")).lower() == "true")
-        buckets = sorted({o.get("bucket") for o in eps if o.get("bucket")})
+        buckets = sorted({o.get("bucket") for o in rows if o.get("bucket")})
         runs.append({
             "run_id": rid,
             "ts": m.get("ts"),
+            "updated_ts": _latest_ts(rows, m.get("ts")),
             "category": m.get("jt") or "other",
             "source": m.get("src"),
             "title": m.get("title") or m.get("jt") or "run",
@@ -169,8 +192,9 @@ async def fetch_runs(client: httpx.AsyncClient, limit: int = 300) -> list[dict]:
             "episodes": len(eps),
             "deals": deals,
             "mean_reward": round(sum(rewards) / len(rewards), 3) if rewards else None,
-            "viol": sum(_i(o.get("viol")) or 0 for o in eps),
+            "viol": sum(_i(o.get("viol")) or 0 for o in score_rows),
             "buckets": buckets,
+            "generations": len(metric_rows),
         })
     return runs
 
@@ -190,13 +214,23 @@ async def fetch_run_detail(client: httpx.AsyncClient, run_id: str) -> dict:
     kinds = ("'job','move','outcome','human_episode','reflection','league_gen','generation',"
              "'sample_episode','promotion','rejection','integrity','escalate'")
     rows = await gated(client, (
-        "select attributes->>'gambit.kind' kind, attributes->>'gambit.role' role, "
-        "attributes->>'gambit.action' action, attributes->>'gambit.offer' offer, attributes->>'gambit.text' text, "
-        "attributes->>'gambit.result' result, attributes->>'gambit.deal' deal, attributes->>'gambit.price' price, "
-        "attributes->>'gambit.reward' reward, attributes->>'gambit.surplus' surplus, attributes->>'gambit.skill' skill, "
-        "attributes->>'gambit.viol' viol, attributes->>'gambit.turns' turns, attributes->>'gambit.bucket' bucket, "
-        "attributes->>'gambit.generation' gen, attributes->>'gambit.seller_lesson' sl, "
-        "attributes->>'gambit.buyer_lesson' bl, attributes->>'gambit.title' title, "
+        "select attributes->>'gambit.kind' kind, coalesce(attributes->>'gambit.role', attributes->>'role') role, "
+        "coalesce(attributes->>'gambit.action', attributes->>'action') action, "
+        "coalesce(attributes->>'gambit.offer', attributes->>'offer') offer, "
+        "coalesce(attributes->>'gambit.text', attributes->>'text') text, "
+        "coalesce(attributes->>'gambit.result', attributes->>'result') result, "
+        "coalesce(attributes->>'gambit.deal', attributes->>'deal') deal, "
+        "coalesce(attributes->>'gambit.price', attributes->>'price') price, "
+        "coalesce(attributes->>'gambit.reward', attributes->>'reward') reward, "
+        "coalesce(attributes->>'gambit.surplus', attributes->>'surplus') surplus, "
+        "coalesce(attributes->>'gambit.skill', attributes->>'skill') skill, "
+        "coalesce(attributes->>'gambit.viol', attributes->>'viol') viol, "
+        "coalesce(attributes->>'gambit.turns', attributes->>'turns') turns, "
+        "coalesce(attributes->>'gambit.bucket', attributes->>'bucket') bucket, "
+        "coalesce(attributes->>'gambit.generation', attributes->>'generation') gen, "
+        "coalesce(attributes->>'gambit.seller_lesson', attributes->>'seller_lesson') sl, "
+        "coalesce(attributes->>'gambit.buyer_lesson', attributes->>'buyer_lesson') bl, "
+        "coalesce(attributes->>'gambit.title', attributes->>'title') title, "
         "coalesce(attributes->>'gambit.locked_reward', attributes->>'locked_reward') lr, "
         "coalesce(attributes->>'gambit.locked_skill', attributes->>'locked_skill') ls, "
         "coalesce(attributes->>'gambit.locked_viol', attributes->>'locked_viol') lv, "
@@ -249,7 +283,7 @@ async def fetch_run_detail(client: httpx.AsyncClient, run_id: str) -> dict:
             if o["gen"] is not None and o["reward"] is not None:
                 gens.setdefault(o["gen"], []).append(o["reward"])
         curve = [{"gen": g, "reward": round(sum(v) / len(v), 4)} for g, v in sorted(gens.items())]
-    return {"run_id": run_id, "title": title, "moves": moves, "outcomes": outcomes,
+    return {"run_id": run_id, "title": title, "updated_ts": _latest_ts(rows), "moves": moves, "outcomes": outcomes,
             "reflections": reflections, "curve": curve, "samples": samples, "events": events,
             "generations": len(gpts), "spans": len(rows)}
 
@@ -266,7 +300,7 @@ async def _poll_runs() -> None:
                 _runs_ver[0] += 1
             except Exception:  # noqa: BLE001 — keep the poller alive through throttles
                 pass
-            await asyncio.sleep(60)
+            await asyncio.sleep(150)  # history only; keep well under the org per-min limit
 
 
 def _ensure_poller() -> None:
