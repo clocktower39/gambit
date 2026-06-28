@@ -6,6 +6,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 runs/
+data/human_episodes/
+checkpoints/
 *.sqlite
 *.db
 .DS_Store
