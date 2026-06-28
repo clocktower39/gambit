@@ -38,6 +38,7 @@ from gambit.negotiation import (
     situation_key,
 )
 from gambit.settings import settings
+from gambit import observability as obs
 from scripts.play import (
     BuyerDeps,
     HumanBuyer,
@@ -189,7 +190,7 @@ class MarketplaceSeller:
     def _commit(self, mv: Move, *, span) -> Move:
         self.log.append(mv)
         span.set_attributes({"action": mv.action, "offer": mv.offer, "text": mv.text, "reasoning": mv.reasoning})
-        logfire.info("{line}", line=f"Seller ({_money(mv.offer) if mv.offer else mv.action}): {mv.text}")
+        obs.move(role=mv.role, action=mv.action, offer=mv.offer, text=mv.text, reasoning=mv.reasoning)
         label = "Seller"
         if mv.action == "offer" and mv.offer is not None:
             label = f"Seller · {_money(mv.offer)}"
@@ -393,15 +394,11 @@ def play_multiple(
     seller_walked = False
 
     try:
-        with logfire.span(
-            "marketplace play: {item}",
-            item=item.name,
-            source="human-vs-marketplace-agents",
-            policy=policy_desc,
-            list_price=item.list_price,
-            floor=item.floor_price,
-            background_buyers=buyer_count,
-        ):
+        with obs.job("human-vs-agent", source="human", market="multi",
+                     title=f"{item.name} — marketplace ({buyer_count} buyers)",
+                     list_price=item.list_price, floor=item.floor_price,
+                     background_buyers=buyer_count), \
+             obs.episode(bucket=situation_key(item), seat="buyer"):
             opening = seller.opening(item)
             seller_ask = opening.offer or item.list_price
             market.set_ask(seller_ask)
@@ -501,6 +498,10 @@ def play_multiple(
                     market.set_ask(seller_ask)
 
             outcome = outcome or _finalize(item, deal=False, price=None, turns=referee_turns, reason="timeout")
+            _ep = _build_episode(item, log, outcome)
+            obs.outcome(deal=outcome.deal, result=("deal" if outcome.deal else "no-deal"),
+                        price=outcome.price, reward=reward(_ep), surplus=outcome.surplus,
+                        viol=len(audit_episode(_ep)), turns=outcome.turns, bucket=situation_key(item))
     finally:
         stop_event.set()
         for worker in background_buyers:
