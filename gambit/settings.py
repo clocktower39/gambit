@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     optimizer_backend: str = Field("local", alias="OPTIMIZER_BACKEND")
     gemini_api_key: str = Field("", alias="GEMINI_API_KEY")
 
+    # --- Voice buyer seat: LiveKit transport + Gemini Live; blank → typed/text seat only ---
+    livekit_url: str = Field("", alias="LIVEKIT_URL")
+    livekit_api_key: str = Field("", alias="LIVEKIT_API_KEY")
+    livekit_api_secret: str = Field("", alias="LIVEKIT_API_SECRET")
+
     @field_validator("offline", mode="before")
     @classmethod
     def _blank_is_false(cls, v):
@@ -37,6 +42,11 @@ class Settings(BaseSettings):
     def llm_available(self) -> bool:
         """True when we can and should call the hosted LLM."""
         return bool(self.minimax_api_key) and not self.offline
+
+    def voice_available(self) -> bool:
+        """True when the voice seat can run: LiveKit transport + Gemini ears/mouth all configured."""
+        return bool(self.livekit_url and self.livekit_api_key and self.livekit_api_secret
+                    and self.gemini_api_key)
 
     @property
     def verifier_model_id(self) -> str:

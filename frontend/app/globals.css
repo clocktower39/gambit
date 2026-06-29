@@ -35,6 +35,50 @@
   --maxw: 1520px;
 
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: dark;
+}
+
+/* ---- Light mode — warm paper. Toggled in the navbar; defaults to the OS preference
+   (resolved before paint by the inline script in layout.tsx). The token NAMES are identical,
+   so every component (which reads tokens + color-mix) re-themes for free. ---- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* surfaces — warm paper; cards lift by going whiter than the page */
+  --bg:       #f3f0e8;
+  --bg-2:     #eae6d9;
+  --panel:    #fbfaf5;
+  --panel-2:  #f1eee4;
+  --line:     #e3decf;
+  --line-2:   #cfc8b5;
+
+  /* text — warm near-black down to a soft gray */
+  --ink:      #1b1e24;
+  --ink-dim:  #3d424c;
+  --muted:    #69707d;
+  --faint:    #a2a6ad;
+
+  /* semantic accents — darkened for contrast on a light ground; meanings unchanged */
+  --brass:    #b07a1c;
+  --brass-2:  #946008;
+  --pos:      #0f9268;
+  --neg:      #cf3a40;
+  --violet:   #5d4fd6;
+  --seller:   #2f6ad0;
+  --buyer:    #a9741b;
+}
+
+/* selection: dark ink on the light ground reads better than the dark-mode white */
+:root[data-theme="light"] ::selection { background: rgba(176, 122, 28, 0.22); color: #1b1e24; }
+
+/* The /live page ships its OWN palette scoped to .live (its tokens shadow :root), so re-point those
+   same names for light mode here — higher specificity than its `.live{…}` block. */
+:root[data-theme="light"] .live {
+  --brass: #b07a1c; --brass2: #946008; --pos: #0f9268; --neg: #cf3a40;
+  --ink: #1b1e24; --dim: #3d424c; --muted: #69707d;
+  --panel: #fbfaf5; --panel2: #f1eee4; --line: #e3decf;
+  --seller: #2f6ad0; --buyer: #a9741b;
 }
 
 * { box-sizing: border-box; }
@@ -458,6 +502,59 @@ a { color: var(--brass); text-decoration: none; }
 @keyframes catpulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.8; } }
 @media (prefers-reduced-motion: reduce) { .catCard.skel { animation: none; } }
 
+/* voice seat — speak to the trained seller (LiveKit room: mic in, seller TTS out, live transcript) */
+.voiceBar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.voiceStart {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+  font-size: 13px; font-weight: 600; color: var(--ink);
+  background: color-mix(in srgb, var(--brass) 14%, var(--panel)); border: 1px solid rgba(217, 162, 74, 0.45);
+  border-radius: 999px; padding: 8px 16px; cursor: pointer;
+  transition: border-color 0.18s var(--ease), background 0.18s var(--ease);
+}
+.voiceStart:hover:not(:disabled) { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 22%, var(--panel)); }
+.voiceStart:disabled { opacity: 0.6; cursor: default; }
+.voiceStart svg { color: var(--brass-2); }
+.voiceHint { font-size: 12px; color: var(--faint); }
+.voiceErr { color: var(--neg); }
+
+.voiceRoom { display: block; margin-bottom: 14px; }
+.voiceLive {
+  display: flex; flex-direction: column; gap: 10px;
+  background: color-mix(in srgb, var(--seller) 7%, var(--panel-2));
+  border: 1px solid color-mix(in srgb, var(--seller) 24%, var(--line)); border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.voiceStatusRow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.voiceState {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--seller);
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.voiceState::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.voiceState.s-listening { color: var(--pos); }
+.voiceState.s-listening::before { animation: pulse 1.6s infinite; box-shadow: 0 0 0 0 rgba(79, 209, 168, 0.5); }
+.voiceState.s-speaking { color: var(--brass-2); }
+.voiceState.s-thinking { color: var(--muted); }
+.voiceViz { flex: 1; min-width: 70px; max-width: 180px; height: 26px; --lk-fg: var(--brass); color: var(--brass); }
+.voiceViz [data-lk-bar], .voiceViz > span { background: var(--brass); border-radius: 2px; }
+.voiceCtrls { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.voiceMic.lk-button, .voiceMic {
+  font-size: 12px; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.voiceMic[data-lk-enabled="false"] { color: var(--neg); border-color: rgba(240, 103, 107, 0.4); }
+.voiceHang {
+  font-size: 12px; color: var(--neg); background: transparent; border: 1px solid rgba(240, 103, 107, 0.4);
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; transition: background 0.15s;
+}
+.voiceHang:hover { background: color-mix(in srgb, var(--neg) 12%, transparent); }
+
+.voiceTranscript { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); padding-top: 10px; }
+.vt { display: flex; gap: 8px; font-size: 13px; line-height: 1.45; }
+.vt .vtwho { flex: none; width: 46px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; padding-top: 2px; }
+.vt.you .vtwho { color: var(--buyer); }
+.vt.seller .vtwho { color: var(--seller); }
+.vt .vttext { color: var(--ink-dim); }
+
 .chat-wrap {
   flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: var(--r);
   overflow: hidden; background: var(--panel-2); margin-bottom: 20px;
@@ -505,3 +602,20 @@ a { color: var(--brass); text-decoration: none; }
 .chat-wrap .copilotKitInput textarea::placeholder { color: var(--muted); }
 .chat-wrap .copilotKitMessages { background: transparent; }
 .chat-wrap .poweredBy { color: var(--muted); opacity: 0.7; }
+
+/* =====================================================================
+   THEME TOGGLE  (app/ThemeToggle.tsx) — light/dark switch in the navbar
+   ===================================================================== */
+.themeToggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none; width: 34px; height: 34px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); cursor: pointer; padding: 0;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.themeToggle:hover { color: var(--ink); border-color: var(--line-2); background: var(--bg-2); }
+.themeToggle svg { width: 17px; height: 17px; display: block; }
+
+/* chat header has no right-hand cluster — pin the toggle to its top-right corner */
+.shell .head { position: relative; }
+.shell .head > .themeToggle { position: absolute; top: 0; right: 0; }

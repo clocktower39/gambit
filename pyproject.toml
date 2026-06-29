@@ -26,6 +26,7 @@ feature-layer = [
     "livekit-agents[google]~=1.5",# voice buyer seat: LiveKit transport + Gemini Live plugin
     "livekit",                    # rtc SDK for the raw Gemini-Live TranslationBridge (primary translate path)
     "requests>=2.32",             # eBay API connector (Trading API is XML over HTTP; parse with stdlib xml.etree)
+    "livekit-plugins-silero>=1.6.2",
 ]
 
 # Application project (not a distributable package) — uv just manages the venv + deps.

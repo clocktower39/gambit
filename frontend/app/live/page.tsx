@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import ThemeToggle from "../ThemeToggle";
 
 const BACKEND = process.env.NEXT_PUBLIC_AGUI_HTTP ?? "http://localhost:8000";
 
@@ -170,6 +171,7 @@ export default function LivePage() {
             {starting ? "starting…" : status === "live" ? "running…" : "▶ Run a fresh climb"}
           </button>
           <Link href="/history" className="btn ghost">Browse past runs →</Link>
+          <ThemeToggle />
         </div>
       </header>
 
