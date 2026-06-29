@@ -1,11 +1,18 @@
 // Stable, submittable demo-video URL: https://gambit.nudepineapple.com/video
-// Submit this link now; drop the real video URL into VIDEO_URL (or set NEXT_PUBLIC_VIDEO_URL)
-// once the render is ready. While VIDEO_URL is empty it shows a "coming soon" placeholder;
-// once set it embeds the player (YouTube/Vimeo/Loom iframe or a direct .mp4) inline.
+// Submit this link now; to fill it in, either set NEXT_PUBLIC_VIDEO_URL to a hosted URL
+// (YouTube/Vimeo/Loom/etc.) OR drop the file at frontend/public/gambit-demo.mp4.
+// Until one of those exists it shows a "coming soon" placeholder; once present it embeds
+// the player (URL → iframe, self-hosted .mp4 → native <video>) inline.
 
 import type { Metadata } from "next";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
-// ── Put the video URL here when it's ready (or set NEXT_PUBLIC_VIDEO_URL) ──────────────
+// ── Where the video comes from, in priority order ─────────────────────────────────────
+//  1. NEXT_PUBLIC_VIDEO_URL env var (YouTube/Vimeo/Loom/any URL), OR
+//  2. drop a file at frontend/public/gambit-demo.mp4 — it's served at /gambit-demo.mp4.
+// Whichever exists wins; if neither, the "coming soon" placeholder shows.
+const SELF_HOSTED = "/gambit-demo.mp4";
 const VIDEO_URL = process.env.NEXT_PUBLIC_VIDEO_URL ?? "";
 
 export const metadata: Metadata = {
@@ -34,8 +41,11 @@ function toEmbed(url: string): string | null {
 }
 
 export default function VideoPage() {
-  const ready = VIDEO_URL.trim().length > 0;
-  const embed = ready ? toEmbed(VIDEO_URL) : null;
+  // Prefer the env-var URL; otherwise use the self-hosted file if it's actually present.
+  const selfHosted = existsSync(join(process.cwd(), "public", SELF_HOSTED));
+  const src = VIDEO_URL.trim() || (selfHosted ? SELF_HOSTED : "");
+  const ready = src.length > 0;
+  const embed = ready ? toEmbed(src) : null;
 
   return (
     <main
@@ -90,7 +100,7 @@ export default function VideoPage() {
               style={{ width: "100%", height: "100%", border: 0 }}
             />
           ) : (
-            <video src={VIDEO_URL} controls playsInline style={{ width: "100%", height: "100%" }} />
+            <video src={src} controls playsInline style={{ width: "100%", height: "100%" }} />
           )
         ) : (
           <div style={{ textAlign: "center", padding: "2rem", opacity: 0.75 }}>

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
+import VoiceConsole from "./VoiceConsole";
+import ThemeToggle from "../ThemeToggle";
 
 const BACKEND = process.env.NEXT_PUBLIC_AGUI_HTTP ?? "http://localhost:8000";
 
@@ -65,6 +67,7 @@ export default function ChatPage() {
     >
       <main className="shell">
         <div className="head">
+          <ThemeToggle />
           <Link href="/" className="back">← Run history</Link>
           <span className="tag live">live · MiniMax M3 · learned PolicyStore</span>
           <h1>Haggle the self-taught negotiator</h1>
@@ -74,6 +77,7 @@ export default function ChatPage() {
           </p>
         </div>
         <Catalogue />
+        <VoiceConsole />
         <div className="chat-wrap">
           <CopilotChat
             labels={{

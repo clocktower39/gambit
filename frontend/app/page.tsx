@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ThemeToggle from "./ThemeToggle";
 
 const BACKEND = process.env.NEXT_PUBLIC_AGUI_HTTP ?? "http://localhost:8000";
 
@@ -747,6 +748,7 @@ export default function RunsPage() {
         <div className="headLinks">
           <Link href="/live" className="chatLink primary">Watch it climb <span className="arr">→</span></Link>
           <Link href="/chat" className="chatLink">Haggle the agent <span className="arr">→</span></Link>
+          <ThemeToggle />
         </div>
       </header>
 
