@@ -17,6 +17,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
+from datetime import datetime, timezone
 from dataclasses import replace
 from pathlib import Path
 from typing import Literal
@@ -82,7 +83,8 @@ def _seller_context(ctx: RunContext[StateDeps[NegotiationState]]) -> str:
     lessons) here in the server-side instructions only; they never reach the UI."""
     st = ctx.deps.state
     return catalogue_context(POLICY, turn_frac=min(st.round_idx, 10) / 10.0,
-                             last_buyer_offer=st.last_buyer_offer)
+                             last_buyer_offer=st.last_buyer_offer,
+                             now=datetime.now(timezone.utc))
 
 
 def _latest_buyer_text(body: dict) -> str:

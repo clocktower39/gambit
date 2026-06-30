@@ -214,7 +214,8 @@ class PostgresHistory:
     def record_move(self, run_id, *, role, action, offer=None, text=""):
         detail = self._get_detail(run_id) or self._blank_detail(run_id, source="human", title="chat",
                                                                 checkpoint=None, category="human-vs-agent")
-        detail.setdefault("moves", []).append({"role": role, "action": action, "offer": offer, "text": text})
+        detail.setdefault("moves", []).append(
+            {"role": role, "action": action, "offer": offer, "text": text, "ts": _now_iso()})
         detail["updated_ts"] = _now_iso()
         self._write(run_id, detail)
 

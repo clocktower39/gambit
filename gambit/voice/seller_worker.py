@@ -20,6 +20,7 @@ MINIMAX_API_KEY (all already in .env). The browser side mints a join token via t
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -137,7 +138,9 @@ class MiniMaxSellerLLM(llm.LLM):
 
     def system_text(self) -> str:
         # Persona + voice-style + the secret catalogue (floors/targets/learned knobs) — all server-side.
-        return "\n\n".join((SELLER_SYSTEM_PROMPT, VOICE_STYLE, catalogue_context(self._policy)))
+        # `now` gives the seller a ground-truth clock so a caller can't haggle by claiming time passed.
+        return "\n\n".join((SELLER_SYSTEM_PROMPT, VOICE_STYLE,
+                            catalogue_context(self._policy, now=datetime.now(timezone.utc))))
 
     def chat(self, *, chat_ctx, tools=None, conn_options=DEFAULT_API_CONNECT_OPTIONS,
              parallel_tool_calls=NOT_GIVEN, tool_choice=NOT_GIVEN, extra_kwargs=NOT_GIVEN):

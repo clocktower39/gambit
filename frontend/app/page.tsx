@@ -13,7 +13,7 @@ type Run = {
   checkpoint: string | null; episodes: number; deals: number; mean_reward: number | null;
   viol: number; buckets: string[];
 };
-type Move = { role: "seller" | "buyer"; action?: string | null; offer: number | null; text: string };
+type Move = { role: "seller" | "buyer"; action?: string | null; offer: number | null; text: string; ts?: string | null };
 type Outcome = { result: string; deal: boolean; price: number | null; reward: number | null; surplus: number | null; skill: number | null; viol: number; turns: number | null; bucket: string | null; gen: number | null };
 type Reflection = { bucket: string | null; seller_lesson: string | null; buyer_lesson: string | null; surplus: number | null; viol: number };
 type CurvePt = { gen: number; reward: number | null; skill?: number | null; viol?: number; promoted?: boolean };
@@ -48,6 +48,7 @@ const CAT_COLORS: Record<string, string> = {
 };
 const catColor = (c: string) => CAT_COLORS[c] ?? "#8a909c";
 const fmt = (ts: string) => { try { return new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch { return ts; } };
+const mclock = (ts?: string | null) => { if (!ts) return ""; try { return new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; } };
 const ageMs = (ts: string) => { const t = Date.parse(ts); return Number.isNaN(t) ? Infinity : Date.now() - t; };
 const relAge = (ts: string) => {
   const m = ageMs(ts); if (!Number.isFinite(m)) return "";
@@ -470,7 +471,7 @@ function Talk({ moves }: { moves: Move[] }) {
       <div className="talk">
         {view.map((m, i) => (
           <div key={i} className={`turn ${m.role}`}>
-            <span className="who">{m.role}</span>
+            <span className="who">{m.role}{m.ts && <time className="mtime">{mclock(m.ts)}</time>}</span>
             <div className="bubble">
               <span className="say">{m.text || (m.action ? `(${m.action})` : "")}</span>
               {m.offer != null && <span className="offer">{money(m.offer)}</span>}

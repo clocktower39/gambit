@@ -249,7 +249,8 @@ def reconstruct_detail(run_id: str, rows: list[dict]) -> dict:
         k = r.get("kind")
         if k == "move":
             moves.append({"role": (r.get("role") or "seller").lower(), "action": r.get("action"),
-                          "offer": _f(r.get("offer")), "text": r.get("text") or ""})
+                          "offer": _f(r.get("offer")), "text": r.get("text") or "",
+                          "ts": r.get("ts") or r.get("start_timestamp")})
         elif k in ("outcome", "human_episode"):
             outcomes.append({
                 "result": r.get("result"), "deal": str(r.get("deal")).lower() == "true",

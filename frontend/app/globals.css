@@ -404,6 +404,7 @@ a { color: var(--brass); text-decoration: none; }
 .turn .who { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 0.04em; color: var(--muted); margin: 0 4px 2px; }
 .turn.seller .who { color: var(--seller); }
 .turn.buyer  .who { color: var(--buyer); }
+.turn .who .mtime { color: var(--faint, #6b7280); margin-left: 6px; font-variant-numeric: tabular-nums; }
 .bubble { font-size: 12.5px; line-height: 1.45; padding: 7px 11px; border: 1px solid var(--line); border-radius: 11px; }
 .turn.seller .bubble { background: color-mix(in srgb, var(--seller) 10%, var(--panel-2)); border-color: color-mix(in srgb, var(--seller) 20%, transparent); border-bottom-left-radius: 4px; }
 .turn.buyer  .bubble { background: color-mix(in srgb, var(--buyer) 10%, var(--panel-2)); border-color: color-mix(in srgb, var(--buyer) 20%, transparent); border-bottom-right-radius: 4px; }

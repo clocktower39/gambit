@@ -26,13 +26,24 @@ type Run = {
   title: string; checkpoint: string | null; episodes: number; deals: number;
   mean_reward: number | null; viol: number; buckets: string[];
 };
-type Move = { role: "seller" | "buyer"; action?: string | null; offer: number | null; text: string };
+type Move = { role: "seller" | "buyer"; action?: string | null; offer: number | null; text: string; ts?: string | null };
 type Outcome = { result: string; deal: boolean; price: number | null; surplus: number | null; turns: number | null };
 type Detail = { run_id: string; title: string | null; moves: Move[]; outcomes: Outcome[]; updated_ts?: string | null };
 
 const money = (v: number | null | undefined) => (v == null ? "—" : `$${Number.isInteger(v) ? v : v.toFixed(2)}`);
 const ageMs = (ts?: string) => { if (!ts) return Infinity; const t = Date.parse(ts); return Number.isNaN(t) ? Infinity : Date.now() - t; };
 const fmt = (ts?: string) => { if (!ts) return ""; try { return new Date(ts).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch { return ts; } };
+const clock = (ts?: string | null) => { if (!ts) return ""; try { return new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; } };
+const elapsed = (moves: Move[]) => {
+  const ts = moves.map((m) => m.ts).filter(Boolean) as string[];
+  if (ts.length < 2) return "";
+  const a = Date.parse(ts[0]), b = Date.parse(ts[ts.length - 1]);
+  if (Number.isNaN(a) || Number.isNaN(b)) return "";
+  const s = Math.max(0, Math.round((b - a) / 1000));
+  if (s < 60) return `${s}s real time`;
+  const m = Math.floor(s / 60);
+  return `${m}m ${s % 60}s real time`;
+};
 
 /* ---------------- login gate ---------------- */
 function Login({ onAuthed }: { onAuthed: (token: string, floors: Floor[]) => void }) {
@@ -80,7 +91,7 @@ function Talk({ moves }: { moves: Move[] }) {
     <div className="talk">
       {moves.map((m, i) => (
         <div key={i} className={`turn ${m.role}`}>
-          <span className="who">{m.role}</span>
+          <span className="who">{m.role}{m.ts && <time className="mtime">{clock(m.ts)}</time>}</span>
           <div className="bubble">
             <span className="say">{m.text || (m.action ? `(${m.action})` : "")}</span>
             {m.offer != null && <span className="offer">{money(m.offer)}</span>}
@@ -204,7 +215,7 @@ function Dashboard({ token, floors, onLogout }: { token: string; floors: Floor[]
               <>
                 <div className="adminDetailHead">
                   <div className="rrTitle">{sel.title || sel.run_id}</div>
-                  <div className="rrMeta">{detail?.moves?.length ?? 0} turns · {fmt(sel.updated_ts || sel.ts)}</div>
+                  <div className="rrMeta">{detail?.moves?.length ?? 0} turns{detail?.moves?.length ? ` · ${elapsed(detail.moves)}` : ""} · {fmt(sel.updated_ts || sel.ts)}</div>
                 </div>
                 {detail?.outcomes?.[0] && (
                   <div className="adminOutcome">
@@ -314,6 +325,7 @@ const adminCss = `
 .rrOpen { color: var(--brass); }
 .adminDetail { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-md, 14px); padding: 18px 20px; min-height: 300px; }
 .adminDetailHead { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 14px; }
+.mtime { font-variant-numeric: tabular-nums; font-size: 11px; color: var(--faint, #6b7280); margin-left: 8px; font-weight: 400; }
 .adminOutcome { font-size: 14px; color: var(--ink-dim, #b9c0cc); margin-bottom: 14px; }
 .adminOutcome b { color: var(--ink); }
 .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }

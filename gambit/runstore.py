@@ -107,7 +107,7 @@ def _detail_from_rows(run_id: str, rows: list[dict]) -> dict:
         k = r.get("kind")
         if k == "move":
             moves.append({"role": (r.get("role") or "seller").lower(), "action": r.get("action"),
-                          "offer": r.get("offer"), "text": r.get("text") or ""})
+                          "offer": r.get("offer"), "text": r.get("text") or "", "ts": r.get("ts")})
         elif k == "outcome":
             outcomes.append({"result": r.get("result"), "deal": bool(r.get("deal")),
                              "price": r.get("price"), "reward": r.get("reward"),
