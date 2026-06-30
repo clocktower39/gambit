@@ -14,6 +14,7 @@ loaded here from the checkpoint and injected into the agent's instructions, neve
 
 from __future__ import annotations
 
+import base64
 import json
 import uuid
 from dataclasses import replace
@@ -215,6 +216,46 @@ async def _items(request: Request) -> Response:
     })
 
 
+def _check_basic_auth(request: Request) -> bool:
+    """HTTP Basic Auth against ADMIN_USERS (.env). Constant-time password compare; no creds → no access."""
+    header = request.headers.get("authorization", "")
+    if not header.startswith("Basic "):
+        return False
+    try:
+        user, _, pw = base64.b64decode(header[6:]).decode("utf-8").partition(":")
+    except Exception:  # noqa: BLE001 — malformed header → unauthorized, not 500
+        return False
+    return settings.check_admin(user, pw)
+
+
+def _unauthorized() -> Response:
+    return JSONResponse({"error": "unauthorized"}, status_code=401,
+                        headers={"WWW-Authenticate": 'Basic realm="gambit-admin"'})
+
+
+async def _admin_floors(request: Request) -> Response:
+    """ADMIN ONLY: the secret reserve the live seller defends — demo floor/target per item, plus the
+    wider sim floor and difficulty bucket. The floor never leaves the server on any public route; this
+    one is gated by Basic Auth (ADMIN_USERS in .env)."""
+    if not settings.admin_available():
+        return JSONResponse({"error": "admin not configured", "detail": "set ADMIN_USERS in .env"},
+                            status_code=503)
+    if not _check_basic_auth(request):
+        return _unauthorized()
+    items = []
+    for i, it in enumerate(ITEMS):
+        floor, target = demo_reserve(it)
+        floor, target = round(floor), round(target)
+        items.append({
+            "id": i, "name": it.name, "condition": it.condition, "description": it.description,
+            "list_price": it.list_price, "target": target, "floor": floor,
+            "sim_floor": it.floor_price, "sim_target": it.target_price,
+            "bucket": situation_key(it),
+            "margin_pct": round((it.list_price - floor) / it.list_price * 100),
+        })
+    return JSONResponse({"policy": POLICY_DESC, "items": items})
+
+
 async def _health(request: Request) -> Response:
     return JSONResponse({"ok": True, "model_configured": bool(settings.minimax_api_key),
                          "policy": POLICY_DESC, "n_items": len(ITEMS),
@@ -254,6 +295,8 @@ app = Starlette(
         Route("/items", _items, methods=["GET"]),
         Route("/voice-token", _voice_token, methods=["GET", "POST"]),
         Route("/health", _health, methods=["GET"]),
+        # ADMIN: secret reserve prices (Basic Auth, ADMIN_USERS in .env)
+        Route("/admin/floors", _admin_floors, methods=["GET"]),
         # LIVE runs view: the fast, rate-limit-free JSONL bus (curve + spotlight + held-out transfer)
         Route("/watch/stream", watch_stream, methods=["GET"]),
         Route("/watch/start", watch_start, methods=["POST"]),

@@ -6,6 +6,8 @@ the international MiniMax Anthropic endpoint and the wiring lives in gambit/llm.
 
 from __future__ import annotations
 
+import secrets
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -33,6 +35,10 @@ class Settings(BaseSettings):
     livekit_api_key: str = Field("", alias="LIVEKIT_API_KEY")
     livekit_api_secret: str = Field("", alias="LIVEKIT_API_SECRET")
 
+    # --- Admin dashboard (HTTP Basic Auth; creds live ONLY in .env) ---
+    # Format: "user:pass,user2:pass2". Blank → admin endpoints return 503 (feature off).
+    admin_users: str = Field("", alias="ADMIN_USERS")
+
     @field_validator("offline", mode="before")
     @classmethod
     def _blank_is_false(cls, v):
@@ -47,6 +53,30 @@ class Settings(BaseSettings):
         """True when the voice seat can run: LiveKit transport + Gemini ears/mouth all configured."""
         return bool(self.livekit_url and self.livekit_api_key and self.livekit_api_secret
                     and self.gemini_api_key)
+
+    def admin_credentials(self) -> dict[str, str]:
+        """Parse ADMIN_USERS ('user:pass,user2:pass2') into {user: password}. Malformed entries skipped."""
+        out: dict[str, str] = {}
+        for pair in self.admin_users.split(","):
+            pair = pair.strip()
+            if not pair or ":" not in pair:
+                continue
+            user, _, pw = pair.partition(":")
+            user = user.strip()
+            if user:
+                out[user] = pw
+        return out
+
+    def admin_available(self) -> bool:
+        """True when at least one admin credential is configured."""
+        return bool(self.admin_credentials())
+
+    def check_admin(self, user: str, password: str) -> bool:
+        """Constant-time check of a (user, password) against the configured admin credentials."""
+        expected = self.admin_credentials().get(user)
+        if expected is None:
+            return False
+        return secrets.compare_digest(expected, password)
 
     @property
     def verifier_model_id(self) -> str:
