@@ -30,8 +30,12 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
+
+from ag_ui.core import (EventType, RunFinishedEvent, RunStartedEvent, TextMessageContentEvent,
+                        TextMessageEndEvent, TextMessageStartEvent)
+from ag_ui.encoder import EventEncoder
 
 from gambit.llm import model_for
 from gambit.negotiation import PolicyStore, situation_key
@@ -84,7 +88,29 @@ def _seller_context(ctx: RunContext[StateDeps[NegotiationState]]) -> str:
     st = ctx.deps.state
     return catalogue_context(POLICY, turn_frac=min(st.round_idx, 10) / 10.0,
                              last_buyer_offer=st.last_buyer_offer,
-                             now=datetime.now(timezone.utc))
+                             now=datetime.now(timezone.utc)) + "\n\n" + WALK_GUIDANCE
+
+
+# When to walk: a real seller doesn't stay in an abusive or pointless thread. The seller decides;
+# `end_chat` is the structured signal the server watches for to close the conversation.
+WALK_GUIDANCE = (
+    "ENDING THE CHAT: you can end this conversation and stop responding, like a real seller who'd "
+    "walk away and block someone. Call the `end_chat` tool when — and only when — the buyer is not "
+    "bargaining in good faith: abuse or threats, spam or the same demand repeated over and over, "
+    "manipulation or gaslighting (e.g. insisting you agreed to something you didn't, or that time has "
+    "passed), or obvious time-wasting with no intent to pay a fair price. After you call it, give one "
+    "short, polite-but-firm goodbye. Do NOT end over a tough but genuine haggle — only when a "
+    "reasonable person would stop engaging."
+)
+
+
+@seller.tool
+async def end_chat(ctx: RunContext[StateDeps[NegotiationState]], reason: str) -> str:
+    """End the negotiation and refuse to continue. Call ONLY when a reasonable seller would walk away
+    and block the buyer (abuse/threats, spam or relentless bad-faith repetition, manipulation or
+    gaslighting, or clear time-wasting). `reason` is a brief internal note for the seller's records —
+    it is NOT shown to the buyer. After calling this, say a short firm goodbye."""
+    return "Conversation ended."
 
 
 def _latest_buyer_text(body: dict) -> str:
@@ -97,9 +123,10 @@ def _latest_buyer_text(body: dict) -> str:
     return ""
 
 
-def _scan_sse(buf: str, seller_parts: list[str], state: dict) -> str:
+def _scan_sse(buf: str, seller_parts: list[str], state: dict, flags: dict) -> str:
     """Parse complete AG-UI SSE events out of `buf`, accumulating the seller's streamed reply
-    (TEXT_MESSAGE_CONTENT deltas) and the resulting public state (STATE_SNAPSHOT / STATE_DELTA).
+    (TEXT_MESSAGE_CONTENT deltas), the resulting public state (STATE_SNAPSHOT / STATE_DELTA), and
+    whether the seller called `end_chat` (TOOL_CALL_* — the signal to close the conversation).
     Returns the unconsumed tail (a partial event still being written)."""
     while "\n\n" in buf:
         block, buf = buf.split("\n\n", 1)
@@ -119,6 +146,11 @@ def _scan_sse(buf: str, seller_parts: list[str], state: dict) -> str:
                 for op in ev.get("delta") or []:
                     if op.get("op") in ("add", "replace") and isinstance(op.get("path"), str):
                         state[op["path"].strip("/").split("/")[0]] = op.get("value")
+            elif t == "TOOL_CALL_START" and ev.get("toolCallName") == "end_chat":
+                flags["ended"] = True
+                flags["end_id"] = ev.get("toolCallId")
+            elif t == "TOOL_CALL_ARGS" and ev.get("toolCallId") and ev.get("toolCallId") == flags.get("end_id"):
+                flags["reason"] = (flags.get("reason") or "") + (ev.get("delta") or "")
     return buf
 
 
@@ -130,15 +162,20 @@ def _surplus(item, price: float | None) -> float | None:
     return max(0.0, min(1.0, (price - floor) / span))
 
 
-def _persist_turn(run_id: str, buyer_text: str, item_id: int, seller_text: str, state: dict) -> None:
-    """Write this turn's buyer+seller moves (and the outcome, once closed) to the durable local
-    store AND to Logfire — so the transcript renders and survives Logfire retention/rate limits."""
+def _persist_turn(run_id: str, buyer_text: str, item_id: int, seller_text: str, state: dict,
+                  *, ended: bool = False, reason: str = "") -> None:
+    """Write this turn's buyer+seller moves (and a terminal outcome once the seller closes the chat)
+    to the durable store AND to Logfire — so the transcript renders and survives Logfire retention."""
     item = ITEMS[item_id] if 0 <= item_id < len(ITEMS) else ITEMS[0]
     bucket = situation_key(item)
-    status = str(state.get("status") or "open")
-    price = state.get("deal_price")
     ask = state.get("current_ask")
     buyer_offer = state.get("last_buyer_offer")
+    note = ""
+    if reason:
+        try:
+            note = json.loads(reason).get("reason") or ""
+        except Exception:  # noqa: BLE001 — partial/invalid args JSON; keep the raw snippet
+            note = reason[:200]
     hist = get_history()
     hist.ensure_job(run_id, source="human", title=f"chat: {item.name}", checkpoint="latest")
     # Re-open the job span at record time so obs.move/outcome carry this run_id in Logfire (the
@@ -149,15 +186,14 @@ def _persist_turn(run_id: str, buyer_text: str, item_id: int, seller_text: str, 
             hist.record_move(run_id, role="buyer", action="counter", offer=buyer_offer, text=buyer_text)
             obs.move(role="buyer", action="counter", offer=buyer_offer, text=buyer_text)
         if seller_text:
-            action = "accept" if status == "deal" else "walk" if status == "walked" else "counter"
+            action = "walk" if ended else "counter"
             hist.record_move(run_id, role="seller", action=action, offer=ask, text=seller_text)
             obs.move(role="seller", action=action, offer=ask, text=seller_text)
-        if status in ("deal", "walked") and not hist.has_outcome(run_id):
-            deal = status == "deal"
-            surplus = _surplus(item, price) if deal else None
-            hist.record_outcome(run_id, deal=deal, price=price, surplus=surplus, bucket=bucket,
-                                result=f"{'deal' if deal else 'no-deal'}")
-            obs.outcome(deal=deal, price=price, reward=surplus, surplus=surplus, bucket=bucket)
+        if ended and not hist.has_outcome(run_id):
+            # A hard close (seller walked away). result="closed" is the marker the server enforces on.
+            hist.record_outcome(run_id, deal=False, result="closed", bucket=bucket, turns=None)
+            obs.outcome(deal=False, result="closed", bucket=bucket)
+            obs.emit(f"seller ended chat: {note or 'bad-faith buyer'}", level="info")
 
 
 def _record_turn(response: Response, *, run_id: str, buyer_text: str, item_id: int) -> Response:
@@ -170,18 +206,57 @@ def _record_turn(response: Response, *, run_id: str, buyer_text: str, item_id: i
     async def teed():
         seller_parts: list[str] = []
         state: dict = {}
+        flags: dict = {}
         buf = ""
         async for chunk in orig:
             yield chunk
             try:
                 text = chunk.decode("utf-8", "replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
-                buf = _scan_sse(buf + text, seller_parts, state)
+                buf = _scan_sse(buf + text, seller_parts, state, flags)
             except Exception:  # noqa: BLE001 — never let logging break the stream
                 pass
-        _persist_turn(run_id, buyer_text, item_id, "".join(seller_parts).strip(), state)
+        _persist_turn(run_id, buyer_text, item_id, "".join(seller_parts).strip(), state,
+                      ended=bool(flags.get("ended")), reason=flags.get("reason") or "")
 
     response.body_iterator = teed()
     return response
+
+
+CLOSED_MSG = "This conversation has ended."
+
+
+def _is_closed(run_id: str | None) -> bool:
+    """True once the seller has walked away from this run (a `result=closed` outcome was recorded).
+    Cheap on Postgres (single indexed row); returns False for unknown/blank runs."""
+    if not run_id:
+        return False
+    detail = get_history().run_detail(run_id) or {}
+    return any(o.get("result") == "closed" for o in detail.get("outcomes") or [])
+
+
+def _closed_stream_response(run_id: str) -> Response:
+    """A minimal, valid AG-UI SSE stream that just says the chat is over — emitted WITHOUT calling the
+    LLM, so a buyer can't keep haggling a seller who already walked. This is the server-enforced block."""
+    enc = EventEncoder()
+    mid = uuid.uuid4().hex
+
+    async def gen():
+        for ev in (
+            RunStartedEvent(type=EventType.RUN_STARTED, thread_id=run_id, run_id=run_id),
+            TextMessageStartEvent(type=EventType.TEXT_MESSAGE_START, message_id=mid, role="assistant"),
+            TextMessageContentEvent(type=EventType.TEXT_MESSAGE_CONTENT, message_id=mid, delta=CLOSED_MSG),
+            TextMessageEndEvent(type=EventType.TEXT_MESSAGE_END, message_id=mid),
+            RunFinishedEvent(type=EventType.RUN_FINISHED, thread_id=run_id, run_id=run_id),
+        ):
+            yield enc.encode(ev)
+
+    return StreamingResponse(gen(), media_type=enc.get_content_type(),
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+async def _chat_status(request: Request) -> Response:
+    """Whether a chat has been closed by the seller — polled by the buyer UI to hard-lock its input."""
+    return JSONResponse({"closed": _is_closed(request.query_params.get("run_id"))})
 
 
 async def _agent_endpoint(request: Request) -> Response:
@@ -198,6 +273,8 @@ async def _agent_endpoint(request: Request) -> Response:
         item_id = int((body.get("state") or {}).get("item_id") or 0)
     except (TypeError, ValueError):
         item_id = 0
+    if _is_closed(run_id):                       # seller already walked → block, don't call the LLM
+        return _closed_stream_response(run_id)
     response = await AGUIAdapter.dispatch_request(request, agent=seller,
                                                   deps=replace(StateDeps(NegotiationState())))
     if run_id:
@@ -297,6 +374,7 @@ app = Starlette(
         Route("/items", _items, methods=["GET"]),
         Route("/voice-token", _voice_token, methods=["GET", "POST"]),
         Route("/health", _health, methods=["GET"]),
+        Route("/chat-status", _chat_status, methods=["GET"]),
         # ADMIN: secret reserve prices (Basic Auth, ADMIN_USERS in .env)
         Route("/admin/floors", _admin_floors, methods=["GET"]),
         # LIVE runs view: the fast, rate-limit-free JSONL bus (curve + spotlight + held-out transfer)

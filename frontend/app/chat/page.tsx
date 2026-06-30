@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
 import "@copilotkit/react-ui/styles.css";
@@ -9,6 +9,29 @@ import VoiceConsole from "./VoiceConsole";
 import ThemeToggle from "../ThemeToggle";
 
 const BACKEND = process.env.NEXT_PUBLIC_AGUI_HTTP ?? "http://localhost:8000";
+
+// The seller can walk away from a bad-faith chat (abuse/spam/manipulation). When it does, the backend
+// records the close and this poll flips `closed`, so we hard-lock the composer — the buyer can't keep
+// haggling a seller who already ended it. We control the threadId so we know which run to poll.
+function useChatClosed(threadId: string) {
+  const [closed, setClosed] = useState(false);
+  const stop = useRef(false);
+  useEffect(() => {
+    stop.current = false;
+    const tick = async () => {
+      if (stop.current) return;
+      try {
+        const r = await fetch(`/api/chat-status?run_id=${encodeURIComponent(threadId)}`, { cache: "no-store" });
+        const j = await r.json();
+        if (j?.closed) { setClosed(true); stop.current = true; return; }
+      } catch { /* transient — keep polling */ }
+      if (!stop.current) timer = setTimeout(tick, 3000);
+    };
+    let timer = setTimeout(tick, 3000);
+    return () => { stop.current = true; clearTimeout(timer); };
+  }, [threadId]);
+  return closed;
+}
 
 // Public catalogue fields only — the secret floor/target never leave the server (see gambit/agui.py).
 type CatalogueItem = { id: number; name: string; condition: string; description: string; list_price: number };
@@ -58,10 +81,16 @@ function Catalogue() {
 }
 
 export default function ChatPage() {
+  // A stable per-session id we control, so the backend groups the run under it and we can poll its
+  // closed-state. (CopilotKit would otherwise generate one we can't see.)
+  const [threadId] = useState(() =>
+    (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : `chat-${Math.random().toString(36).slice(2)}`);
+  const closed = useChatClosed(threadId);
   return (
     <CopilotKit
       runtimeUrl="/api/copilotkit"
       agent="seller"
+      threadId={threadId}
       showDevConsole={false}
       enableInspector={false}
     >
@@ -78,7 +107,12 @@ export default function ChatPage() {
         </div>
         <Catalogue />
         <VoiceConsole />
-        <div className="chat-wrap">
+        <div className={`chat-wrap${closed ? " ended" : ""}`}>
+          {closed && (
+            <div className="chatEndedBanner" role="status">
+              🔒 The seller ended this conversation. They’ve walked away — refresh to start a new one.
+            </div>
+          )}
           <CopilotChat
             labels={{
               title: "Gambit seller",

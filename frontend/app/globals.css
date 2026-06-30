@@ -604,6 +604,17 @@ a { color: var(--brass); text-decoration: none; }
 .chat-wrap .copilotKitMessages { background: transparent; }
 .chat-wrap .poweredBy { color: var(--muted); opacity: 0.7; }
 
+/* Seller walked away → hard-lock the composer (the backend also blocks server-side). */
+.chatEndedBanner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; margin-bottom: 10px;
+  background: color-mix(in srgb, var(--neg, #e06a6a) 14%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--neg, #e06a6a) 45%, var(--line));
+  border-radius: var(--r-sm, 10px); color: var(--ink); font-size: 14px;
+}
+.chat-wrap.ended .copilotKitInput { opacity: 0.45; pointer-events: none; filter: grayscale(1); }
+.chat-wrap.ended .copilotKitInput textarea::placeholder { color: var(--faint, #6b7280); }
+
 /* =====================================================================
    THEME TOGGLE  (app/ThemeToggle.tsx) — light/dark switch in the navbar
    ===================================================================== */
