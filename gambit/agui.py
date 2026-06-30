@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import uuid
 from datetime import datetime, timezone
 from dataclasses import replace
@@ -162,6 +163,80 @@ def _surplus(item, price: float | None) -> float | None:
     return max(0.0, min(1.0, (price - floor) / span))
 
 
+# --- Hard floor clamp -------------------------------------------------------------------------
+# The floor is otherwise only a prompt instruction, which a persistent buyer can erode (or the model
+# can contradict itself into breaking). This is the mechanical backstop: we buffer the seller's reply,
+# and if it OFFERS a price below the item's floor, we replace the whole reply with a floor-respecting
+# line — the buyer never sees a sub-floor number. Detection is heuristic; enforcement is hard.
+_PRICE_RE = re.compile(r"\$\s?(\d{2,4})(?:\.\d{1,2})?")
+# Sentences mentioning these are references (retail/competitor/cost), not the seller's own offer.
+_REF_CUES = ("new", "retail", "elsewhere", "other", "online", "website", "they", "their", "market",
+             "brand", "worth", "cost", "paid", "mug", "rob", "stol")
+# Which item is being haggled — the typed UI never sets item_id, so infer from the conversation text.
+_ITEM_ALIASES = [
+    (0, ("iphone", "13 pro", "phone")),
+    (1, ("aeron", "herman", "miller", "chair")),
+    (2, ("allez", "specialized", "road bike", "bike", "bicycle")),
+]
+
+
+def _detect_item_id(text: str, default: int = 0) -> int:
+    """Best guess of the item under discussion = the one whose alias appears LAST (most recent topic)."""
+    t = (text or "").lower()
+    best, best_pos = default, -1
+    for iid, aliases in _ITEM_ALIASES:
+        for a in aliases:
+            pos = t.rfind(a)
+            if pos > best_pos:
+                best, best_pos = iid, pos
+    return best
+
+
+def _min_offer_price(seller_text: str) -> int | None:
+    """Lowest $-price the SELLER appears to be offering — skipping sentences that quote retail/
+    competitor/cost figures (those aren't the seller's own offer)."""
+    lo = None
+    for sent in re.split(r"[.!?\n]", seller_text or ""):
+        if any(c in sent.lower() for c in _REF_CUES):
+            continue
+        for m in _PRICE_RE.finditer(sent):
+            n = int(m.group(1))
+            if 50 <= n <= 5000 and (lo is None or n < lo):
+                lo = n
+    return lo
+
+
+def _clamp_reply(seller_text: str, item_id: int, convo_text: str):
+    """If the seller offered below the active item's floor, return (replacement_text, floor, item_id);
+    else None. The replacement offers exactly the floor as 'best price' (never names it as the floor)."""
+    if not seller_text:
+        return None
+    det = _detect_item_id(f"{convo_text} {seller_text}", default=item_id)
+    item = ITEMS[det] if 0 <= det < len(ITEMS) else ITEMS[0]
+    floor, _ = demo_reserve(item)
+    lo = _min_offer_price(seller_text)
+    if lo is not None and lo < floor:
+        repl = (f"I hear you, but that's below what I can do on this one — the best I can land on is "
+                f"${floor:.0f}. If that works it's yours; otherwise I understand.")
+        return (repl, floor, det)
+    return None
+
+
+def _canned_event_bytes(run_id: str, text: str) -> list[bytes]:
+    """A complete, valid AG-UI SSE message stream that says exactly `text` (one assistant message),
+    encoded to bytes — reused for both the floor-clamp replacement and the closed-chat block."""
+    enc = EventEncoder()
+    mid = uuid.uuid4().hex
+    events = (
+        RunStartedEvent(type=EventType.RUN_STARTED, thread_id=run_id, run_id=run_id),
+        TextMessageStartEvent(type=EventType.TEXT_MESSAGE_START, message_id=mid, role="assistant"),
+        TextMessageContentEvent(type=EventType.TEXT_MESSAGE_CONTENT, message_id=mid, delta=text),
+        TextMessageEndEvent(type=EventType.TEXT_MESSAGE_END, message_id=mid),
+        RunFinishedEvent(type=EventType.RUN_FINISHED, thread_id=run_id, run_id=run_id),
+    )
+    return [enc.encode(ev).encode("utf-8") for ev in events]
+
+
 def _persist_turn(run_id: str, buyer_text: str, item_id: int, seller_text: str, state: dict,
                   *, ended: bool = False, reason: str = "") -> None:
     """Write this turn's buyer+seller moves (and a terminal outcome once the seller closes the chat)
@@ -196,9 +271,12 @@ def _persist_turn(run_id: str, buyer_text: str, item_id: int, seller_text: str, 
             obs.emit(f"seller ended chat: {note or 'bad-faith buyer'}", level="info")
 
 
-def _record_turn(response: Response, *, run_id: str, buyer_text: str, item_id: int) -> Response:
-    """Tee the AG-UI SSE response: pass every chunk through untouched, and when the stream ends
-    persist the reconstructed buyer+seller turn. Logging never alters what the client receives."""
+def _record_turn(response: Response, *, run_id: str, buyer_text: str, item_id: int,
+                 convo_text: str = "") -> Response:
+    """Buffer the AG-UI SSE reply, scan it, then emit. If the seller offered below the item's floor we
+    REPLACE the whole reply with a floor-respecting line (the buyer never sees the sub-floor number);
+    otherwise the original stream is replayed untouched. Each turn is then persisted. Buffering (vs
+    live passthrough) is the price of a hard floor guarantee — replies are short, so latency is small."""
     orig = getattr(response, "body_iterator", None)
     if orig is None:
         return response
@@ -207,16 +285,29 @@ def _record_turn(response: Response, *, run_id: str, buyer_text: str, item_id: i
         seller_parts: list[str] = []
         state: dict = {}
         flags: dict = {}
+        chunks: list = []
         buf = ""
         async for chunk in orig:
-            yield chunk
+            chunks.append(chunk)
             try:
                 text = chunk.decode("utf-8", "replace") if isinstance(chunk, (bytes, bytearray)) else str(chunk)
                 buf = _scan_sse(buf + text, seller_parts, state, flags)
             except Exception:  # noqa: BLE001 — never let logging break the stream
                 pass
-        _persist_turn(run_id, buyer_text, item_id, "".join(seller_parts).strip(), state,
-                      ended=bool(flags.get("ended")), reason=flags.get("reason") or "")
+        seller_text = "".join(seller_parts).strip()
+        ended = bool(flags.get("ended"))
+        clamp = None if ended else _clamp_reply(seller_text, item_id, convo_text)
+        if clamp is not None:
+            repl_text, floor, det_item = clamp
+            for b in _canned_event_bytes(run_id, repl_text):
+                yield b
+            obs.emit(f"floor clamp: seller offered below ${floor:.0f} on {ITEMS[det_item].name}", level="warn")
+            _persist_turn(run_id, buyer_text, det_item, repl_text, state)   # record the clamped reply
+        else:
+            for c in chunks:
+                yield c
+            _persist_turn(run_id, buyer_text, item_id, seller_text, state,
+                          ended=ended, reason=flags.get("reason") or "")
 
     response.body_iterator = teed()
     return response
@@ -237,20 +328,13 @@ def _is_closed(run_id: str | None) -> bool:
 def _closed_stream_response(run_id: str) -> Response:
     """A minimal, valid AG-UI SSE stream that just says the chat is over — emitted WITHOUT calling the
     LLM, so a buyer can't keep haggling a seller who already walked. This is the server-enforced block."""
-    enc = EventEncoder()
-    mid = uuid.uuid4().hex
+    blocks = _canned_event_bytes(run_id, CLOSED_MSG)
 
     async def gen():
-        for ev in (
-            RunStartedEvent(type=EventType.RUN_STARTED, thread_id=run_id, run_id=run_id),
-            TextMessageStartEvent(type=EventType.TEXT_MESSAGE_START, message_id=mid, role="assistant"),
-            TextMessageContentEvent(type=EventType.TEXT_MESSAGE_CONTENT, message_id=mid, delta=CLOSED_MSG),
-            TextMessageEndEvent(type=EventType.TEXT_MESSAGE_END, message_id=mid),
-            RunFinishedEvent(type=EventType.RUN_FINISHED, thread_id=run_id, run_id=run_id),
-        ):
-            yield enc.encode(ev)
+        for b in blocks:
+            yield b
 
-    return StreamingResponse(gen(), media_type=enc.get_content_type(),
+    return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
@@ -275,10 +359,15 @@ async def _agent_endpoint(request: Request) -> Response:
         item_id = 0
     if _is_closed(run_id):                       # seller already walked → block, don't call the LLM
         return _closed_stream_response(run_id)
+    # Whole-conversation text (all prior turns) so the floor clamp can tell which item is in play —
+    # the typed UI never sets item_id, but earlier messages name the item.
+    convo_text = " ".join(m.get("content") for m in (body.get("messages") or [])
+                          if isinstance(m, dict) and isinstance(m.get("content"), str))
     response = await AGUIAdapter.dispatch_request(request, agent=seller,
                                                   deps=replace(StateDeps(NegotiationState())))
     if run_id:
-        response = _record_turn(response, run_id=run_id, buyer_text=buyer_text, item_id=item_id)
+        response = _record_turn(response, run_id=run_id, buyer_text=buyer_text, item_id=item_id,
+                                convo_text=convo_text)
     return response
 
 
